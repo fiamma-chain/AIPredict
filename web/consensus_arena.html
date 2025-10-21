@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 共识交易竞技场</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 
+                         'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .mode-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .groups-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .group-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .group-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .group-balance {
+            text-align: right;
+        }
+
+        .group-balance .label {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .group-balance .amount {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .group-balance .pnl {
+            font-size: 1.1em;
+            margin-top: 5px;
+        }
+
+        .group-balance .pnl.positive {
+            color: #27ae60;
+        }
+
+        .group-balance .pnl.negative {
+            color: #e74c3c;
+        }
+
+        .ai-members {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .ai-tag {
+            background: #f0f0f0;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .consensus-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .consensus-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .consensus-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .consensus-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .consensus-coin {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #667eea;
+        }
+
+        .consensus-decision {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .consensus-decision.buy {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .consensus-decision.strong_buy {
+            background: #28a745;
+            color: white;
+        }
+
+        .consensus-decision.sell {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .consensus-decision.strong_sell {
+            background: #dc3545;
+            color: white;
+        }
+
+        .consensus-decision.hold {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .vote-info {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .vote-badge {
+            padding: 3px 10px;
+            border-radius: 12px;
+            background: #e9ecef;
+        }
+
+        .consensus-summary {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 3px solid #ffc107;
+            margin-top: 10px;
+            font-size: 0.9em;
+            line-height: 1.5;
+            white-space: pre-line;
+        }
+
+        .votes-detail {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .vote-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            font-size: 0.85em;
+        }
+
+        .vote-item .ai-name {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .vote-item .vote-decision {
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: #f0f0f0;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .leaderboard {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+        }
+
+        .leaderboard-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .leaderboard-table th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+            color: #555;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .leaderboard-table td {
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .leaderboard-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .rank-badge {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+            border-radius: 50%;
+            font-weight: bold;
+            color: white;
+        }
+
+        .rank-badge.rank-1 {
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+        }
+
+        .rank-badge.rank-2 {
+            background: linear-gradient(135deg, #c3cfe2 0%, #c3cfe2 100%);
+        }
+
+        .rank-badge.rank-3 {
+            background: linear-gradient(135deg, #cd853f 0%, #cd853f 100%);
+        }
+
+        .rank-badge.rank-other {
+            background: #95a5a6;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .timestamp {
+            font-size: 0.75em;
+            color: #999;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI 共识交易竞技场</h1>
+            <p class="subtitle">多 AI 投票决策 · 集体智慧交易</p>
+            <span class="mode-badge">🗳️ 共识模式：每组至少 2/3 AI 同意</span>
+        </div>
+
+        <div id="loading" class="loading">
+            正在加载数据...
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="leaderboard-container" style="display: none;"></div>
+
+        <div id="groups-container" class="groups-container" style="display: none;"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let updateInterval;
+
+        async function fetchData(endpoint) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                return await response.json();
+            } catch (error) {
+                console.error('Fetch error:', error);
+                throw error;
+            }
+        }
+
+        function formatTime(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleString('zh-CN', {
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function renderLeaderboard(groups) {
+            const leaderboard = groups.sort((a, b) => b.roi_percentage - a.roi_percentage);
+            
+            let html = `
+                <div class="leaderboard">
+                    <div class="leaderboard-title">🏆 组排行榜</div>
+                    <table class="leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th>排名</th>
+                                <th>组名</th>
+                                <th>成员</th>
+                                <th>余额</th>
+                                <th>盈亏</th>
+                                <th>ROI</th>
+                                <th>交易数</th>
+                                <th>胜率</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            leaderboard.forEach((group, index) => {
+                const rank = index + 1;
+                const rankClass = rank <= 3 ? `rank-${rank}` : 'rank-other';
+                const pnlClass = group.total_pnl >= 0 ? 'positive' : 'negative';
+                
+                html += `
+                    <tr>
+                        <td><span class="rank-badge ${rankClass}">${rank}</span></td>
+                        <td><strong>${group.group_name}</strong></td>
+                        <td>${group.ai_members.join(', ')}</td>
+                        <td>$${group.current_balance.toFixed(2)}</td>
+                        <td class="${pnlClass}">$${group.total_pnl.toFixed(2)}</td>
+                        <td class="${pnlClass}">${group.roi_percentage.toFixed(2)}%</td>
+                        <td>${group.total_trades}</td>
+                        <td>${group.win_rate.toFixed(1)}%</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            document.getElementById('leaderboard-container').innerHTML = html;
+        }
+
+        function renderGroups(groups) {
+            let html = '';
+
+            groups.forEach(group => {
+                const pnlClass = group.total_pnl >= 0 ? 'positive' : 'negative';
+                const pnlSign = group.total_pnl >= 0 ? '+' : '';
+
+                html += `
+                    <div class="group-card">
+                        <div class="group-header">
+                            <div class="group-name">${group.group_name}</div>
+                            <div class="group-balance">
+                                <div class="label">账户余额</div>
+                                <div class="amount">$${group.current_balance.toFixed(2)}</div>
+                                <div class="pnl ${pnlClass}">
+                                    ${pnlSign}$${group.total_pnl.toFixed(2)} (${pnlSign}${group.roi_percentage.toFixed(2)}%)
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ai-members">
+                            ${group.ai_members.map(ai => `<span class="ai-tag">🤖 ${ai}</span>`).join('')}
+                        </div>
+
+                        <div class="stats-row">
+                            <div class="stat-item">
+                                <div class="stat-label">总交易数</div>
+                                <div class="stat-value">${group.total_trades}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">胜率</div>
+                                <div class="stat-value">${group.win_rate.toFixed(1)}%</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">活跃持仓</div>
+                                <div class="stat-value">${group.active_positions}</div>
+                            </div>
+                        </div>
+
+                        ${renderConsensusHistory(group.recent_consensus)}
+                    </div>
+                `;
+            });
+
+            document.getElementById('groups-container').innerHTML = html;
+        }
+
+        function renderConsensusHistory(consensusHistory) {
+            if (!consensusHistory || consensusHistory.length === 0) {
+                return '<div class="consensus-section"><p style="text-align:center;color:#999;">暂无共识记录</p></div>';
+            }
+
+            let html = `
+                <div class="consensus-section">
+                    <div class="consensus-title">📊 最近共识决策</div>
+            `;
+
+            consensusHistory.slice(-5).reverse().forEach(item => {
+                const consensus = item.consensus;
+                if (!consensus) return;
+
+                const decisionClass = consensus.decision.value.toLowerCase().replace('_', '_');
+                const hasConsensusIcon = consensus.has_consensus ? '✅' : '⚠️';
+
+                html += `
+                    <div class="consensus-item">
+                        <div class="consensus-header">
+                            <span class="consensus-coin">${hasConsensusIcon} ${item.coin}</span>
+                            <span class="consensus-decision ${decisionClass}">
+                                ${consensus.decision.value.toUpperCase().replace('_', ' ')}
+                            </span>
+                        </div>
+
+                        <div class="vote-info">
+                            <span class="vote-badge">
+                                🗳️ 投票: ${consensus.vote_count}/${consensus.total_votes}
+                            </span>
+                            <span class="vote-badge">
+                                💯 置信度: ${consensus.avg_confidence.toFixed(0)}%
+                            </span>
+                            <span class="vote-badge">
+                                💵 价格: $${item.price.toLocaleString()}
+                            </span>
+                        </div>
+
+                        <div class="consensus-summary">
+                            ${consensus.summary}
+                        </div>
+
+                        ${renderVotes(consensus.votes)}
+
+                        <div class="timestamp">
+                            ${formatTime(item.timestamp)}
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            return html;
+        }
+
+        function renderVotes(votes) {
+            if (!votes || votes.length === 0) return '';
+
+            let html = '<div class="votes-detail">';
+            
+            votes.forEach(vote => {
+                html += `
+                    <div class="vote-item">
+                        <span class="ai-name">${vote.ai_name}</span>
+                        <div>
+                            <span class="vote-decision">${vote.decision.value.toUpperCase()}</span>
+                            <span style="color:#999;margin-left:8px;">${vote.confidence.toFixed(0)}%</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            return html;
+        }
+
+        async function updateUI() {
+            try {
+                // 获取所有组的数据
+                const groups = await fetchData('/consensus/groups');
+                
+                if (groups && groups.length > 0) {
+                    // 渲染排行榜
+                    renderLeaderboard(groups);
+                    document.getElementById('leaderboard-container').style.display = 'block';
+                    
+                    // 渲染组卡片
+                    renderGroups(groups);
+                    document.getElementById('groups-container').style.display = 'grid';
+                    
+                    // 隐藏加载提示
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('error').style.display = 'none';
+                } else {
+                    throw new Error('没有可用的组数据');
+                }
+            } catch (error) {
+                console.error('Update UI error:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = '无法连接到服务器，请确保后端服务正在运行';
+            }
+        }
+
+        // 初始加载
+        updateUI();
+
+        // 每30秒自动刷新
+        updateInterval = setInterval(updateUI, 30000);
+    </script>
+</body>
+</html>
+
