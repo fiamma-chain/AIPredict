@@ -31,6 +31,7 @@ class PlatformTrader:
             "platform": client.platform_name,
             "name": name,
             "balance": 0.0,
+            "initial_balance": 0.0,
             "pnl": 0.0,
             "roi": 0.0,
             "total_trades": 0,
@@ -54,6 +55,7 @@ class PlatformTrader:
             self.start_balance = float(account.get('marginSummary', {}).get('accountValue', 0))
         
         self.stats["balance"] = self.start_balance
+        self.stats["initial_balance"] = self.start_balance
         logger.info(f"[{self.name}] 初始余额: ${self.start_balance:,.2f}")
     
     async def execute_decision(

@@ -10,17 +10,24 @@ class Settings(BaseSettings):
     # 交易平台配置
     enabled_platforms: str = "hyperliquid,aster"  # 启用的平台，逗号分隔
     
-    # Hyperliquid 配置
-    hyperliquid_testnet: bool = True
-    hyperliquid_api_url: str = "https://api.hyperliquid-testnet.xyz"
+    # Hyperliquid 配置（默认主网）
+    hyperliquid_testnet: bool = False
+    hyperliquid_api_url: str = "https://api.hyperliquid.xyz"
     
-    # Aster 配置
-    aster_testnet: bool = True
-    aster_api_url: str = "https://testnet-api.aster.exchange"  # 请替换为实际URL
+    # Aster 配置（仅支持主网）
+    aster_testnet: bool = False
+    aster_api_url: str = "https://fapi.asterdex.com"
     
     # API 配置
     api_host: str = "0.0.0.0"
     api_port: int = 8000
+    
+    # Redis 配置
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_db: int = 0
+    redis_password: str = ""
+    balance_history_ttl: int = 86400 * 7  # 7天过期
     
     # 允许交易的币种
     allowed_trading_symbols: str = "BTC"
@@ -35,19 +42,17 @@ class Settings(BaseSettings):
     deepseek_api_key: str = ""
     
     # AI 交易配置
-    ai_initial_balance: float = 1000.0
-    ai_min_position_size: float = 5.0
-    ai_max_position_size: float = 200.0
+    ai_initial_balance: float = 240.0
+    ai_min_position_size: float = 150.0
+    ai_max_position_size: float = 240.0
     
-    # 分组共识配置
+    # 分组共识配置（默认主网）
     group_1_name: str = "Alpha组"
     group_1_ais: str = ""
     group_1_private_key: str = ""
-    group_1_testnet: bool = True
     group_2_name: str = "Beta组"
     group_2_ais: str = ""
     group_2_private_key: str = ""
-    group_2_testnet: bool = True
     consensus_min_votes: int = 2
     consensus_interval: int = 300
     min_confidence: float = 60.0

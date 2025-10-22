@@ -177,14 +177,23 @@ class AsterClient(BaseExchangeClient):
             
             if method == "GET":
                 async with session.get(url, params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        logger.error(f"[Aster] API 错误 {response.status}: {error_text}")
                     response.raise_for_status()
                     return await response.json()
             elif method == "POST":
                 async with session.post(url, data=params, headers=headers, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        logger.error(f"[Aster] API 错误 {response.status}: {error_text}")
                     response.raise_for_status()
                     return await response.json()
             elif method == "DELETE":
                 async with session.delete(url, data=params, headers=headers, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        logger.error(f"[Aster] API 错误 {response.status}: {error_text}")
                     response.raise_for_status()
                     return await response.json()
             else:
@@ -203,20 +212,36 @@ class AsterClient(BaseExchangeClient):
             # 获取账户信息 (V3)
             result = await self._request("GET", "/fapi/v3/account", signed=True)
             
-            # 获取余额
-            balance = 0.0
+            # 获取余额（支持 USDT 和 USDC）
+            total_wallet_balance = 0.0
+            total_unrealized_profit = 0.0
+            total_margin_balance = 0.0
+            total_available_balance = 0.0
+            
             if 'assets' in result:
                 for asset in result['assets']:
-                    if asset.get('asset') == 'USDT':
-                        balance = float(asset.get('walletBalance', 0))
-                        break
+                    asset_type = asset.get('asset', '')
+                    if asset_type in ['USDT', 'USDC']:
+                        wallet_balance = float(asset.get('walletBalance', 0))
+                        total_wallet_balance += wallet_balance
+                        total_unrealized_profit += float(asset.get('unrealizedProfit', 0))
+                        total_margin_balance += float(asset.get('marginBalance', 0))
+                        total_available_balance += float(asset.get('availableBalance', 0))
+                        logger.info(f"[Aster] 检测到 {asset_type} 余额: ${wallet_balance:,.2f}")
             
-            # 标准化返回格式，兼容 Hyperliquid 格式
+            # 标准化返回格式，兼容 Hyperliquid 格式，同时包含 Aster 详细信息
             return {
                 "marginSummary": {
-                    "accountValue": balance
+                    "accountValue": total_wallet_balance
                 },
                 "assetPositions": result.get('positions', []),
+                "withdrawable": total_available_balance,  # 兼容 Hyperliquid 格式
+                # Aster 特有字段
+                "equity": total_margin_balance,
+                "availableBalance": total_available_balance,
+                "totalPositionInitialMargin": float(result.get('totalPositionInitialMargin', 0)),
+                "totalUnrealizedProfit": total_unrealized_profit,
+                "positions": result.get('positions', []),
                 "raw": result
             }
         except Exception as e:
@@ -285,12 +310,12 @@ class AsterClient(BaseExchangeClient):
             # 转换币种格式
             symbol = f"{coin}USDT" if not coin.endswith('USDT') else coin
             
-            # 处理精度
+            # 处理精度（BTC 使用 3 位小数）
             size_decimal = Decimal(str(size))
             if reduce_only:
-                size_rounded = float(size_decimal.quantize(Decimal('0.00001'), rounding=ROUND_HALF_UP))
+                size_rounded = float(size_decimal.quantize(Decimal('0.001'), rounding=ROUND_HALF_UP))
             else:
-                size_rounded = float(size_decimal.quantize(Decimal('0.00001'), rounding=ROUND_DOWN))
+                size_rounded = float(size_decimal.quantize(Decimal('0.001'), rounding=ROUND_DOWN))
             
             # 处理价格
             if price is None:
@@ -313,7 +338,7 @@ class AsterClient(BaseExchangeClient):
             price_decimal = Decimal(str(price))
             price_rounded = float(price_decimal.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))
             
-            logger.info(f"[Aster] 📊 下单: {symbol} {'BUY' if is_buy else 'SELL'} {size_rounded} @ ${price_rounded}")
+            logger.info(f"[Aster] 📊 下单: {symbol} {'BUY' if is_buy else 'SELL'} {size_rounded} @ ${price_rounded if price_rounded else 'MARKET'}")
             
             # 构建订单请求 (AsterDex V3 格式)
             order_params = {
@@ -321,11 +346,17 @@ class AsterClient(BaseExchangeClient):
                 "positionSide": "BOTH",  # 单向持仓模式
                 "side": "BUY" if is_buy else "SELL",
                 "type": "LIMIT" if order_type == "Limit" else "MARKET",
-                "timeInForce": "GTC" if not reduce_only else "IOC",  # 平仓使用 IOC
                 "quantity": str(size_rounded),
-                "price": price_rounded,
                 "reduceOnly": reduce_only
             }
+            
+            # 市价单不需要 price 和 timeInForce
+            if order_type == "Limit":
+                order_params["price"] = price_rounded
+                order_params["timeInForce"] = "GTC" if not reduce_only else "IOC"
+            
+            # 调试：打印订单参数
+            logger.info(f"[Aster] 🔍 订单参数: {order_params}")
             
             # 发送订单请求 (使用 V3 端点)
             result = await self._request("POST", "/fapi/v3/order", params=order_params, signed=True)

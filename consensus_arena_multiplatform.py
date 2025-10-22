@@ -20,6 +20,7 @@ from trading.multi_platform_trader import MultiPlatformTrader
 from utils.symbol_filter import symbol_filter
 from trading.kline_manager import KlineManager
 from ai_models.base_ai import TradingDecision
+from utils.redis_manager import redis_manager
 
 import uvicorn
 from fastapi import FastAPI
@@ -38,7 +39,7 @@ app = FastAPI()
 class AIGroup:
     """AI组 - 多平台版本"""
     
-    def __init__(self, name: str, ai_traders: List, private_key: str, testnet: bool = True):
+    def __init__(self, name: str, ai_traders: List, private_key: str):
         """
         初始化 AI 组
         
@@ -46,7 +47,6 @@ class AIGroup:
             name: 组名
             ai_traders: AI 交易者列表
             private_key: 私钥
-            testnet: 是否使用测试网
         """
         self.name = name
         self.ai_traders = ai_traders
@@ -56,16 +56,16 @@ class AIGroup:
         # 创建多平台交易管理器
         self.multi_trader = MultiPlatformTrader()
         
-        # 根据配置初始化各个平台
+        # 根据配置初始化各个平台（使用平台级别的 testnet 配置）
         enabled_platforms = get_enabled_platforms()
         logger.info(f"[{name}] 启用的交易平台: {enabled_platforms}")
         
         for platform in enabled_platforms:
             if platform == "hyperliquid":
-                client = HyperliquidClient(private_key, testnet)
+                client = HyperliquidClient(private_key, settings.hyperliquid_testnet)
                 self.multi_trader.add_platform(client, f"{name}-Hyperliquid")
             elif platform == "aster":
-                client = AsterClient(private_key, testnet)
+                client = AsterClient(private_key, settings.aster_testnet)
                 self.multi_trader.add_platform(client, f"{name}-Aster")
         
         # 保存第一个客户端用于获取市场数据（所有平台看同一个市场）
@@ -271,6 +271,8 @@ class ConsensusArena:
         self.groups: List[AIGroup] = []
         self.running = False
         self.update_interval = settings.consensus_interval
+        self.decision_history = []  # 决策历史记录（全局）
+        self.balance_history = []   # 余额历史记录（全局）
     
     async def initialize(self):
         """初始化系统"""
@@ -296,8 +298,7 @@ class ConsensusArena:
         alpha_group = AIGroup(
             settings.group_1_name,
             alpha_ais,
-            settings.group_1_private_key,
-            settings.group_1_testnet
+            settings.group_1_private_key
         )
         await alpha_group.initialize()
         self.groups.append(alpha_group)
@@ -313,8 +314,7 @@ class ConsensusArena:
         beta_group = AIGroup(
             settings.group_2_name,
             beta_ais,
-            settings.group_2_private_key,
-            settings.group_2_testnet
+            settings.group_2_private_key
         )
         await beta_group.initialize()
         self.groups.append(beta_group)
@@ -388,6 +388,36 @@ class ConsensusArena:
                         group.stats["consensus_decisions"].insert(0, decision_record)
                         group.stats["consensus_decisions"] = group.stats["consensus_decisions"][:100]
                         
+                        # 记录到全局决策历史（用于前端展示）
+                        # ai_votes 是一个列表，每个元素是 {'ai_name': xx, 'decision': xx, ...}
+                        votes_count = sum(1 for vote in ai_votes if vote and vote.get('decision') == consensus_decision)
+                        
+                        # 格式化AI投票信息（用于前端展示）
+                        formatted_ai_votes = []
+                        for vote in ai_votes:
+                            if vote:
+                                formatted_ai_votes.append({
+                                    "ai_name": vote.get('ai_name', 'Unknown'),
+                                    "decision": str(vote.get('decision', '')),
+                                    "confidence": round(vote.get('confidence', 0), 1),
+                                    "reasoning": vote.get('reasoning', '')[:200]  # 限制长度
+                                })
+                        
+                        global_decision = {
+                            "time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                            "group": group.name,
+                            "direction": str(consensus_decision),
+                            "confidence": round(confidence, 1),
+                            "votes": votes_count,
+                            "total_ais": len([v for v in ai_votes if v]),  # 过滤掉None
+                            "price": current_price,
+                            "platforms": [],
+                            "ai_votes": formatted_ai_votes,
+                            "summary": summary  # 添加共识总结
+                        }
+                        self.decision_history.insert(0, global_decision)
+                        self.decision_history = self.decision_history[:100]  # 保留最近100条
+                        
                         # 在所有平台上执行决策
                         await group.execute_decision_on_all_platforms(
                             trading_symbol,
@@ -418,6 +448,25 @@ class ConsensusArena:
                 
                 # 并行处理所有组
                 await asyncio.gather(*[process_group(group) for group in self.groups])
+                
+                # 保存余额快照到 Redis
+                try:
+                    accounts = []
+                    for group in self.groups:
+                        for platform_name, trader in group.multi_trader.platform_traders.items():
+                            accounts.append({
+                                "group": group.name,
+                                "platform": platform_name,
+                                "balance": trader.stats.get("balance", 0),
+                                "pnl": trader.stats.get("pnl", 0),
+                                "roi": trader.stats.get("roi", 0),
+                                "total_trades": trader.stats.get("total_trades", 0)
+                            })
+                    
+                    if accounts:
+                        redis_manager.save_balance_snapshot(accounts)
+                except Exception as e:
+                    logger.error(f"保存余额快照失败: {e}")
                 
                 logger.info(f"\n⏰ 等待 {self.update_interval} 秒后进行下一轮决策...")
                 await asyncio.sleep(self.update_interval)
@@ -493,25 +542,249 @@ async def get_status():
 async def get_platform_comparison():
     """获取平台对比数据"""
     if not arena:
-        return {"error": "系统未启动"}
+        return {"platforms": []}
     
-    comparison_data = []
+    # 汇总所有组的多平台数据
+    platform_summary = {}
+    
     for group in arena.groups:
-        comparison_data.append({
-            "group_name": group.stats["group_name"],
-            "comparison": group.stats.get("platform_comparison", {})
+        platforms = group.stats.get("platforms", {})
+        for platform_name, platform_stats in platforms.items():
+            # 提取平台简称（如 Hyperliquid 或 Aster）
+            platform_key = "Hyperliquid" if "Hyperliquid" in platform_name else "Aster"
+            
+            if platform_key not in platform_summary:
+                platform_summary[platform_key] = {
+                    "platform": platform_key,
+                    "total_pnl": 0,
+                    "total_trades": 0,
+                    "wins": 0,
+                    "losses": 0,
+                    "initial_balance": 0,
+                    "current_balance": 0
+                }
+            
+            summary = platform_summary[platform_key]
+            summary["total_pnl"] += platform_stats.get("total_pnl", 0)
+            summary["total_trades"] += platform_stats.get("total_trades", 0)
+            summary["wins"] += platform_stats.get("total_wins", 0)
+            summary["losses"] += platform_stats.get("total_losses", 0)
+            summary["initial_balance"] += platform_stats.get("initial_balance", 0)
+            summary["current_balance"] += platform_stats.get("current_balance", 0)
+    
+    # 计算衍生指标
+    platforms_list = []
+    for platform_data in platform_summary.values():
+        total_trades = platform_data["total_trades"]
+        win_rate = (platform_data["wins"] / total_trades * 100) if total_trades > 0 else 0
+        roi = (platform_data["total_pnl"] / platform_data["initial_balance"] * 100) if platform_data["initial_balance"] > 0 else 0
+        
+        platforms_list.append({
+            "platform": platform_data["platform"],
+            "total_pnl": platform_data["total_pnl"],
+            "current_balance": platform_data["current_balance"],
+            "initial_balance": platform_data["initial_balance"],
+            "roi_percentage": roi,
+            "win_rate": win_rate,
+            "total_trades": total_trades
         })
     
+    return {"platforms": platforms_list}
+
+
+@app.get("/api/chart")
+async def get_chart_data(
+    symbol: str = settings.allowed_trading_symbols,
+    interval: str = "15m",
+    lookback: int = 100
+):
+    """获取K线图数据（包含多平台交易标记）"""
+    try:
+        if not arena or len(arena.groups) == 0:
+            return {"error": "系统未启动"}
+        
+        # 从第一个组的第一个平台获取K线数据
+        first_group = arena.groups[0]
+        candles = []
+        
+        if first_group.primary_client:
+            candles = await first_group.primary_client.get_candles(
+                symbol,
+                interval=interval,
+                lookback=lookback
+            )
+        
+        # 收集所有组的所有平台的交易标记
+        trade_markers = []
+        for group in arena.groups:
+            group_start_time = group.start_time
+            
+            # 遍历该组的所有平台
+            for platform_name, platform_stats in group.stats.get("platforms", {}).items():
+                for trade in platform_stats.get("trades", []):
+                    try:
+                        from datetime import datetime
+                        trade_time = datetime.fromisoformat(trade.get("time", ""))
+                        
+                        # 只显示系统启动后的交易
+                        if trade_time < group_start_time:
+                            continue
+                        
+                        timestamp_ms = int(trade_time.timestamp() * 1000)
+                        
+                        trade_markers.append({
+                            "time": timestamp_ms,
+                            "price": trade.get("px", 0),
+                            "group": group.stats["group_name"],
+                            "platform": platform_name,  # 添加平台信息
+                            "action": trade.get("action", ""),
+                            "side": trade.get("side", ""),
+                            "size": trade.get("size", 0),
+                            "pnl": trade.get("closedPnl", 0)
+                        })
+                    except:
+                        continue
+        
+        return {
+            "candles": candles,
+            "trade_markers": trade_markers,
+            "symbol": symbol,
+            "interval": interval
+        }
+    except Exception as e:
+        logger.error(f"获取K线数据失败: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return {"error": str(e)}
+
+
+@app.get("/leaderboard")
+async def get_leaderboard(metric: str = "total_pnl", limit: int = 10):
+    """获取AI排行榜"""
+    if not arena:
+        return {"rankings": []}
+    
+    # 收集所有AI的统计数据
+    ai_stats = []
+    for group in arena.groups:
+        for ai_trader in group.ai_traders:
+            ai_name = ai_trader.__class__.__name__.replace('Trader', '')
+            stats = {
+                "ai_name": ai_name,
+                "group": group.stats["group_name"],
+                "total_pnl": 0,
+                "roi_percentage": 0,
+                "win_rate": 0,
+                "total_trades": 0
+            }
+            ai_stats.append(stats)
+    
+    # 按指标排序
+    ai_stats.sort(key=lambda x: x.get(metric, 0), reverse=True)
+    
+    # 添加排名
+    for i, stats in enumerate(ai_stats[:limit]):
+        stats["rank"] = i + 1
+    
+    return {"rankings": ai_stats[:limit]}
+
+
+@app.get("/leaderboard/summary")
+async def get_leaderboard_summary():
+    """获取排行榜摘要"""
+    if not arena:
+        return {}
+    
+    total_trades = 0
+    total_pnl = 0
+    
+    for group in arena.groups:
+        for platform_stats in group.stats.get("platforms", {}).values():
+            total_trades += platform_stats.get("total_trades", 0)
+            total_pnl += platform_stats.get("total_pnl", 0)
+    
     return {
-        "groups": comparison_data,
-        "enabled_platforms": get_enabled_platforms()
+        "total_ais": len(arena.groups[0].ai_traders) * len(arena.groups) if arena.groups else 0,
+        "total_trades": total_trades,
+        "total_pnl": total_pnl,
+        "active_groups": len(arena.groups)
     }
+
+
+@app.get("/strategies")
+async def get_strategies():
+    """获取策略详情"""
+    if not arena:
+        return {"strategies": []}
+    
+    strategies = []
+    for group in arena.groups:
+        for ai_trader in group.ai_traders:
+            ai_name = ai_trader.__class__.__name__.replace('Trader', '')
+            strategy = {
+                "name": ai_name,
+                "group": group.stats["group_name"],
+                "status": "active",
+                "description": f"{ai_name} AI 交易策略"
+            }
+            strategies.append(strategy)
+    
+    return {"strategies": strategies}
+
+
+@app.get("/api/realtime_balance")
+async def get_realtime_balance():
+    """获取所有账户的实时余额"""
+    if not arena:
+        return {"accounts": []}
+    
+    accounts = []
+    for group in arena.groups:
+        group_name = group.stats["group_name"]
+        
+        # 获取该组所有平台的余额
+        for platform_name, platform_stats in group.stats.get("platforms", {}).items():
+            # 提取平台简称（去掉组名前缀）
+            platform_display = platform_name.replace(f"{group_name}-", "")
+            
+            account = {
+                "group": group_name,
+                "platform": platform_display,
+                "balance": platform_stats.get("balance", 0),
+                "initial_balance": platform_stats.get("initial_balance", 0),
+                "pnl": platform_stats.get("pnl", 0),
+                "roi": platform_stats.get("roi", 0),
+                "trades": platform_stats.get("total_trades", 0)
+            }
+            accounts.append(account)
+    
+    return {"accounts": accounts}
+
+
+@app.get("/api/balance_history")
+async def get_balance_history(limit: int = 100):
+    """获取余额历史数据（从Redis）"""
+    try:
+        history = redis_manager.get_balance_history(limit=limit)
+        return {"history": history, "count": len(history)}
+    except Exception as e:
+        logger.error(f"获取余额历史失败: {e}")
+        return {"history": [], "count": 0, "error": str(e)}
+
+
+@app.get("/api/decisions")
+async def get_decisions():
+    """获取决策历史"""
+    if not arena:
+        return {"decisions": []}
+    
+    return {"decisions": arena.decision_history}
 
 
 @app.get("/")
 async def root():
     """根路径"""
-    return FileResponse("web/consensus_arena.html")
+    return FileResponse("web/index.html")
 
 
 app.mount("/web", StaticFiles(directory="web"), name="web")

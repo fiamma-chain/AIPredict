@@ -27,7 +27,7 @@ class AutoTrader:
         # 交易配置（激进波段交易）
         self.min_confidence = settings.min_confidence  # 从配置读取
         self.min_position_size = settings.ai_min_position_size  # 从配置读取
-        self.max_position_size = 200.0  # 最大单笔仓位（USDC）
+        self.max_position_size = settings.ai_max_position_size  # 从配置读取
         self.stop_loss_pct = 0.05  # 止损比例 5%（给AI更多空间）
         self.take_profit_pct = 0.10  # 止盈比例 10%（追求更大收益）
         self.leverage = 1  # 杠杆倍数
