@@ -591,11 +591,11 @@
                     },
                     scales: {
                         y: {
-                            min: 450,  // 固定Y轴最小值
-                            max: 550,  // 固定Y轴最大值（根据止盈止损调整）
+                            min: 499,  // 初始范围紧凑
+                            max: 501,  // 初始范围紧凑
                             ticks: { 
                                 color: '#fff',
-                                stepSize: 10  // 每10刻度一格
+                                stepSize: 0.5  // 精细刻度
                             },
                             grid: { color: 'rgba(255, 255, 255, 0.1)' }
                         },
@@ -606,6 +606,93 @@
                     }
                 }
             });
+        }
+        
+        // 实时余额更新（每5秒平滑更新权益曲线终点）
+        async function updateRealtimeBalance() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                if (!data.groups || data.groups.length < 2) return;
+                
+                const alphaGroup = data.groups[0];
+                const betaGroup = data.groups[1];
+                
+                // 更新余额显示
+                document.getElementById('alpha-balance').textContent = `$${alphaGroup.balance.toFixed(2)}`;
+                document.getElementById('alpha-pnl').textContent = `$${alphaGroup.pnl.toFixed(2)}`;
+                document.getElementById('alpha-pnl').className = 'stat-value ' + (alphaGroup.pnl >= 0 ? 'positive' : 'negative');
+                document.getElementById('alpha-roi').textContent = `${alphaGroup.roi >= 0 ? '+' : ''}${alphaGroup.roi.toFixed(2)}%`;
+                document.getElementById('alpha-roi').className = 'stat-value ' + (alphaGroup.roi >= 0 ? 'positive' : 'negative');
+                
+                document.getElementById('beta-balance').textContent = `$${betaGroup.balance.toFixed(2)}`;
+                document.getElementById('beta-pnl').textContent = `$${betaGroup.pnl.toFixed(2)}`;
+                document.getElementById('beta-pnl').className = 'stat-value ' + (betaGroup.pnl >= 0 ? 'positive' : 'negative');
+                document.getElementById('beta-roi').textContent = `${betaGroup.roi >= 0 ? '+' : ''}${betaGroup.roi.toFixed(2)}%`;
+                document.getElementById('beta-roi').className = 'stat-value ' + (betaGroup.roi >= 0 ? 'positive' : 'negative');
+                
+                // 平滑更新权益曲线
+                if (equityChart) {
+                    const alphaData = equityChart.data.datasets[0].data;
+                    const betaData = equityChart.data.datasets[1].data;
+                    const labels = equityChart.data.labels;
+                    
+                    // 如果图表还没有数据，添加初始点
+                    if (alphaData.length === 0) {
+                        labels.push('起点');
+                        alphaData.push(500);
+                        betaData.push(500);
+                    }
+                    
+                    // 添加新的实时数据点（每次都添加，保持5秒粒度）
+                    const now = new Date();
+                    const timeLabel = now.toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit', second: '2-digit'});
+                    
+                    // 添加新点（不是更新最后一个点）
+                    labels.push(timeLabel);
+                    alphaData.push(alphaGroup.balance);
+                    betaData.push(betaGroup.balance);
+                    
+                    // 限制数据点数量，避免过多（保留最近200个点，约16分钟）
+                    const maxPoints = 200;
+                    if (alphaData.length > maxPoints) {
+                        labels.shift();
+                        alphaData.shift();
+                        betaData.shift();
+                    }
+                    
+                    // 动态调整Y轴范围（精细颗粒度）
+                    const allValues = [...alphaData, ...betaData];
+                    const minVal = Math.min(...allValues);
+                    const maxVal = Math.max(...allValues);
+                    const range = maxVal - minVal;
+                    
+                    // 根据实际波动调整padding，保持更紧凑的视图
+                    let padding;
+                    if (range < 0.1) {
+                        padding = 0.5;  // 极小波动
+                    } else if (range < 1) {
+                        padding = 1;    // 小波动
+                    } else if (range < 5) {
+                        padding = 2;    // 中等波动
+                    } else {
+                        padding = range * 0.3;  // 大波动
+                    }
+                    
+                    equityChart.options.scales.y.min = Math.max(490, Math.floor(minVal - padding));
+                    equityChart.options.scales.y.max = Math.min(510, Math.ceil(maxVal + padding));
+                    
+                    // 设置更精细的刻度
+                    equityChart.options.scales.y.ticks.stepSize = range < 2 ? 0.5 : (range < 10 ? 1 : 2);
+                    
+                    // 使用'none'模式实现无感知更新（不重绘动画）
+                    equityChart.update('none');
+                }
+                
+            } catch (error) {
+                console.error('实时余额更新失败:', error);
+            }
         }
         
         async function updateData() {
@@ -636,7 +723,7 @@
                 document.getElementById('beta-trades').textContent = betaGroup.total_trades;
                 document.getElementById('beta-address').textContent = `地址: ${betaGroup.address}`;
                 
-                // 更新图表
+                // 更新图表（当有新决策时，添加新的数据点）
                 if (alphaGroup.equity_curve && alphaGroup.equity_curve.length > 0) {
                     const labels = alphaGroup.equity_curve.map(p => new Date(p.time).toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'}));
                     const alphaValues = alphaGroup.equity_curve.map(p => p.balance);
@@ -655,15 +742,29 @@
                     equityChart.data.datasets[0].data = alphaValues;
                     equityChart.data.datasets[1].data = betaValues;
                     
-                    // 动态调整Y轴范围以显示差异
+                    // 动态调整Y轴范围（精细颗粒度）
                     const allValues = [...alphaValues, ...betaValues];
                     const minVal = Math.min(...allValues);
                     const maxVal = Math.max(...allValues);
                     const range = maxVal - minVal;
-                    const padding = Math.max(range * 0.2, 20);  // 至少20的padding
                     
-                    equityChart.options.scales.y.min = Math.floor(minVal - padding);
-                    equityChart.options.scales.y.max = Math.ceil(maxVal + padding);
+                    // 根据实际波动调整padding，保持更紧凑的视图
+                    let padding;
+                    if (range < 0.1) {
+                        padding = 0.5;  // 极小波动
+                    } else if (range < 1) {
+                        padding = 1;    // 小波动
+                    } else if (range < 5) {
+                        padding = 2;    // 中等波动
+                    } else {
+                        padding = range * 0.3;  // 大波动
+                    }
+                    
+                    equityChart.options.scales.y.min = Math.max(490, Math.floor(minVal - padding));
+                    equityChart.options.scales.y.max = Math.min(510, Math.ceil(maxVal + padding));
+                    
+                    // 设置更精细的刻度
+                    equityChart.options.scales.y.ticks.stepSize = range < 2 ? 0.5 : (range < 10 ? 1 : 2);
                     
                     equityChart.update('none');
                 }
@@ -754,10 +855,17 @@
                 console.error('❌ K线数据加载失败:', e);
             }
             
-            setInterval(updateData, 5000);
-            setInterval(updateKlineChart, 30000); // K线每30秒更新一次
+            // 每5秒更新余额和权益曲线终点（平滑无感知）
+            setInterval(updateRealtimeBalance, 5000);
+            
+            // 每30秒更新完整数据（决策记录等）
+            setInterval(updateData, 30000);
+            
+            // K线每30秒更新一次
+            setInterval(updateKlineChart, 30000);
             
             console.log('✅ 所有初始化完成');
+            console.log('💚 实时余额更新已启用：每5秒平滑更新');
         });
     </script>
 </body>
