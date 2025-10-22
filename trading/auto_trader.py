@@ -24,13 +24,14 @@ class AutoTrader:
         """
         self.client = hyperliquid_client
         
-        # 交易配置（15分钟超短线波段）
-        self.min_confidence = 50.0  # 最小信心阈值（超短线更激进）
-        self.max_position_size = 20.0  # 最大单笔仓位（USDC）
-        self.stop_loss_pct = 0.015  # 止损比例 1.5%（超短线止损更紧）
-        self.take_profit_pct = 0.03  # 止盈比例 3%（超短线快速止盈）
+        # 交易配置（激进波段交易）
+        self.min_confidence = settings.min_confidence  # 从配置读取
+        self.min_position_size = settings.ai_min_position_size  # 从配置读取
+        self.max_position_size = 200.0  # 最大单笔仓位（USDC）
+        self.stop_loss_pct = 0.05  # 止损比例 5%（给AI更多空间）
+        self.take_profit_pct = 0.10  # 止盈比例 10%（追求更大收益）
         self.leverage = 1  # 杠杆倍数
-        self.max_balance_usage_pct = 0.20  # 最大使用余额的20%（更激进）
+        self.max_balance_usage_pct = 0.20  # 最大使用余额的20%
         
         # 持仓管理
         self.positions: Dict[str, Dict] = {}  # {coin: position_info}
@@ -38,15 +39,14 @@ class AutoTrader:
         
         # 风险控制
         self.daily_loss_limit = 10.0  # 每日最大亏损（USDC）
-        self.daily_trade_limit = 10  # 每日最大交易次数
         self.daily_pnl = 0.0
         self.daily_trade_count = 0
         self.last_reset_date = datetime.now().date()
         
         logger.info("🤖 自动交易器初始化完成")
         logger.info(f"   最小信心阈值: {self.min_confidence}%")
-        logger.info(f"   最大单笔仓位: ${self.max_position_size}")
-        logger.info(f"   止损/止盈: {self.stop_loss_pct*100}% / {self.take_profit_pct*100}%")
+        logger.info(f"   仓位范围: ${self.min_position_size:.0f} - ${self.max_position_size:.0f}")
+        logger.info(f"   止损/止盈: {self.stop_loss_pct*100:.1f}% / {self.take_profit_pct*100:.1f}%")
     
     def reset_daily_stats(self):
         """重置每日统计"""
@@ -71,11 +71,6 @@ class AutoTrader:
         # 检查每日亏损限制
         if self.daily_pnl < -self.daily_loss_limit:
             logger.warning(f"⚠️  已达每日亏损限制: ${self.daily_pnl:,.2f}")
-            return False
-        
-        # 检查每日交易次数
-        if self.daily_trade_count >= self.daily_trade_limit:
-            logger.warning(f"⚠️  已达每日交易次数限制: {self.daily_trade_count}")
             return False
         
         return True
@@ -145,8 +140,12 @@ class AutoTrader:
             elif self.positions[coin]['side'] == 'short':
                 # 先平空仓
                 await self._close_position(coin, current_price, "反向信号")
+                # 平仓后重新获取余额
+                account_info = await self.client.get_account_info()
+                new_balance = float(account_info.get('marginSummary', {}).get('accountValue', balance))
+                logger.info(f"   平仓后余额更新: ${balance:.2f} → ${new_balance:.2f}")
                 # 再开多仓
-                return await self._open_position(coin, 'long', confidence, reasoning, current_price, balance)
+                return await self._open_position(coin, 'long', confidence, reasoning, current_price, new_balance)
         
         elif decision == TradingDecision.STRONG_SELL or decision == TradingDecision.SELL:
             if not has_position:
@@ -154,8 +153,12 @@ class AutoTrader:
             elif self.positions[coin]['side'] == 'long':
                 # 先平多仓
                 await self._close_position(coin, current_price, "反向信号")
+                # 平仓后重新获取余额
+                account_info = await self.client.get_account_info()
+                new_balance = float(account_info.get('marginSummary', {}).get('accountValue', balance))
+                logger.info(f"   平仓后余额更新: ${balance:.2f} → ${new_balance:.2f}")
                 # 再开空仓
-                return await self._open_position(coin, 'short', confidence, reasoning, current_price, balance)
+                return await self._open_position(coin, 'short', confidence, reasoning, current_price, new_balance)
         
         elif decision == TradingDecision.HOLD:
             logger.debug(f"💤 AI 建议观望")
@@ -193,6 +196,11 @@ class AutoTrader:
                 balance * 0.2,  # 最多使用20%的资金
                 (confidence / 100) * self.max_position_size  # 根据信心度调整
             )
+            
+            # 确保满足最小仓位要求
+            if position_value < self.min_position_size:
+                position_value = self.min_position_size
+                logger.info(f"   仓位已调整至最小值: ${position_value}")
             
             # 计算数量（币的数量）
             size = position_value / current_price
@@ -319,20 +327,48 @@ class AutoTrader:
         try:
             position = self.positions[coin]
             
-            # 计算盈亏
-            if position['side'] == 'long':
-                pnl = (current_price - position['entry_price']) * position['size']
-            else:  # short
-                pnl = (position['entry_price'] - current_price) * position['size']
+            # 🔑 关键修复：从交易所获取实际持仓数量
+            logger.info(f"🔍 获取 {coin} 在交易所的实际持仓数量...")
+            account_info = await self.client.get_account_info()
+            actual_size = None
             
-            pnl_pct = (pnl / (position['entry_price'] * position['size'])) * 100
+            for asset_pos in account_info.get('assetPositions', []):
+                if asset_pos['position']['coin'] == coin:
+                    szi = float(asset_pos['position']['szi'])
+                    actual_size = abs(szi)
+                    actual_side = 'long' if szi > 0 else 'short'
+                    
+                    # 验证方向是否一致
+                    if actual_side != position['side']:
+                        logger.warning(f"⚠️  持仓方向不一致！系统记录: {position['side']}, 实际: {actual_side}")
+                    
+                    logger.info(f"✅ 交易所实际持仓: {actual_size:.8f} {coin}")
+                    break
+            
+            if actual_size is None:
+                logger.error(f"❌ 交易所无 {coin} 持仓，但系统有记录！")
+                logger.warning(f"⚠️  清理系统内的无效持仓记录")
+                del self.positions[coin]
+                return None
+            
+            # 使用交易所的实际数量（避免精度导致残余）
+            close_size = actual_size
+            
+            # 计算盈亏（使用实际数量）
+            if position['side'] == 'long':
+                pnl = (current_price - position['entry_price']) * close_size
+            else:  # short
+                pnl = (position['entry_price'] - current_price) * close_size
+            
+            pnl_pct = (pnl / (position['entry_price'] * close_size)) * 100 if close_size > 0 else 0
             
             logger.info("=" * 60)
             logger.info(f"📉 平{'多' if position['side'] == 'long' else '空'}仓")
             logger.info(f"   币种: {coin}")
             logger.info(f"   开仓价: ${position['entry_price']:,.2f}")
             logger.info(f"   平仓价: ${current_price:,.2f}")
-            logger.info(f"   数量: {position['size']:.5f} {coin}")
+            logger.info(f"   系统记录数量: {position['size']:.8f} {coin}")
+            logger.info(f"   实际平仓数量: {close_size:.8f} {coin} ✅")
             logger.info(f"   盈亏: ${pnl:+.2f} ({pnl_pct:+.2f}%)")
             logger.info(f"   原因: {reason}")
             logger.info("=" * 60)
@@ -344,13 +380,33 @@ class AutoTrader:
             order_result = await self.client.place_order(
                 coin=coin,
                 is_buy=is_buy,
-                size=position['size'],
+                size=close_size,  # 使用交易所实际数量
                 price=order_price,
                 order_type="Limit",
                 reduce_only=True  # 只减仓
             )
             
-            # 记录交易
+            # 检查订单是否成功
+            if order_result.get('status') == 'err':
+                error_msg = order_result.get('response', 'Unknown error')
+                logger.error(f"❌ 平仓订单被拒绝: {error_msg}")
+                logger.error(f"   请检查 Hyperliquid 账户状态和持仓")
+                return None
+            
+            # 检查订单详细状态
+            if order_result.get('status') == 'ok':
+                response = order_result.get('response', {})
+                data = response.get('data', {})
+                statuses = data.get('statuses', [])
+                
+                if statuses and 'error' in statuses[0]:
+                    error_msg = statuses[0]['error']
+                    logger.error(f"❌ 平仓订单失败: {error_msg}")
+                    logger.error(f"   订单详情: {order_result}")
+                    logger.warning(f"⚠️  系统持仓与交易所不同步，保留内部持仓记录")
+                    return None
+            
+            # 记录交易（使用实际平仓数量）
             trade_record = {
                 'time': datetime.now().isoformat(),
                 'coin': coin,
@@ -358,7 +414,7 @@ class AutoTrader:
                 'side': position['side'],
                 'entry_price': position['entry_price'],
                 'exit_price': current_price,
-                'size': position['size'],
+                'size': close_size,  # 使用实际平仓数量
                 'pnl': pnl,
                 'pnl_pct': pnl_pct,
                 'reason': reason,
@@ -372,7 +428,7 @@ class AutoTrader:
             # 移除持仓
             del self.positions[coin]
             
-            logger.info(f"✅ 平仓成功: {position['side'].upper()} {position['size']:.5f} {coin}, 盈亏: ${pnl:+.2f}")
+            logger.info(f"✅ 平仓成功: {position['side'].upper()} {close_size:.8f} {coin}, 盈亏: ${pnl:+.2f}")
             
             return trade_record
             

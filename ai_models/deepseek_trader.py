@@ -3,7 +3,7 @@ DeepSeek AI 交易模型
 使用 DeepSeek API
 """
 import httpx
-from typing import Dict, List
+from typing import Dict, List, Optional
 from .base_ai import AITradingModel, TradingDecision
 
 
@@ -31,7 +31,8 @@ class DeepSeekTrader(AITradingModel):
         coin: str,
         market_data: Dict,
         orderbook: Dict,
-        recent_trades: List[Dict]
+        recent_trades: List[Dict],
+        position_info: Optional[Dict] = None
     ) -> tuple[TradingDecision, float, str]:
         """
         使用 DeepSeek 分析市场

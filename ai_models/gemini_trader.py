@@ -3,14 +3,14 @@ Gemini AI 交易模型
 使用 Google Gemini API
 """
 import httpx
-from typing import Dict, List
+from typing import Dict, List, Optional
 from .base_ai import AITradingModel, TradingDecision
 
 
 class GeminiTrader(AITradingModel):
     """Gemini AI 交易员"""
     
-    def __init__(self, api_key: str, model: str = "gemini-pro", **kwargs):
+    def __init__(self, api_key: str, model: str = "gemini-2.5-pro", **kwargs):
         """
         初始化 Gemini 交易员
         
@@ -31,7 +31,8 @@ class GeminiTrader(AITradingModel):
         coin: str,
         market_data: Dict,
         orderbook: Dict,
-        recent_trades: List[Dict]
+        recent_trades: List[Dict],
+        position_info: Optional[Dict] = None
     ) -> tuple[TradingDecision, float, str]:
         """
         使用 Gemini 分析市场
@@ -57,27 +58,66 @@ class GeminiTrader(AITradingModel):
                     },
                     json={
                         "contents": [{
+                            "role": "user",
                             "parts": [{
                                 "text": prompt
                             }]
                         }],
                         "generationConfig": {
                             "temperature": 0.7,
-                            "maxOutputTokens": 500
-                        }
+                            "maxOutputTokens": 4096,
+                            "topP": 0.8,
+                            "topK": 40
+                        },
+                        "safetySettings": [
+                            {
+                                "category": "HARM_CATEGORY_HARASSMENT",
+                                "threshold": "BLOCK_NONE"
+                            },
+                            {
+                                "category": "HARM_CATEGORY_HATE_SPEECH",
+                                "threshold": "BLOCK_NONE"
+                            },
+                            {
+                                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                                "threshold": "BLOCK_NONE"
+                            },
+                            {
+                                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                                "threshold": "BLOCK_NONE"
+                            }
+                        ]
                     }
                 )
             
             if response.status_code == 200:
                 result = response.json()
-                ai_response = result["candidates"][0]["content"]["parts"][0]["text"]
+                
+                # 安全解析响应
+                try:
+                    candidate = result["candidates"][0]
+                    content = candidate.get("content", {})
+                    
+                    # 尝试多种响应格式
+                    if "parts" in content and len(content["parts"]) > 0:
+                        ai_response = content["parts"][0]["text"]
+                    elif "text" in content:
+                        ai_response = content["text"]
+                    else:
+                        print(f"Gemini 响应格式不匹配")
+                        return TradingDecision.HOLD, 0.0, f"无法提取AI响应文本"
+                    
+                except (KeyError, IndexError, TypeError) as e:
+                    print(f"Gemini 响应解析失败: {e}")
+                    return TradingDecision.HOLD, 0.0, f"响应格式错误"
                 
                 decision, confidence, reasoning = self.parse_ai_response(ai_response)
                 self.record_ai_response(coin, decision, confidence, reasoning, ai_response)
                 
                 return decision, confidence, reasoning
             else:
-                print(f"Gemini API 错误: {response.status_code}")
+                error_detail = response.text
+                print(f"Gemini API 错误: {response.status_code} - {error_detail}")
                 return TradingDecision.HOLD, 0.0, f"API 调用失败"
         
         except Exception as e:

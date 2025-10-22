@@ -3,607 +3,762 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 共识交易竞技场</title>
+    <title>🤖 AI共识交易竞技场</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 
-                         'Microsoft YaHei', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            background: #0b0e11;
+            color: #e8e9ed;
             padding: 20px;
+            min-height: 100vh;
         }
-
+        
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
         }
-
-        .header {
+        
+        header {
             text-align: center;
-            color: white;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
-
-        .header h1 {
+        
+        h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
-
-        .header .subtitle {
+        
+        .subtitle {
             font-size: 1.2em;
             opacity: 0.9;
         }
-
-        .mode-badge {
-            display: inline-block;
-            background: rgba(255,255,255,0.2);
-            padding: 5px 15px;
-            border-radius: 20px;
-            margin-top: 10px;
-            font-size: 0.9em;
-        }
-
+        
         .groups-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
-            gap: 20px;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
             margin-bottom: 30px;
         }
-
+        
         .group-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            background: #1e222d;
+            border: 1px solid #2b3139;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
         }
-
+        
+        .group-card:hover {
+            border-color: #3a3f4b;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+        }
+        
         .group-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
             padding-bottom: 15px;
-            border-bottom: 2px solid #f0f0f0;
+            border-bottom: 2px solid rgba(255,255,255,0.2);
         }
-
+        
         .group-name {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .group-balance {
-            text-align: right;
-        }
-
-        .group-balance .label {
-            font-size: 0.9em;
-            color: #666;
-        }
-
-        .group-balance .amount {
             font-size: 1.8em;
             font-weight: bold;
-            color: #2c3e50;
         }
-
-        .group-balance .pnl {
-            font-size: 1.1em;
-            margin-top: 5px;
+        
+        .group-address {
+            font-size: 0.8em;
+            opacity: 0.7;
+            font-family: monospace;
         }
-
-        .group-balance .pnl.positive {
-            color: #27ae60;
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
         }
-
-        .group-balance .pnl.negative {
-            color: #e74c3c;
-        }
-
-        .ai-members {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .ai-tag {
-            background: #f0f0f0;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            color: #555;
-        }
-
-        .consensus-section {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 15px;
-        }
-
-        .consensus-title {
-            font-size: 1.1em;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        .consensus-item {
-            background: white;
+        
+        .stat-card {
+            background: #131722;
+            border: 1px solid #2b3139;
             padding: 15px;
             border-radius: 8px;
-            margin-bottom: 10px;
-            border-left: 4px solid #667eea;
-        }
-
-        .consensus-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .consensus-coin {
-            font-weight: bold;
-            font-size: 1.1em;
-            color: #667eea;
-        }
-
-        .consensus-decision {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 15px;
-            font-size: 0.85em;
-            font-weight: bold;
-        }
-
-        .consensus-decision.buy {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .consensus-decision.strong_buy {
-            background: #28a745;
-            color: white;
-        }
-
-        .consensus-decision.sell {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .consensus-decision.strong_sell {
-            background: #dc3545;
-            color: white;
-        }
-
-        .consensus-decision.hold {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
-
-        .vote-info {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-            font-size: 0.9em;
-        }
-
-        .vote-badge {
-            padding: 3px 10px;
-            border-radius: 12px;
-            background: #e9ecef;
-        }
-
-        .consensus-summary {
-            background: #fff3cd;
-            padding: 10px;
-            border-radius: 5px;
-            border-left: 3px solid #ffc107;
-            margin-top: 10px;
-            font-size: 0.9em;
-            line-height: 1.5;
-            white-space: pre-line;
-        }
-
-        .votes-detail {
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid #e0e0e0;
-        }
-
-        .vote-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 5px 0;
-            font-size: 0.85em;
-        }
-
-        .vote-item .ai-name {
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .vote-item .vote-decision {
-            padding: 2px 8px;
-            border-radius: 10px;
-            background: #f0f0f0;
-        }
-
-        .stats-row {
-            display: flex;
-            gap: 15px;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #e0e0e0;
-        }
-
-        .stat-item {
-            flex: 1;
             text-align: center;
         }
-
+        
         .stat-label {
-            font-size: 0.85em;
-            color: #666;
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .positive {
+            color: #4ade80;
+        }
+        
+        .negative {
+            color: #f87171;
+        }
+        
+        .chart-container {
+            background: #1e222d;
+            border: 1px solid #2b3139;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+        }
+        
+        .decisions-container {
+            background: #1e222d;
+            border: 1px solid #2b3139;
+            border-radius: 12px;
+            padding: 25px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .decision-item {
+            background: #131722;
+            border: 1px solid #2b3139;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #60a5fa;
+        }
+        
+        .decision-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .decision-action {
+            font-weight: bold;
+            font-size: 1.2em;
+            padding: 5px 12px;
+            border-radius: 6px;
+            background: rgba(96, 165, 250, 0.3);
+        }
+        
+        .decision-time {
+            opacity: 0.7;
+            font-size: 0.9em;
+        }
+        
+        .ai-votes {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .ai-vote {
+            background: #1e222d;
+            border: 1px solid #2b3139;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+        
+        .ai-name {
+            font-weight: bold;
             margin-bottom: 5px;
         }
-
-        .stat-value {
-            font-size: 1.3em;
-            font-weight: bold;
-            color: #2c3e50;
+        
+        .consensus-summary {
+            margin-top: 12px;
+            padding: 12px;
+            background: #0b0e11;
+            border: 1px solid #2b3139;
+            border-radius: 6px;
+            font-size: 0.95em;
+            line-height: 1.6;
         }
-
-        .leaderboard {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1e222d;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #3a3f4b;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4a4f5b;
+        }
+        
+        .kline-chart-container {
+            background: #1e222d;
+            border: 1px solid #2b3139;
+            border-radius: 12px;
+            padding: 30px;
             margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
-
-        .leaderboard-title {
-            font-size: 1.8em;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .leaderboard-table {
+        
+        #klineChart {
             width: 100%;
-            border-collapse: collapse;
+            height: 500px;
+            background: #131722;
+            border-radius: 8px;
         }
-
-        .leaderboard-table th {
-            background: #f8f9fa;
-            padding: 12px;
-            text-align: left;
-            font-weight: bold;
-            color: #555;
-            border-bottom: 2px solid #dee2e6;
+        
+        .kline-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
         }
-
-        .leaderboard-table td {
-            padding: 12px;
-            border-bottom: 1px solid #dee2e6;
+        
+        .kline-controls button {
+            padding: 8px 16px;
+            border: 1px solid #2b3139;
+            border-radius: 6px;
+            background: #131722;
+            color: #e8e9ed;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
         }
-
-        .leaderboard-table tr:hover {
-            background: #f8f9fa;
+        
+        .kline-controls button:hover {
+            background: #1e222d;
+            border-color: #3a3f4b;
         }
-
-        .rank-badge {
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            line-height: 30px;
-            text-align: center;
+        
+        .kline-controls button.active {
+            background: #2962ff;
+            border-color: #2962ff;
+            color: white;
+        }
+        
+        .trade-legend {
+            display: flex;
+            gap: 20px;
+            font-size: 0.9em;
+            margin-left: auto;
+        }
+        
+        .trade-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .legend-marker {
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
-            font-weight: bold;
-            color: white;
-        }
-
-        .rank-badge.rank-1 {
-            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
-        }
-
-        .rank-badge.rank-2 {
-            background: linear-gradient(135deg, #c3cfe2 0%, #c3cfe2 100%);
-        }
-
-        .rank-badge.rank-3 {
-            background: linear-gradient(135deg, #cd853f 0%, #cd853f 100%);
-        }
-
-        .rank-badge.rank-other {
-            background: #95a5a6;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 50px;
-            color: white;
-            font-size: 1.2em;
-        }
-
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 20px 0;
-            border: 1px solid #f5c6cb;
-        }
-
-        .timestamp {
-            font-size: 0.75em;
-            color: #999;
-            margin-top: 5px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🤖 AI 共识交易竞技场</h1>
-            <p class="subtitle">多 AI 投票决策 · 集体智慧交易</p>
-            <span class="mode-badge">🗳️ 共识模式：每组至少 2/3 AI 同意</span>
-        </div>
-
-        <div id="loading" class="loading">
-            正在加载数据...
-        </div>
-
-        <div id="error" class="error" style="display: none;"></div>
-
-        <div id="leaderboard-container" style="display: none;"></div>
-
-        <div id="groups-container" class="groups-container" style="display: none;"></div>
-    </div>
-
-    <script>
-        const API_BASE = 'http://localhost:8000';
-        let updateInterval;
-
-        async function fetchData(endpoint) {
-            try {
-                const response = await fetch(`${API_BASE}${endpoint}`);
-                if (!response.ok) throw new Error('Network response was not ok');
-                return await response.json();
-            } catch (error) {
-                console.error('Fetch error:', error);
-                throw error;
-            }
-        }
-
-        function formatTime(isoString) {
-            const date = new Date(isoString);
-            return date.toLocaleString('zh-CN', {
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
-
-        function renderLeaderboard(groups) {
-            const leaderboard = groups.sort((a, b) => b.roi_percentage - a.roi_percentage);
-            
-            let html = `
-                <div class="leaderboard">
-                    <div class="leaderboard-title">🏆 组排行榜</div>
-                    <table class="leaderboard-table">
-                        <thead>
-                            <tr>
-                                <th>排名</th>
-                                <th>组名</th>
-                                <th>成员</th>
-                                <th>余额</th>
-                                <th>盈亏</th>
-                                <th>ROI</th>
-                                <th>交易数</th>
-                                <th>胜率</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-
-            leaderboard.forEach((group, index) => {
-                const rank = index + 1;
-                const rankClass = rank <= 3 ? `rank-${rank}` : 'rank-other';
-                const pnlClass = group.total_pnl >= 0 ? 'positive' : 'negative';
-                
-                html += `
-                    <tr>
-                        <td><span class="rank-badge ${rankClass}">${rank}</span></td>
-                        <td><strong>${group.group_name}</strong></td>
-                        <td>${group.ai_members.join(', ')}</td>
-                        <td>$${group.current_balance.toFixed(2)}</td>
-                        <td class="${pnlClass}">$${group.total_pnl.toFixed(2)}</td>
-                        <td class="${pnlClass}">${group.roi_percentage.toFixed(2)}%</td>
-                        <td>${group.total_trades}</td>
-                        <td>${group.win_rate.toFixed(1)}%</td>
-                    </tr>
-                `;
-            });
-
-            html += `
-                        </tbody>
-                    </table>
+        <header>
+            <h1>🤖 AI共识交易竞技场</h1>
+            <p class="subtitle">Alpha组 vs Beta组 | 主网实时对战</p>
+        </header>
+        
+        <div class="groups-container">
+            <!-- Alpha组 -->
+            <div class="group-card">
+                <div class="group-header">
+                    <div>
+                        <div class="group-name">🅰️ Alpha组</div>
+                        <div style="font-size: 0.9em; opacity: 0.8; margin-top: 5px;">DeepSeek + Claude + Grok4</div>
+                    </div>
                 </div>
-            `;
-
-            document.getElementById('leaderboard-container').innerHTML = html;
-        }
-
-        function renderGroups(groups) {
-            let html = '';
-
-            groups.forEach(group => {
-                const pnlClass = group.total_pnl >= 0 ? 'positive' : 'negative';
-                const pnlSign = group.total_pnl >= 0 ? '+' : '';
-
-                html += `
-                    <div class="group-card">
-                        <div class="group-header">
-                            <div class="group-name">${group.group_name}</div>
-                            <div class="group-balance">
-                                <div class="label">账户余额</div>
-                                <div class="amount">$${group.current_balance.toFixed(2)}</div>
-                                <div class="pnl ${pnlClass}">
-                                    ${pnlSign}$${group.total_pnl.toFixed(2)} (${pnlSign}${group.roi_percentage.toFixed(2)}%)
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="ai-members">
-                            ${group.ai_members.map(ai => `<span class="ai-tag">🤖 ${ai}</span>`).join('')}
-                        </div>
-
-                        <div class="stats-row">
-                            <div class="stat-item">
-                                <div class="stat-label">总交易数</div>
-                                <div class="stat-value">${group.total_trades}</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">胜率</div>
-                                <div class="stat-value">${group.win_rate.toFixed(1)}%</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">活跃持仓</div>
-                                <div class="stat-value">${group.active_positions}</div>
-                            </div>
-                        </div>
-
-                        ${renderConsensusHistory(group.recent_consensus)}
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">💰 余额</div>
+                        <div class="stat-value" id="alpha-balance">$0</div>
                     </div>
-                `;
-            });
-
-            document.getElementById('groups-container').innerHTML = html;
-        }
-
-        function renderConsensusHistory(consensusHistory) {
-            if (!consensusHistory || consensusHistory.length === 0) {
-                return '<div class="consensus-section"><p style="text-align:center;color:#999;">暂无共识记录</p></div>';
-            }
-
-            let html = `
-                <div class="consensus-section">
-                    <div class="consensus-title">📊 最近共识决策</div>
-            `;
-
-            consensusHistory.slice(-5).reverse().forEach(item => {
-                const consensus = item.consensus;
-                if (!consensus) return;
-
-                const decisionClass = consensus.decision.value.toLowerCase().replace('_', '_');
-                const hasConsensusIcon = consensus.has_consensus ? '✅' : '⚠️';
-
-                html += `
-                    <div class="consensus-item">
-                        <div class="consensus-header">
-                            <span class="consensus-coin">${hasConsensusIcon} ${item.coin}</span>
-                            <span class="consensus-decision ${decisionClass}">
-                                ${consensus.decision.value.toUpperCase().replace('_', ' ')}
-                            </span>
-                        </div>
-
-                        <div class="vote-info">
-                            <span class="vote-badge">
-                                🗳️ 投票: ${consensus.vote_count}/${consensus.total_votes}
-                            </span>
-                            <span class="vote-badge">
-                                💯 置信度: ${consensus.avg_confidence.toFixed(0)}%
-                            </span>
-                            <span class="vote-badge">
-                                💵 价格: $${item.price.toLocaleString()}
-                            </span>
-                        </div>
-
-                        <div class="consensus-summary">
-                            ${consensus.summary}
-                        </div>
-
-                        ${renderVotes(consensus.votes)}
-
-                        <div class="timestamp">
-                            ${formatTime(item.timestamp)}
-                        </div>
+                    <div class="stat-card">
+                        <div class="stat-label">📈 盈亏</div>
+                        <div class="stat-value" id="alpha-pnl">$0</div>
                     </div>
-                `;
-            });
-
-            html += '</div>';
-            return html;
-        }
-
-        function renderVotes(votes) {
-            if (!votes || votes.length === 0) return '';
-
-            let html = '<div class="votes-detail">';
+                    <div class="stat-card">
+                        <div class="stat-label">📊 ROI</div>
+                        <div class="stat-value" id="alpha-roi">0%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">🔄 交易</div>
+                        <div class="stat-value" id="alpha-trades">0</div>
+                    </div>
+                </div>
+                <div class="group-address" id="alpha-address">地址: 加载中...</div>
+            </div>
             
-            votes.forEach(vote => {
-                html += `
-                    <div class="vote-item">
-                        <span class="ai-name">${vote.ai_name}</span>
+            <!-- Beta组 -->
+            <div class="group-card">
+                <div class="group-header">
+                    <div>
+                        <div class="group-name">🅱️ Beta组</div>
+                        <div style="font-size: 0.9em; opacity: 0.8; margin-top: 5px;">GPT-4 + Gemini + Qwen</div>
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">💰 余额</div>
+                        <div class="stat-value" id="beta-balance">$0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">📈 盈亏</div>
+                        <div class="stat-value" id="beta-pnl">$0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">📊 ROI</div>
+                        <div class="stat-value" id="beta-roi">0%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">🔄 交易</div>
+                        <div class="stat-value" id="beta-trades">0</div>
+                    </div>
+                </div>
+                <div class="group-address" id="beta-address">地址: 加载中...</div>
+            </div>
+        </div>
+        
+        <!-- K线图 -->
+        <div class="kline-chart-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>📊 市场K线图 & 交易标记</h2>
+                <div class="kline-controls">
+                    <button onclick="changeInterval('5m')">5分钟</button>
+                    <button onclick="changeInterval('15m')" class="active">15分钟</button>
+                    <button onclick="changeInterval('1h')">1小时</button>
+                    <button onclick="changeInterval('4h')">4小时</button>
+                    <div class="trade-legend">
+                        <div class="trade-legend-item">
+                            <div class="legend-marker" style="background: #4ade80;"></div>
+                            <span>Alpha开仓</span>
+                        </div>
+                        <div class="trade-legend-item">
+                            <div class="legend-marker" style="background: #86efac;"></div>
+                            <span>Alpha平仓</span>
+                        </div>
+                        <div class="trade-legend-item">
+                            <div class="legend-marker" style="background: #60a5fa;"></div>
+                            <span>Beta开仓</span>
+                        </div>
+                        <div class="trade-legend-item">
+                            <div class="legend-marker" style="background: #93c5fd;"></div>
+                            <span>Beta平仓</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="klineChart"></div>
+        </div>
+        
+        <!-- 权益曲线对比 -->
+        <div class="chart-container">
+            <h2 style="margin-bottom: 20px;">📈 权益曲线对比</h2>
+            <div class="chart-wrapper">
+                <canvas id="equityChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- 共识决策记录 -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+            <div class="decisions-container">
+                <h2 style="margin-bottom: 20px;">🅰️ Alpha组 - 共识决策</h2>
+                <div id="alpha-decisions"></div>
+            </div>
+            
+            <div class="decisions-container">
+                <h2 style="margin-bottom: 20px;">🅱️ Beta组 - 共识决策</h2>
+                <div id="beta-decisions"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let equityChart = null;
+        let klineChart = null;
+        let candlestickSeries = null;
+        let currentInterval = '15m';
+        
+        function initKlineChart() {
+            const chartContainer = document.getElementById('klineChart');
+            
+            // 检查 LightweightCharts 是否加载
+            if (typeof LightweightCharts === 'undefined') {
+                console.error('❌ LightweightCharts 未加载');
+                return;
+            }
+            
+            console.log('LightweightCharts 版本:', LightweightCharts);
+            
+            klineChart = LightweightCharts.createChart(chartContainer, {
+                width: chartContainer.clientWidth,
+                height: 500,
+                layout: {
+                    background: { color: 'rgba(0, 0, 0, 0)' },
+                    textColor: '#d1d4dc',
+                },
+                grid: {
+                    vertLines: { color: 'rgba(197, 203, 206, 0.1)' },
+                    horzLines: { color: 'rgba(197, 203, 206, 0.1)' },
+                },
+                timeScale: {
+                    timeVisible: true,
+                    secondsVisible: false,
+                },
+            });
+            
+            console.log('klineChart 创建成功:', klineChart);
+            console.log('可用方法:', Object.keys(klineChart));
+            
+            // 使用正确的API方法名
+            if (typeof klineChart.addCandlestickSeries === 'function') {
+                candlestickSeries = klineChart.addCandlestickSeries({
+                    upColor: '#4ade80',
+                    downColor: '#f87171',
+                    borderUpColor: '#4ade80',
+                    borderDownColor: '#f87171',
+                    wickUpColor: '#4ade80',
+                    wickDownColor: '#f87171',
+                });
+            } else if (typeof klineChart.addAreaSeries === 'function') {
+                // 如果addCandlestickSeries不存在，尝试其他方法
+                console.log('使用备用方案: addAreaSeries');
+                candlestickSeries = klineChart.addAreaSeries({
+                    topColor: 'rgba(74, 222, 128, 0.4)',
+                    bottomColor: 'rgba(74, 222, 128, 0)',
+                    lineColor: 'rgba(74, 222, 128, 1)',
+                    lineWidth: 2,
+                });
+            } else {
+                console.error('❌ 无可用的图表类型');
+                return;
+            }
+            
+            console.log('candlestickSeries 创建成功');
+            
+            // 响应式调整
+            window.addEventListener('resize', () => {
+                klineChart.applyOptions({ width: chartContainer.clientWidth });
+            });
+        }
+        
+        async function updateKlineChart() {
+            try {
+                // 检查candlestickSeries是否已初始化
+                if (!candlestickSeries) {
+                    console.error('❌ candlestickSeries 未初始化');
+                    return;
+                }
+                
+                const response = await fetch(`/api/kline?interval=${currentInterval}&lookback=200`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error('获取K线数据失败:', data.error);
+                    return;
+                }
+                
+                if (!data.candles || data.candles.length === 0) {
+                    console.warn('⚠️ K线数据为空');
+                    return;
+                }
+                
+                // 转换K线数据格式
+                const candlesData = data.candles.map(candle => ({
+                    time: candle.time / 1000, // 转换为秒
+                    open: candle.open,
+                    high: candle.high,
+                    low: candle.low,
+                    close: candle.close
+                }));
+                
+                candlestickSeries.setData(candlesData);
+                console.log(`✅ K线数据已更新: ${candlesData.length} 根`);
+                
+                // 添加交易标记
+                if (data.trade_markers && data.trade_markers.length > 0) {
+                    const markers = data.trade_markers.map(trade => {
+                        const isAlpha = trade.group === 'Alpha组';
+                        const isOpen = trade.action === 'OPEN';
+                        
+                        // Alpha组: 绿色系, Beta组: 蓝色系
+                        // 开仓: 深色, 平仓: 浅色
+                        let color = '#4ade80'; // Alpha开仓
+                        if (isAlpha && !isOpen) color = '#86efac'; // Alpha平仓
+                        if (!isAlpha && isOpen) color = '#60a5fa'; // Beta开仓
+                        if (!isAlpha && !isOpen) color = '#93c5fd'; // Beta平仓
+                        
+                        const shape = isOpen ? 'arrowUp' : 'arrowDown';
+                        
+                        // 构建标签文本
+                        let text = `${trade.group} ${isOpen ? '开' : '平'}${trade.side}`;
+                        if (!isOpen && trade.pnl !== 0) {
+                            text += ` P/L: $${trade.pnl.toFixed(2)}`;
+                        }
+                        
+                        return {
+                            time: trade.time / 1000,
+                            position: isOpen ? 'belowBar' : 'aboveBar',
+                            color: color,
+                            shape: shape,
+                            text: text
+                        };
+                    });
+                    
+                    candlestickSeries.setMarkers(markers);
+                }
+                
+            } catch (error) {
+                console.error('更新K线图失败:', error);
+            }
+        }
+        
+        function changeInterval(interval) {
+            currentInterval = interval;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.kline-controls button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // 重新加载K线数据
+            updateKlineChart();
+        }
+        
+        function initChart() {
+            const ctx = document.getElementById('equityChart').getContext('2d');
+            equityChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Alpha组',
+                            data: [],
+                            borderColor: 'rgb(74, 222, 128)',
+                            backgroundColor: 'rgba(74, 222, 128, 0.1)',
+                            tension: 0.4,
+                            borderWidth: 3
+                        },
+                        {
+                            label: 'Beta组',
+                            data: [],
+                            borderColor: 'rgb(96, 165, 250)',
+                            backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                            tension: 0.4,
+                            borderWidth: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#fff', font: { size: 14 } }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 450,  // 固定Y轴最小值
+                            max: 550,  // 固定Y轴最大值（根据止盈止损调整）
+                            ticks: { 
+                                color: '#fff',
+                                stepSize: 10  // 每10刻度一格
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: {
+                            ticks: { color: '#fff' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+        
+        async function updateData() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                if (!data.groups || data.groups.length < 2) return;
+                
+                const alphaGroup = data.groups[0];
+                const betaGroup = data.groups[1];
+                
+                // 更新Alpha组统计
+                document.getElementById('alpha-balance').textContent = `$${alphaGroup.balance.toFixed(2)}`;
+                document.getElementById('alpha-pnl').textContent = `$${alphaGroup.pnl.toFixed(2)}`;
+                document.getElementById('alpha-pnl').className = 'stat-value ' + (alphaGroup.pnl >= 0 ? 'positive' : 'negative');
+                document.getElementById('alpha-roi').textContent = `${alphaGroup.roi >= 0 ? '+' : ''}${alphaGroup.roi.toFixed(2)}%`;
+                document.getElementById('alpha-roi').className = 'stat-value ' + (alphaGroup.roi >= 0 ? 'positive' : 'negative');
+                document.getElementById('alpha-trades').textContent = alphaGroup.total_trades;
+                document.getElementById('alpha-address').textContent = `地址: ${alphaGroup.address}`;
+                
+                // 更新Beta组统计
+                document.getElementById('beta-balance').textContent = `$${betaGroup.balance.toFixed(2)}`;
+                document.getElementById('beta-pnl').textContent = `$${betaGroup.pnl.toFixed(2)}`;
+                document.getElementById('beta-pnl').className = 'stat-value ' + (betaGroup.pnl >= 0 ? 'positive' : 'negative');
+                document.getElementById('beta-roi').textContent = `${betaGroup.roi >= 0 ? '+' : ''}${betaGroup.roi.toFixed(2)}%`;
+                document.getElementById('beta-roi').className = 'stat-value ' + (betaGroup.roi >= 0 ? 'positive' : 'negative');
+                document.getElementById('beta-trades').textContent = betaGroup.total_trades;
+                document.getElementById('beta-address').textContent = `地址: ${betaGroup.address}`;
+                
+                // 更新图表
+                if (alphaGroup.equity_curve && alphaGroup.equity_curve.length > 0) {
+                    const labels = alphaGroup.equity_curve.map(p => new Date(p.time).toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'}));
+                    const alphaValues = alphaGroup.equity_curve.map(p => p.balance);
+                    const betaValues = betaGroup.equity_curve.map(p => p.balance);
+                    
+                    // 确保起点都是500
+                    if (alphaValues.length > 0 && alphaValues[0] !== 500) {
+                        alphaValues.unshift(500);
+                        labels.unshift('起点');
+                    }
+                    if (betaValues.length > 0 && betaValues[0] !== 500) {
+                        betaValues.unshift(500);
+                    }
+                    
+                    equityChart.data.labels = labels;
+                    equityChart.data.datasets[0].data = alphaValues;
+                    equityChart.data.datasets[1].data = betaValues;
+                    
+                    // 动态调整Y轴范围以显示差异
+                    const allValues = [...alphaValues, ...betaValues];
+                    const minVal = Math.min(...allValues);
+                    const maxVal = Math.max(...allValues);
+                    const range = maxVal - minVal;
+                    const padding = Math.max(range * 0.2, 20);  // 至少20的padding
+                    
+                    equityChart.options.scales.y.min = Math.floor(minVal - padding);
+                    equityChart.options.scales.y.max = Math.ceil(maxVal + padding);
+                    
+                    equityChart.update('none');
+                }
+                
+                // 更新Alpha组决策
+                updateDecisions('alpha-decisions', alphaGroup.consensus_decisions);
+                
+                // 更新Beta组决策
+                updateDecisions('beta-decisions', betaGroup.consensus_decisions);
+                
+            } catch (error) {
+                console.error('更新数据失败:', error);
+            }
+        }
+        
+        function updateDecisions(containerId, decisions) {
+            const container = document.getElementById(containerId);
+            if (!decisions || decisions.length === 0) {
+                container.innerHTML = '<p style="opacity: 0.7;">等待共识决策...</p>';
+                return;
+            }
+            
+            container.innerHTML = decisions.map(decision => {
+                const date = new Date(decision.time);
+                const timeStr = date.toLocaleString('zh-CN');
+                
+                let aiVotesHtml = '';
+                if (decision.ai_votes && decision.ai_votes.length > 0) {
+                    aiVotesHtml = '<div class="ai-votes">' +
+                        decision.ai_votes.map(vote => `
+                            <div class="ai-vote">
+                                <div class="ai-name">${vote.ai_name}</div>
+                                <div>${vote.decision}</div>
+                                <div style="font-size: 0.85em; opacity: 0.8;">信心: ${vote.confidence.toFixed(0)}%</div>
+                            </div>
+                        `).join('') +
+                        '</div>';
+                }
+                
+                return `
+                    <div class="decision-item">
+                        <div class="decision-header">
+                            <span class="decision-action">${decision.decision}</span>
+                            <span class="decision-time">${timeStr}</span>
+                        </div>
                         <div>
-                            <span class="vote-decision">${vote.decision.value.toUpperCase()}</span>
-                            <span style="color:#999;margin-left:8px;">${vote.confidence.toFixed(0)}%</span>
+                            <strong>价格:</strong> $${decision.price.toLocaleString()}
+                        </div>
+                        ${aiVotesHtml}
+                        <div class="consensus-summary">
+                            <strong>共识总结:</strong><br>
+                            ${decision.summary.replace(/\n/g, '<br>')}
                         </div>
                     </div>
                 `;
-            });
-
-            html += '</div>';
-            return html;
+            }).join('');
         }
-
-        async function updateUI() {
+        
+        // 等待页面完全加载后再初始化
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('页面加载完成，开始初始化...');
+            
             try {
-                // 获取所有组的数据
-                const groups = await fetchData('/consensus/groups');
-                
-                if (groups && groups.length > 0) {
-                    // 渲染排行榜
-                    renderLeaderboard(groups);
-                    document.getElementById('leaderboard-container').style.display = 'block';
-                    
-                    // 渲染组卡片
-                    renderGroups(groups);
-                    document.getElementById('groups-container').style.display = 'grid';
-                    
-                    // 隐藏加载提示
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('error').style.display = 'none';
-                } else {
-                    throw new Error('没有可用的组数据');
-                }
-            } catch (error) {
-                console.error('Update UI error:', error);
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('error').style.display = 'block';
-                document.getElementById('error').textContent = '无法连接到服务器，请确保后端服务正在运行';
+                initKlineChart();
+                console.log('✅ K线图初始化成功');
+            } catch (e) {
+                console.error('❌ K线图初始化失败:', e);
             }
-        }
-
-        // 初始加载
-        updateUI();
-
-        // 每30秒自动刷新
-        updateInterval = setInterval(updateUI, 30000);
+            
+            try {
+                initChart();
+                console.log('✅ 权益曲线初始化成功');
+            } catch (e) {
+                console.error('❌ 权益曲线初始化失败:', e);
+            }
+            
+            try {
+                updateData();
+                console.log('✅ 数据更新成功');
+            } catch (e) {
+                console.error('❌ 数据更新失败:', e);
+            }
+            
+            try {
+                updateKlineChart();
+                console.log('✅ K线数据加载成功');
+            } catch (e) {
+                console.error('❌ K线数据加载失败:', e);
+            }
+            
+            setInterval(updateData, 5000);
+            setInterval(updateKlineChart, 30000); // K线每30秒更新一次
+            
+            console.log('✅ 所有初始化完成');
+        });
     </script>
 </body>
 </html>
-

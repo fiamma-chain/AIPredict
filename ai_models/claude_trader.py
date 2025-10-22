@@ -10,7 +10,7 @@ from .base_ai import AITradingModel, TradingDecision
 class ClaudeTrader(AITradingModel):
     """Claude AI 交易员"""
     
-    def __init__(self, api_key: str, model: str = "claude-3-5-sonnet-20241022", **kwargs):
+    def __init__(self, api_key: str, model: str = "claude-sonnet-4-5", **kwargs):
         """
         初始化 Claude 交易员
         
@@ -31,7 +31,8 @@ class ClaudeTrader(AITradingModel):
         coin: str,
         market_data: Dict,
         orderbook: Dict,
-        recent_trades: List[Dict]
+        recent_trades: List[Dict],
+        position_info: Optional[Dict] = None
     ) -> tuple[TradingDecision, float, str]:
         """
         使用 Claude 分析市场

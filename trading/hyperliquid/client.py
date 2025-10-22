@@ -142,14 +142,26 @@ class HyperliquidClient:
             coin: 币种符号
             
         Returns:
-            订单簿数据
+            订单簿数据 {"bids": [[price, size], ...], "asks": [[price, size], ...]}
         """
         try:
             l2_snapshot = self.info.l2_snapshot(coin)
-            return l2_snapshot
+            # l2_snapshot 格式: {"levels": [[{"px": price, "sz": size, "n": count},...], [...]]}
+            levels = l2_snapshot.get('levels', [[], []])
+            
+            # 转换成标准格式 [[price, size], ...]
+            bids = [[float(level['px']), float(level['sz'])] for level in levels[0]] if len(levels) > 0 else []
+            asks = [[float(level['px']), float(level['sz'])] for level in levels[1]] if len(levels) > 1 else []
+            
+            return {
+                "bids": bids,
+                "asks": asks
+            }
         except Exception as e:
             logger.error(f"获取订单簿失败: {e}")
-            return {"levels": [[], []]}
+            import traceback
+            logger.error(traceback.format_exc())
+            return {"bids": [], "asks": []}
     
     async def get_recent_trades(self, coin: str, limit: int = 20) -> List[Dict]:
         """
@@ -160,13 +172,21 @@ class HyperliquidClient:
             limit: 返回数量
             
         Returns:
-            成交记录列表
+            成交记录列表 [{"time": ts, "px": price, "sz": size, "side": "A/B"}, ...]
         """
         try:
-            # 官方SDK暂时可能不支持此功能，返回空列表
-            return []
+            # 使用官方SDK的 recent_trades 方法
+            trades = self.info.recent_trades(coin)
+            if not trades:
+                return []
+            
+            # 限制返回数量
+            if len(trades) > limit:
+                trades = trades[:limit]
+            
+            return trades
         except Exception as e:
-            logger.error(f"获取最近成交失败: {e}")
+            logger.warning(f"获取最近成交失败: {e}, 返回空列表")
             return []
     
     async def place_order(
@@ -201,7 +221,29 @@ class HyperliquidClient:
             
             # BTC使用5位小数
             size_decimal = Decimal(str(size))
-            size_rounded = float(size_decimal.quantize(Decimal('0.00001'), rounding=ROUND_DOWN))
+            # 平仓订单不做ROUND_DOWN，保持精确值（避免残余仓位）
+            if reduce_only:
+                size_rounded = float(size_decimal.quantize(Decimal('0.00001'), rounding=ROUND_HALF_UP))
+            else:
+                size_rounded = float(size_decimal.quantize(Decimal('0.00001'), rounding=ROUND_DOWN))
+            
+            # 处理价格：如果为 None（市价单），则获取当前市价
+            if price is None:
+                logger.info("📊 市价单，正在获取当前市价...")
+                orderbook = await self.get_orderbook(coin)
+                bids = orderbook.get("bids", [])
+                asks = orderbook.get("asks", [])
+                
+                # 买单用卖一价，卖单用买一价（确保立即成交）
+                if is_buy:
+                    price = float(asks[0][0]) if asks else None
+                else:
+                    price = float(bids[0][0]) if bids else None
+                
+                if price is None:
+                    raise ValueError(f"无法获取 {coin} 的市价")
+                
+                logger.info(f"📊 市价单价格: ${price:,.2f}")
             
             # 价格取整到最近的整数（BTC价格不支持小数）
             price_decimal = Decimal(str(price))
@@ -210,12 +252,23 @@ class HyperliquidClient:
             logger.info(f"📊 原始数量: {size}, 处理后: {size_rounded}")
             logger.info(f"📊 原始价格: {price}, 处理后: {price_rounded}")
             
+            # 平仓单使用 Ioc（立即成交或取消），开仓单使用 Gtc（有效直到取消）
+            if reduce_only:
+                # 平仓单：使用 Ioc 确保立即成交
+                order_type_param = {"limit": {"tif": "Ioc"}}
+            else:
+                # 开仓单：根据 order_type 参数决定
+                if order_type == "Limit":
+                    order_type_param = {"limit": {"tif": "Gtc"}}
+                else:
+                    order_type_param = {"limit": {"tif": "Ioc"}}  # 市价单也用 Ioc
+            
             order_result = self.exchange.order(
                 name=coin,
                 is_buy=is_buy,
                 sz=size_rounded,
                 limit_px=price_rounded,
-                order_type={"limit": {"tif": "Gtc"}} if order_type == "Limit" else {"market": {}},
+                order_type=order_type_param,
                 reduce_only=reduce_only
             )
             
@@ -259,5 +312,99 @@ class HyperliquidClient:
             return user_state.get('assetPositions', [])
         except Exception as e:
             logger.error(f"获取未成交订单失败: {e}")
+            return []
+    
+    async def get_user_fills(self, limit: int = 100, start_time_ms: int = None) -> List[Dict]:
+        """
+        获取用户历史成交记录
+        
+        Args:
+            limit: 返回数量限制
+            start_time_ms: 开始时间（毫秒时间戳），如果为None则获取所有
+            
+        Returns:
+            成交记录列表
+        """
+        try:
+            if start_time_ms:
+                # 使用时间范围查询
+                fills = self.info.user_fills_by_time(self.address, start_time_ms)
+            else:
+                # 获取所有交易记录
+                fills = self.info.user_fills(self.address)
+            
+            if not fills:
+                return []
+            
+            # 限制返回数量
+            if len(fills) > limit:
+                fills = fills[:limit]
+            
+            logger.info(f"📊 从 Hyperliquid 获取了 {len(fills)} 条历史成交记录")
+            return fills
+        except Exception as e:
+            logger.error(f"获取历史成交失败: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return []
+    
+    async def get_candles(self, coin: str, interval: str = "15m", lookback: int = 100, timeout: int = 30) -> List[Dict]:
+        """
+        获取 K 线数据（带超时保护）
+        
+        Args:
+            coin: 币种符号
+            interval: K线周期 ("1m", "5m", "15m", "1h", "4h", "1d")
+            lookback: 回溯K线数量
+            timeout: 超时时间（秒），默认30秒
+            
+        Returns:
+            K线数据列表 [{"time": timestamp, "open": o, "high": h, "low": l, "close": c, "volume": v}, ...]
+        """
+        import asyncio
+        import time
+        
+        async def _fetch_candles():
+            """内部异步获取函数"""
+            # 使用官方SDK获取K线数据，endTime为当前时间戳（毫秒）
+            end_time_ms = int(time.time() * 1000)
+            
+            # SDK调用是同步的，需要在executor中运行
+            loop = asyncio.get_event_loop()
+            candles = await loop.run_in_executor(
+                None,
+                self.info.candles_snapshot,
+                coin, interval, lookback, end_time_ms
+            )
+            return candles
+        
+        try:
+            # 使用asyncio.wait_for添加超时保护
+            candles = await asyncio.wait_for(_fetch_candles(), timeout=timeout)
+            
+            if not candles:
+                logger.warning(f"⚠️  未获取到K线数据，返回空列表")
+                return []
+            
+            # 转换成标准格式
+            result = []
+            for candle in candles:
+                result.append({
+                    "time": candle.get('t', 0),  # 时间戳（毫秒）
+                    "open": float(candle.get('o', 0)),
+                    "high": float(candle.get('h', 0)),
+                    "low": float(candle.get('l', 0)),
+                    "close": float(candle.get('c', 0)),
+                    "volume": float(candle.get('v', 0))
+                })
+            
+            logger.info(f"📊 获取了 {len(result)} 根 {interval} K线数据")
+            return result
+            
+        except asyncio.TimeoutError:
+            logger.warning(f"⚠️  获取K线数据超时（{timeout}秒），返回空列表")
+            return []
+        except Exception as e:
+            logger.warning(f"⚠️  获取K线数据失败: {e}, 返回空列表")
             return []
 

@@ -3,14 +3,14 @@ Qwen AI 交易模型
 使用阿里云通义千问 API
 """
 import httpx
-from typing import Dict, List
+from typing import Dict, List, Optional
 from .base_ai import AITradingModel, TradingDecision
 
 
 class QwenTrader(AITradingModel):
     """Qwen AI 交易员"""
     
-    def __init__(self, api_key: str, model: str = "qwen-max", **kwargs):
+    def __init__(self, api_key: str, model: str = "qwen-turbo", **kwargs):
         """
         初始化 Qwen 交易员
         
@@ -24,14 +24,15 @@ class QwenTrader(AITradingModel):
             **kwargs
         )
         self.model = model
-        self.api_url = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation"
+        self.api_url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
     
     async def analyze_market(
         self,
         coin: str,
         market_data: Dict,
         orderbook: Dict,
-        recent_trades: List[Dict]
+        recent_trades: List[Dict],
+        position_info: Optional[Dict] = None
     ) -> tuple[TradingDecision, float, str]:
         """
         使用 Qwen 分析市场
@@ -58,31 +59,28 @@ class QwenTrader(AITradingModel):
                     },
                     json={
                         "model": self.model,
-                        "input": {
-                            "messages": [
-                                {
-                                    "role": "user",
-                                    "content": prompt
-                                }
-                            ]
-                        },
-                        "parameters": {
-                            "temperature": 0.7,
-                            "max_tokens": 500
-                        }
+                        "messages": [
+                            {
+                                "role": "user",
+                                "content": prompt
+                            }
+                        ],
+                        "temperature": 0.7,
+                        "max_tokens": 500
                     }
                 )
             
             if response.status_code == 200:
                 result = response.json()
-                ai_response = result["output"]["text"]
+                ai_response = result["choices"][0]["message"]["content"]
                 
                 decision, confidence, reasoning = self.parse_ai_response(ai_response)
                 self.record_ai_response(coin, decision, confidence, reasoning, ai_response)
                 
                 return decision, confidence, reasoning
             else:
-                print(f"Qwen API 错误: {response.status_code}")
+                error_detail = response.text
+                print(f"Qwen API 错误: {response.status_code} - {error_detail}")
                 return TradingDecision.HOLD, 0.0, f"API 调用失败"
         
         except Exception as e:

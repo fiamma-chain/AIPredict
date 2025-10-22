@@ -2,45 +2,23 @@
 配置管理模块
 """
 from pydantic_settings import BaseSettings
-from typing import Optional
 
 
 class Settings(BaseSettings):
     """应用配置"""
     
-    # Hyperliquid Configuration
-    hyperliquid_private_key: str = ""
+    # Hyperliquid 配置
     hyperliquid_testnet: bool = True
     hyperliquid_api_url: str = "https://api.hyperliquid-testnet.xyz"
     
-    # Database Configuration
-    database_url: str = "postgresql://localhost:5432/aitrading"
-    redis_url: str = "redis://localhost:6379/0"
-    
-    # API Configuration
+    # API 配置
     api_host: str = "0.0.0.0"
     api_port: int = 8000
-    api_secret_key: str = "your-secret-key-change-this"
     
-    # Trading Configuration
-    max_position_size: float = 1000.0  # USD
-    max_leverage: int = 5
-    stop_loss_percentage: float = 5.0
-    take_profit_percentage: float = 10.0
+    # 允许交易的币种
+    allowed_trading_symbols: str = "BTC"
     
-    # Arena Configuration
-    arena_update_interval: int = 60  # seconds
-    leaderboard_size: int = 50
-    
-    # Risk Management
-    daily_loss_limit: float = 500.0  # USD
-    max_open_positions: int = 5
-    min_account_balance: float = 100.0  # USD
-    
-    # 允许交易的币种（用逗号分隔，留空表示全部允许）
-    allowed_trading_symbols: str = "BTC"  # 例如: "BTC,ETH,SOL"
-    
-    # AI 配置
+    # AI API Keys
     claude_api_key: str = ""
     openai_api_key: str = ""
     gpt_model: str = "gpt-4o"
@@ -48,25 +26,22 @@ class Settings(BaseSettings):
     qwen_api_key: str = ""
     grok_api_key: str = ""
     deepseek_api_key: str = ""
+    
+    # AI 交易配置
     ai_initial_balance: float = 1000.0
+    ai_min_position_size: float = 5.0
     ai_max_position_size: float = 200.0
     
-    # 多地址模式 - 每个 AI 的独立私钥（可选）
-    claude_private_key: str = ""
-    gpt_private_key: str = ""
-    gemini_private_key: str = ""
-    qwen_private_key: str = ""
-    grok_private_key: str = ""
-    deepseek_private_key: str = ""
-    
-    # 共识模式分组私钥（可选）
-    group_a_private_key: str = ""
-    group_b_private_key: str = ""
-    
-    # 共识模式 AI 分组配置（可选，留空则使用默认分组）
-    # 格式：用逗号分隔的AI名称，可选值：claude,gpt4,gemini,qwen,grok,deepseek
-    group_a_members: str = "claude,gpt4,gemini"  # 默认：国际AI组
-    group_b_members: str = "qwen,grok,deepseek"  # 默认：国产AI组
+    # 分组共识配置
+    group_1_name: str = "Alpha组"
+    group_1_ais: str = ""
+    group_1_private_key: str = ""
+    group_2_name: str = "Beta组"
+    group_2_ais: str = ""
+    group_2_private_key: str = ""
+    consensus_min_votes: int = 2
+    consensus_interval: int = 300
+    min_confidence: float = 60.0
     
     class Config:
         env_file = ".env"

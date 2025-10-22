@@ -57,7 +57,8 @@ class AITradingModel(ABC):
         coin: str,
         market_data: Dict,
         orderbook: Dict,
-        recent_trades: List[Dict]
+        recent_trades: List[Dict],
+        position_info: Optional[Dict] = None
     ) -> tuple[TradingDecision, float, str]:
         """
         分析市场并做出交易决策
@@ -99,9 +100,9 @@ class AITradingModel(ABC):
         volume_24h = float(market_data.get("volume", market_data.get("dayNtlVlm", 0)))
         open_interest = float(market_data.get("open_interest", market_data.get("openInterest", 0)))
         
-        # 获取订单簿深度
-        bids = orderbook.get("levels", [[]])[0][:5] if orderbook else []
-        asks = orderbook.get("levels", [[]])[1][:5] if orderbook else []
+        # 获取订单簿深度（新格式：{"bids": [...], "asks": [...]}）
+        bids = orderbook.get("bids", [])[:5] if orderbook else []
+        asks = orderbook.get("asks", [])[:5] if orderbook else []
         
         # 24h涨跌幅
         change_24h = market_data.get("change_24h", 0)
@@ -166,12 +167,32 @@ class AITradingModel(ABC):
 """
         
         prompt += """
-请根据以上信息进行技术分析，考虑：
-1. 价格趋势和动量
-2. 订单簿流动性和深度
-3. 资金费率（正值表示多头支付空头）
-4. 成交量和未平仓合约
-5. 市场情绪和风险
+⚡ 激进波段交易策略 - 追求更大收益空间 ⚡
+
+你的目标是作为一个**激进的波段交易员**，通过中高胜率获取高收益。
+
+交易理念：
+• 止损5% / 止盈10%，风险回报比1:2
+• 只在信心度≥50%时开仓（严格质量控制）
+• 给趋势足够的发展空间，不被小波动洗出
+• 追求更高胜率，减少频繁止损
+
+请分析：
+1. 价格短期趋势（上涨/下跌/震荡）
+2. 订单簿买卖力量对比
+3. 资金费率（正值=多头强，负值=空头强）
+4. 成交量和动量
+5. 是否有5-10%的波动空间（匹配止损止盈）
+
+决策指引：
+• 强烈看涨信号（明确趋势+强势买盘） → STRONG_BUY (信心≥70%)
+• 温和看涨信号（小幅上涨+买盘优势） → BUY (信心50-70%)
+• 强烈看跌信号（明确趋势+强势卖盘） → STRONG_SELL (信心≥70%)
+• 温和看跌信号（小幅下跌+卖盘优势） → SELL (信心50-70%)
+• 完全无法判断、市场死寂、极度震荡 → HOLD (信心<50%)
+
+⚠️ 质量控制：只在信心≥50%时开仓！
+低于50%信心度时，选择HOLD等待更好机会。
 
 回复格式（严格按照此格式）:
 DECISION: [STRONG_BUY/BUY/HOLD/SELL/STRONG_SELL]

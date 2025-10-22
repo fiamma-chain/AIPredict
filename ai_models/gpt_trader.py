@@ -3,14 +3,14 @@ GPT AI 交易模型
 使用 OpenAI GPT API
 """
 import httpx
-from typing import Dict, List
+from typing import Dict, List, Optional
 from .base_ai import AITradingModel, TradingDecision
 
 
 class GPTTrader(AITradingModel):
     """GPT AI 交易员"""
     
-    def __init__(self, api_key: str, model: str = "gpt-4-turbo-preview", **kwargs):
+    def __init__(self, api_key: str, model: str = "gpt-5", **kwargs):
         """
         初始化 GPT 交易员
         
@@ -19,7 +19,7 @@ class GPTTrader(AITradingModel):
             model: GPT 模型版本
         """
         super().__init__(
-            model_name=f"GPT-4 ({model.split('-')[1]})",
+            model_name=f"GPT-5 Mini" if "mini" in model.lower() else (f"GPT-5" if model.startswith("gpt-5") else f"GPT-4 ({model.split('-')[1]})"),
             api_key=api_key,
             **kwargs
         )
@@ -31,7 +31,8 @@ class GPTTrader(AITradingModel):
         coin: str,
         market_data: Dict,
         orderbook: Dict,
-        recent_trades: List[Dict]
+        recent_trades: List[Dict],
+        position_info: Optional[Dict] = None
     ) -> tuple[TradingDecision, float, str]:
         """
         使用 GPT 分析市场
@@ -68,8 +69,7 @@ class GPTTrader(AITradingModel):
                                 "content": prompt
                             }
                         ],
-                        "temperature": 0.7,
-                        "max_tokens": 500
+                        "max_completion_tokens": 2000
                     }
                 )
             
