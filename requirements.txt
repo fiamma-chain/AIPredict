@@ -17,6 +17,7 @@ sqlalchemy==2.0.25
 asyncpg==0.29.0
 alembic==1.13.1
 redis==5.0.1
+hiredis==2.3.2
 
 # Data Processing
 pandas==2.1.4

@@ -56,6 +56,13 @@ class Settings(BaseSettings):
     multi_platform_mode: bool = True  # 是否启用多平台对比模式
     platform_comparison_enabled: bool = True  # 是否显示平台对比
     
+    # Redis 配置（用于持久化 AI 响应）
+    redis_enabled: bool = True  # 是否启用 Redis 持久化
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_db: int = 0
+    redis_password: str = ""  # Redis 密码（如果有）
+    
     class Config:
         env_file = ".env"
         case_sensitive = False

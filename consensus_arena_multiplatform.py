@@ -20,6 +20,7 @@ from trading.multi_platform_trader import MultiPlatformTrader
 from utils.symbol_filter import symbol_filter
 from trading.kline_manager import KlineManager
 from ai_models.base_ai import TradingDecision
+from utils.redis_manager import initialize_redis_manager, shutdown_redis_manager
 
 import uvicorn
 from fastapi import FastAPI
@@ -60,6 +61,9 @@ class AIGroup:
         enabled_platforms = get_enabled_platforms()
         logger.info(f"[{name}] 启用的交易平台: {enabled_platforms}")
         
+        # 为每个平台创建一组独立的AI实例并启用Redis持久化
+        self.platform_ai_traders = {}  # 存储每个平台的AI实例
+        
         for platform in enabled_platforms:
             if platform == "hyperliquid":
                 client = HyperliquidClient(private_key, testnet)
@@ -67,6 +71,22 @@ class AIGroup:
             elif platform == "aster":
                 client = AsterClient(private_key, testnet)
                 self.multi_trader.add_platform(client, f"{name}-Aster")
+            
+            # 为每个平台创建AI交易者副本并设置平台信息
+            platform_ais = []
+            for ai_trader in ai_traders:
+                # 创建AI实例的副本（每个平台一个实例）
+                ai_class = ai_trader.__class__
+                ai_copy = ai_class(
+                    api_key=ai_trader.api_key,
+                    platform=platform  # 传递平台参数
+                )
+                # 启用Redis持久化
+                if settings.redis_enabled:
+                    ai_copy.enable_redis_persistence()
+                platform_ais.append(ai_copy)
+            
+            self.platform_ai_traders[platform] = platform_ais
         
         # 保存第一个客户端用于获取市场数据（所有平台看同一个市场）
         self.primary_client = list(self.multi_trader.platform_traders.values())[0].client if self.multi_trader.platform_traders else None
@@ -141,15 +161,32 @@ class AIGroup:
         market_data: Dict, 
         orderbook: Dict, 
         recent_trades: List,
-        position_info: Optional[Dict] = None
+        position_info: Optional[Dict] = None,
+        platform: str = None
     ) -> Tuple[Optional[TradingDecision], float, str, List[Dict]]:
-        """获取组内共识决策"""
+        """
+        获取组内共识决策
+        
+        Args:
+            coin: 币种
+            market_data: 市场数据
+            orderbook: 订单簿
+            recent_trades: 最近交易
+            position_info: 持仓信息
+            platform: 平台名称（如果指定，使用该平台的AI实例）
+        """
         kline_history_data = self.kline_manager.format_for_prompt(max_rows=16)
+        
+        # 选择使用哪组AI（如果指定平台，使用平台特定的AI，否则使用默认AI）
+        ai_traders_to_use = self.ai_traders
+        if platform and platform in self.platform_ai_traders:
+            ai_traders_to_use = self.platform_ai_traders[platform]
         
         async def get_ai_decision(ai_trader):
             try:
                 ai_name = ai_trader.__class__.__name__.replace('Trader', '')
-                logger.info(f"[{self.name}] 🤖 正在获取 {ai_name} 的决策...")
+                platform_name = getattr(ai_trader, 'platform', 'unknown')
+                logger.info(f"[{self.name}] 🤖 正在获取 {ai_name} ({platform_name}) 的决策...")
                 
                 original_create_prompt = ai_trader.create_market_prompt
                 def wrapped_prompt(c, m, o, p=None, kline_history=None):
@@ -162,21 +199,22 @@ class AIGroup:
                 
                 ai_trader.create_market_prompt = original_create_prompt
                 
-                logger.info(f"[{self.name}]    {ai_name}: {decision} (信心: {confidence:.1f}%)")
+                logger.info(f"[{self.name}]    {ai_name} ({platform_name}): {decision} (信心: {confidence:.1f}%)")
                 
                 return {
                     'ai_name': ai_name,
                     'decision': decision,
                     'confidence': confidence,
-                    'reasoning': reasoning
+                    'reasoning': reasoning,
+                    'platform': platform_name
                 }
             
             except Exception as e:
                 logger.error(f"[{self.name}] ❌ {ai_trader.__class__.__name__} 决策失败: {e}")
                 return None
         
-        logger.info(f"[{self.name}] 🚀 开始并行调用 {len(self.ai_traders)} 个AI模型...")
-        results = await asyncio.gather(*[get_ai_decision(ai) for ai in self.ai_traders])
+        logger.info(f"[{self.name}] 🚀 开始并行调用 {len(ai_traders_to_use)} 个AI模型...")
+        results = await asyncio.gather(*[get_ai_decision(ai) for ai in ai_traders_to_use])
         
         ai_decisions = [r for r in results if r is not None]
         
@@ -278,6 +316,22 @@ class ConsensusArena:
         logger.info("🤖 AI共识交易系统 - 多平台对比版")
         logger.info("=" * 80)
         
+        # 初始化 Redis 持久化（如果启用）
+        if settings.redis_enabled:
+            logger.info("🔄 正在初始化 Redis 持久化...")
+            redis_success = initialize_redis_manager(
+                host=settings.redis_host,
+                port=settings.redis_port,
+                db=settings.redis_db,
+                password=settings.redis_password if settings.redis_password else None
+            )
+            if redis_success:
+                logger.info("✅ Redis 持久化已启用")
+            else:
+                logger.warning("⚠️  Redis 持久化初始化失败，将仅使用内存存储")
+        else:
+            logger.info("ℹ️  Redis 持久化未启用")
+        
         enabled_platforms = get_enabled_platforms()
         logger.info(f"启用的交易平台: {', '.join(enabled_platforms)}")
         logger.info(f"交易币种: {symbol_filter.get_default_symbol()}")
@@ -368,12 +422,17 @@ class ConsensusArena:
                             volume=market_data.get('volume', 0)
                         )
                         
-                        # 获取共识决策（使用任意平台的持仓信息即可）
+                        # 为每个平台分别获取共识决策
+                        # 注意：由于我们为每个平台创建了独立的AI实例，所以每个平台的决策是独立的
+                        # 这里简化处理，获取一次共识决策（所有AI的综合决策）
                         first_trader = list(group.multi_trader.platform_traders.values())[0]
                         position_info = first_trader.auto_trader.positions.get(trading_symbol)
                         
+                        # 获取第一个平台的名称，用于选择对应的AI实例
+                        first_platform = list(group.platform_ai_traders.keys())[0] if group.platform_ai_traders else None
+                        
                         consensus_decision, confidence, summary, ai_votes = await group.get_consensus_decision(
-                            trading_symbol, market_data, orderbook_data, recent_trades, position_info
+                            trading_symbol, market_data, orderbook_data, recent_trades, position_info, first_platform
                         )
                         
                         # 记录决策
@@ -445,6 +504,12 @@ class ConsensusArena:
         for group in self.groups:
             for trader in group.multi_trader.platform_traders.values():
                 await trader.client.close_session()
+        
+        # 关闭 Redis 连接
+        if settings.redis_enabled:
+            logger.info("🔄 正在关闭 Redis 连接...")
+            shutdown_redis_manager()
+        
         logger.info("✅ 共识交易系统已停止")
 
 

@@ -6,6 +6,9 @@ from abc import ABC, abstractmethod
 from typing import Dict, Optional, List
 from datetime import datetime
 from enum import Enum
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class TradingDecision(Enum):
@@ -25,7 +28,8 @@ class AITradingModel(ABC):
         model_name: str,
         api_key: str,
         initial_balance: float = 1000.0,
-        max_position_size: float = 200.0
+        max_position_size: float = 200.0,
+        platform: str = "unknown"
     ):
         """
         初始化 AI 模型
@@ -35,12 +39,14 @@ class AITradingModel(ABC):
             api_key: API 密钥
             initial_balance: 初始资金
             max_position_size: 最大仓位大小
+            platform: 交易平台名称（如 "hyperliquid", "aster"）
         """
         self.model_name = model_name
         self.api_key = api_key
         self.initial_balance = initial_balance
         self.current_balance = initial_balance
         self.max_position_size = max_position_size
+        self.platform = platform
         
         # 交易状态
         self.positions: Dict[str, Dict] = {}
@@ -48,8 +54,12 @@ class AITradingModel(ABC):
         self.total_trades = 0
         self.winning_trades = 0
         
-        # AI 响应记录
+        # AI 响应记录（内存中保留最近的）
         self.ai_responses: List[Dict] = []
+        
+        # 是否启用 Redis 持久化
+        self._redis_enabled = False
+        self._redis_manager = None
     
     @abstractmethod
     async def analyze_market(
@@ -311,27 +321,140 @@ REASONING: [你的分析理由，50-100字]
         
         return position_value
     
+    def enable_redis_persistence(self):
+        """启用 Redis 持久化"""
+        try:
+            from utils.redis_manager import get_redis_manager
+            self._redis_manager = get_redis_manager()
+            if self._redis_manager and self._redis_manager.is_connected():
+                self._redis_enabled = True
+                logger.info(f"[{self.model_name}] ✅ Redis 持久化已启用")
+                
+                # 尝试从 Redis 加载历史数据（可选）
+                # 这里只加载最近的数据以避免内存占用过多
+                # self._load_from_redis()
+            else:
+                logger.warning(f"[{self.model_name}] ⚠️  Redis 未连接，持久化功能不可用")
+        except ImportError:
+            logger.warning(f"[{self.model_name}] ⚠️  Redis 管理器未安装，持久化功能不可用")
+        except Exception as e:
+            logger.error(f"[{self.model_name}] ❌ 启用 Redis 持久化失败: {e}")
+    
+    def _load_from_redis(self, coin: str = None, limit: int = 100):
+        """
+        从 Redis 加载历史数据
+        
+        Args:
+            coin: 币种（如果为 None，则不加载）
+            limit: 加载数量限制
+        """
+        if not self._redis_enabled or not self._redis_manager or not coin:
+            return
+        
+        try:
+            responses = self._redis_manager.get_ai_responses(
+                platform=self.platform,
+                ai_model=self.model_name,
+                coin=coin,
+                limit=limit
+            )
+            if responses:
+                logger.info(f"[{self.model_name}] 从 Redis 加载了 {len(responses)} 条历史响应")
+                # 可以选择将历史数据加载到内存中
+                # self.ai_responses = responses + self.ai_responses
+        except Exception as e:
+            logger.error(f"[{self.model_name}] 从 Redis 加载数据失败: {e}")
+    
     def record_ai_response(
         self,
         coin: str,
         decision: TradingDecision,
         confidence: float,
         reasoning: str,
-        raw_response: str
+        raw_response: str,
+        extra_data: Optional[Dict] = None
     ):
-        """记录 AI 响应"""
-        self.ai_responses.append({
-            "timestamp": datetime.now().isoformat(),
+        """
+        记录 AI 响应
+        
+        Args:
+            coin: 币种
+            decision: 交易决策
+            confidence: 信心度
+            reasoning: 推理过程
+            raw_response: 原始响应
+            extra_data: 额外数据（可选）
+        """
+        timestamp = datetime.now().isoformat()
+        
+        # 构建响应数据
+        response_data = {
+            "timestamp": timestamp,
             "coin": coin,
             "decision": decision.value,
             "confidence": confidence,
             "reasoning": reasoning,
-            "raw_response": raw_response
-        })
+            "raw_response": raw_response,
+            "platform": self.platform,
+            "ai_model": self.model_name
+        }
         
-        # 只保留最近 100 条
+        if extra_data:
+            response_data.update(extra_data)
+        
+        # 保存到内存
+        self.ai_responses.append(response_data)
+        
+        # 只保留最近 100 条（内存）
         if len(self.ai_responses) > 100:
             self.ai_responses = self.ai_responses[-100:]
+        
+        # 保存到 Redis（如果启用）
+        if self._redis_enabled and self._redis_manager:
+            try:
+                self._redis_manager.save_ai_response(
+                    platform=self.platform,
+                    ai_model=self.model_name,
+                    coin=coin,
+                    decision=decision.value,
+                    confidence=confidence,
+                    reasoning=reasoning,
+                    raw_response=raw_response,
+                    timestamp=timestamp,
+                    extra_data=extra_data
+                )
+                logger.debug(f"[{self.model_name}] 已保存响应到 Redis: {coin} {decision.value}")
+            except Exception as e:
+                logger.error(f"[{self.model_name}] 保存到 Redis 失败: {e}")
+    
+    def get_redis_responses(
+        self,
+        coin: str,
+        limit: int = 100
+    ) -> List[Dict]:
+        """
+        从 Redis 获取历史响应
+        
+        Args:
+            coin: 币种
+            limit: 获取数量限制
+            
+        Returns:
+            响应列表
+        """
+        if not self._redis_enabled or not self._redis_manager:
+            return []
+        
+        try:
+            return self._redis_manager.get_ai_responses(
+                platform=self.platform,
+                ai_model=self.model_name,
+                coin=coin,
+                limit=limit
+            )
+        except Exception as e:
+            logger.error(f"[{self.model_name}] 从 Redis 获取数据失败: {e}")
+            return []
     
     def get_stats(self) -> Dict:
         """获取统计信息"""
