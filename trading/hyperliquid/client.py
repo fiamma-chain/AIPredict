@@ -7,10 +7,12 @@ from hyperliquid.info import Info
 from hyperliquid.exchange import Exchange
 from hyperliquid.utils import constants
 
+from trading.base_client import BaseExchangeClient
+
 logger = logging.getLogger(__name__)
 
 
-class HyperliquidClient:
+class HyperliquidClient(BaseExchangeClient):
     """Hyperliquid 交易客户端（官方SDK版本）"""
     
     def __init__(self, private_key: str, testnet: bool = True):
@@ -21,6 +23,7 @@ class HyperliquidClient:
             private_key: 以太坊私钥（可以带或不带0x前缀）
             testnet: 是否使用测试网
         """
+        super().__init__(private_key, testnet)
         self.testnet = testnet
         
         # 确保私钥格式正确
@@ -51,6 +54,11 @@ class HyperliquidClient:
         logger.info(f"✅ Hyperliquid 客户端初始化成功")
         logger.info(f"   地址: {self.address}")
         logger.info(f"   网络: {'测试网' if testnet else '主网'}")
+    
+    @property
+    def platform_name(self) -> str:
+        """平台名称"""
+        return "Hyperliquid"
     
     async def __aenter__(self):
         """异步上下文管理器入口"""
@@ -282,34 +290,42 @@ class HyperliquidClient:
             logger.error(traceback.format_exc())
             return {"status": "err", "response": str(e)}
     
-    async def cancel_order(self, coin: str, oid: int) -> Dict:
+    async def cancel_order(self, coin: str, order_id) -> Dict:
         """
         取消订单
         
         Args:
             coin: 币种符号
-            oid: 订单ID
+            order_id: 订单ID
             
         Returns:
             取消结果
         """
         try:
+            oid = int(order_id) if isinstance(order_id, str) else order_id
             result = self.exchange.cancel(coin, oid)
             return result
         except Exception as e:
             logger.error(f"取消订单失败: {e}")
             return {"status": "err", "response": str(e)}
     
-    async def get_open_orders(self) -> List[Dict]:
+    async def get_open_orders(self, coin: str = None) -> List[Dict]:
         """
         获取未成交订单
+        
+        Args:
+            coin: 币种符号（可选，Hyperliquid 不支持按币种过滤）
         
         Returns:
             订单列表
         """
         try:
             user_state = await self.get_account_info()
-            return user_state.get('assetPositions', [])
+            orders = user_state.get('assetPositions', [])
+            # 如果指定了币种，过滤结果
+            if coin:
+                orders = [o for o in orders if o.get('position', {}).get('coin') == coin]
+            return orders
         except Exception as e:
             logger.error(f"获取未成交订单失败: {e}")
             return []

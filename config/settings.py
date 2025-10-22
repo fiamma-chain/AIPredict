@@ -7,9 +7,16 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     """应用配置"""
     
+    # 交易平台配置
+    enabled_platforms: str = "hyperliquid,aster"  # 启用的平台，逗号分隔
+    
     # Hyperliquid 配置
     hyperliquid_testnet: bool = True
     hyperliquid_api_url: str = "https://api.hyperliquid-testnet.xyz"
+    
+    # Aster 配置
+    aster_testnet: bool = True
+    aster_api_url: str = "https://testnet-api.aster.exchange"  # 请替换为实际URL
     
     # API 配置
     api_host: str = "0.0.0.0"
@@ -36,12 +43,18 @@ class Settings(BaseSettings):
     group_1_name: str = "Alpha组"
     group_1_ais: str = ""
     group_1_private_key: str = ""
+    group_1_testnet: bool = True
     group_2_name: str = "Beta组"
     group_2_ais: str = ""
     group_2_private_key: str = ""
+    group_2_testnet: bool = True
     consensus_min_votes: int = 2
     consensus_interval: int = 300
     min_confidence: float = 60.0
+    
+    # 多平台对比模式
+    multi_platform_mode: bool = True  # 是否启用多平台对比模式
+    platform_comparison_enabled: bool = True  # 是否显示平台对比
     
     class Config:
         env_file = ".env"
@@ -67,5 +80,20 @@ def is_symbol_allowed(symbol: str) -> bool:
     if not allowed:  # 空列表表示全部允许
         return True
     return symbol.upper() in allowed
+
+
+def get_enabled_platforms():
+    """获取启用的交易平台列表"""
+    if not settings.enabled_platforms:
+        return ["hyperliquid"]  # 默认只启用 Hyperliquid
+    
+    platforms = [p.strip().lower() for p in settings.enabled_platforms.split(',')]
+    return [p for p in platforms if p]  # 过滤空字符串
+
+
+def is_platform_enabled(platform: str) -> bool:
+    """检查平台是否启用"""
+    enabled = get_enabled_platforms()
+    return platform.lower() in enabled
 
 
