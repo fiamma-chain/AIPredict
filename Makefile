@@ -1,4 +1,4 @@
-.PHONY: help install setup run dev clean test lint status ps logs logs-list logs-clean
+.PHONY: help install setup run dev clean test lint status ps port logs logs-list logs-clean
 
 # 默认目标
 .DEFAULT_GOAL := help
@@ -167,6 +167,21 @@ status: ## 显示系统状态
 	else \
 		echo "  $(YELLOW)⚠️  logs 目录不存在$(NC)"; \
 	fi
+	@echo ""
+	@echo "$(GREEN)服务端口:$(NC)"
+	@if [ -f .env ]; then \
+		PORT=$$(grep "^API_PORT=" .env | cut -d'=' -f2 | tr -d ' '); \
+		if [ -n "$$PORT" ]; then \
+			echo "  $(GREEN)✓ $$PORT$(NC) (配置)"; \
+			echo "  $(GREEN)✓ http://localhost:$$PORT$(NC)"; \
+		else \
+			echo "  $(GREEN)✓ 88000$(NC) (默认)"; \
+			echo "  $(GREEN)✓ http://localhost:88000$(NC)"; \
+		fi; \
+	else \
+		echo "  $(GREEN)✓ 88000$(NC) (默认)"; \
+	fi
+	@echo "  查看详情: make port"
 
 ps: ## 显示服务进程信息
 	@echo "$(BLUE)🔍 进程信息:$(NC)"
@@ -177,6 +192,59 @@ ps: ## 显示服务进程信息
 	else \
 		echo "$(RED)❌ 服务未运行$(NC)"; \
 	fi
+
+port: ## 查看服务端口信息
+	@echo "$(BLUE)🌐 服务端口信息:$(NC)"
+	@echo ""
+	@echo "$(GREEN)配置端口:$(NC)"
+	@if [ -f .env ]; then \
+		PORT=$$(grep "^API_PORT=" .env | cut -d'=' -f2 | tr -d ' '); \
+		if [ -n "$$PORT" ]; then \
+			echo "  端口: $$PORT"; \
+			echo "  地址: http://localhost:$$PORT"; \
+		else \
+			echo "  端口: 88000 (默认)"; \
+			echo "  地址: http://localhost:88000"; \
+		fi; \
+	else \
+		echo "  端口: 88000 (默认)"; \
+		echo "  地址: http://localhost:88000"; \
+	fi
+	@echo ""
+	@echo "$(GREEN)实际监听端口:$(NC)"
+	@if ps aux | grep -v grep | grep -v make | grep "[p]ython.*consensus_arena_multiplatform.py" > /dev/null; then \
+		PID=$$(ps aux | grep -v grep | grep -v make | grep "[p]ython.*consensus_arena_multiplatform.py" | awk '{print $$2}' | head -1); \
+		if command -v lsof > /dev/null 2>&1; then \
+			PORTS=$$(lsof -Pan -p $$PID -i 2>/dev/null | grep LISTEN | awk '{print $$9}' | cut -d':' -f2 | sort -u); \
+			if [ -n "$$PORTS" ]; then \
+				echo "  $(GREEN)✓ 服务正在监听以下端口:$(NC)"; \
+				for port in $$PORTS; do \
+					echo "    - $$port"; \
+				done; \
+			else \
+				echo "  $(YELLOW)⚠️  未检测到监听端口（服务可能正在启动中）$(NC)"; \
+			fi; \
+		elif command -v netstat > /dev/null 2>&1; then \
+			PORTS=$$(netstat -tuln 2>/dev/null | grep LISTEN | grep ":88" | awk '{print $$4}' | cut -d':' -f2 | sort -u); \
+			if [ -n "$$PORTS" ]; then \
+				echo "  $(GREEN)✓ 服务正在监听以下端口:$(NC)"; \
+				for port in $$PORTS; do \
+					echo "    - $$port"; \
+				done; \
+			else \
+				echo "  $(YELLOW)⚠️  未检测到监听端口$(NC)"; \
+			fi; \
+		else \
+			echo "  $(YELLOW)⚠️  无法检测端口（需要 lsof 或 netstat 命令）$(NC)"; \
+		fi; \
+	else \
+		echo "  $(RED)❌ 服务未运行$(NC)"; \
+	fi
+	@echo ""
+	@echo "$(YELLOW)提示:$(NC)"
+	@echo "  - 检查所有监听端口: lsof -i -P | grep LISTEN"
+	@echo "  - 检查特定端口: lsof -i :88000"
+	@echo "  - 测试端口连接: curl http://localhost:88000/api/status"
 
 reinstall: clean ## 重新安装所有依赖
 	@echo "$(BLUE)🔄 重新安装依赖...$(NC)"
