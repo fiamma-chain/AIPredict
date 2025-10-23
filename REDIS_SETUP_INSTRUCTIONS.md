@@ -153,11 +153,11 @@ redis-cli LRANGE balance_history 0 0
 
 ### 4. 测试API
 ```bash
-curl http://localhost:8000/api/balance_history | python3 -m json.tool
+curl http://localhost:88000/api/balance_history | python3 -m json.tool
 ```
 
 ### 5. 测试前端
-1. 打开 http://localhost:8000
+1. 打开 http://localhost:88000
 2. 等待收集一些数据点（约10分钟）
 3. 刷新页面 (Cmd+R)
 4. ✅ 走势图应该显示历史数据，不再清零
@@ -217,7 +217,7 @@ curl http://localhost:8000/api/balance_history | python3 -m json.tool
 **A**: 不需要完全重启，只需：
 ```bash
 # 停止当前系统
-lsof -ti:8000 | xargs kill -9
+lsof -ti:88000 | xargs kill -9
 
 # 重新启动
 cd AIPredict

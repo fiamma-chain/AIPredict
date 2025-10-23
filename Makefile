@@ -69,7 +69,7 @@ run: ## 运行AI交易系统（生产模式）
 	@echo "$(GREEN)  🚀 启动 AI Trading Arena$(NC)"
 	@echo "$(BLUE)═══════════════════════════════════════════════════════════$(NC)"
 	@echo ""
-	@echo "$(YELLOW)📌 Web界面地址: http://localhost:8000$(NC)"
+	@echo "$(YELLOW)📌 Web界面地址: http://localhost:88000$(NC)"
 	@echo "$(YELLOW)📌 按 Ctrl+C 停止服务$(NC)"
 	@echo ""
 	@cd $(PROJECT_DIR) && $(PYTHON) consensus_arena_multiplatform.py
