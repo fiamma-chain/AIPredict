@@ -6,6 +6,9 @@ from abc import ABC, abstractmethod
 from typing import Dict, Optional, List
 from datetime import datetime
 from enum import Enum
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class TradingDecision(Enum):
@@ -50,6 +53,9 @@ class AITradingModel(ABC):
         
         # AI 响应记录
         self.ai_responses: List[Dict] = []
+        
+        # 从 Redis 加载历史响应
+        self._load_responses_from_redis()
     
     @abstractmethod
     async def analyze_market(
@@ -311,6 +317,23 @@ REASONING: [你的分析理由，50-100字]
         
         return position_value
     
+    def _load_responses_from_redis(self):
+        """从 Redis 加载历史响应"""
+        try:
+            from utils.redis_manager import redis_manager
+            
+            if redis_manager.is_connected():
+                responses = redis_manager.get_ai_responses(self.model_name, limit=100)
+                if responses:
+                    self.ai_responses = responses
+                    logger.info(f"✅ 从 Redis 加载 {self.model_name} 的历史响应: {len(responses)} 条")
+                else:
+                    logger.info(f"📭 {self.model_name} 没有历史响应")
+            else:
+                logger.warning(f"⚠️  Redis 未连接，{self.model_name} 无法加载历史响应")
+        except Exception as e:
+            logger.error(f"从 Redis 加载 {self.model_name} 响应失败: {e}")
+    
     def record_ai_response(
         self,
         coin: str,
@@ -319,19 +342,29 @@ REASONING: [你的分析理由，50-100字]
         reasoning: str,
         raw_response: str
     ):
-        """记录 AI 响应"""
-        self.ai_responses.append({
+        """记录 AI 响应并保存到 Redis"""
+        response = {
             "timestamp": datetime.now().isoformat(),
             "coin": coin,
             "decision": decision.value,
             "confidence": confidence,
             "reasoning": reasoning,
             "raw_response": raw_response
-        })
+        }
+        
+        self.ai_responses.append(response)
         
         # 只保留最近 100 条
         if len(self.ai_responses) > 100:
             self.ai_responses = self.ai_responses[-100:]
+        
+        # 保存到 Redis
+        try:
+            from utils.redis_manager import redis_manager
+            if redis_manager.is_connected():
+                redis_manager.append_ai_response(self.model_name, response)
+        except Exception as e:
+            logger.error(f"保存 {self.model_name} 响应到 Redis 失败: {e}")
     
     def get_stats(self) -> Dict:
         """获取统计信息"""

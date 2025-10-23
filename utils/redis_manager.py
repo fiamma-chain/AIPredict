@@ -153,6 +153,101 @@ class RedisManager:
         except Exception as e:
             logger.error(f"清空余额历史失败: {e}")
     
+    def save_ai_responses(self, model_name: str, responses: List[Dict]):
+        """
+        保存 AI 模型的响应历史
+        
+        Args:
+            model_name: 模型名称
+            responses: 响应列表（最近100条）
+        """
+        if not self.is_connected():
+            logger.warning(f"Redis 未连接，跳过保存 {model_name} 的响应")
+            return
+        
+        try:
+            key = f"ai_responses:{model_name}"
+            
+            # 清空旧数据
+            self.redis_client.delete(key)
+            
+            # 保存新数据（从旧到新的顺序）
+            if responses:
+                for response in responses:
+                    self.redis_client.rpush(key, json.dumps(response))
+            
+            # 设置过期时间（30天）
+            self.redis_client.expire(key, 30 * 24 * 60 * 60)
+            
+            logger.debug(f"💾 已保存 {model_name} 的响应历史: {len(responses)} 条")
+            
+        except Exception as e:
+            logger.error(f"保存 {model_name} 响应失败: {e}")
+    
+    def get_ai_responses(self, model_name: str, limit: int = 100) -> List[Dict]:
+        """
+        获取 AI 模型的响应历史
+        
+        Args:
+            model_name: 模型名称
+            limit: 返回最近的N条记录（默认100）
+            
+        Returns:
+            响应历史列表
+        """
+        if not self.is_connected():
+            logger.warning(f"Redis 未连接，返回空响应历史")
+            return []
+        
+        try:
+            key = f"ai_responses:{model_name}"
+            # 获取最近的 limit 条记录（从右侧取，即最新的）
+            raw_data = self.redis_client.lrange(key, -limit, -1)
+            
+            responses = []
+            for item in raw_data:
+                try:
+                    response = json.loads(item)
+                    responses.append(response)
+                except json.JSONDecodeError as e:
+                    logger.error(f"解析 {model_name} 响应失败: {e}")
+                    continue
+            
+            logger.info(f"📊 获取 {model_name} 响应历史: {len(responses)} 条记录")
+            return responses
+            
+        except Exception as e:
+            logger.error(f"获取 {model_name} 响应历史失败: {e}")
+            return []
+    
+    def append_ai_response(self, model_name: str, response: Dict):
+        """
+        追加单条 AI 响应到历史记录
+        
+        Args:
+            model_name: 模型名称
+            response: 响应数据
+        """
+        if not self.is_connected():
+            return
+        
+        try:
+            key = f"ai_responses:{model_name}"
+            
+            # 追加到列表末尾
+            self.redis_client.rpush(key, json.dumps(response))
+            
+            # 只保留最近100条
+            self.redis_client.ltrim(key, -100, -1)
+            
+            # 设置过期时间（30天）
+            self.redis_client.expire(key, 30 * 24 * 60 * 60)
+            
+            logger.debug(f"💾 已追加 {model_name} 的响应")
+            
+        except Exception as e:
+            logger.error(f"追加 {model_name} 响应失败: {e}")
+    
     def get_stats(self) -> Dict:
         """获取 Redis 统计信息"""
         if not self.is_connected():
