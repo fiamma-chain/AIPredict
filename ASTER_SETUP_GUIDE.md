@@ -362,7 +362,7 @@ logger.info(f"[Aster] 📊 下单: {symbol} {side} {size} @ ${price}")
 
 访问 API 查看对比：
 ```bash
-curl http://localhost:88000/api/platform_comparison
+curl http://localhost:46000/api/platform_comparison
 ```
 
 ## 技术支持

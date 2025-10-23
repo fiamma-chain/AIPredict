@@ -78,7 +78,7 @@ run: ## 运行AI交易系统（后台模式）
 	@mkdir -p logs
 	@LOG_FILE="logs/server-$$(date +%Y-%m-%d-%H).log"; \
 	echo "$(GREEN)✓ 启动服务...$(NC)"; \
-	echo "$(YELLOW)📌 Web界面地址: http://localhost:88000$(NC)"; \
+	echo "$(YELLOW)📌 Web界面地址: http://localhost:46000$(NC)"; \
 	echo "$(YELLOW)📌 日志文件: $$LOG_FILE$(NC)"; \
 	echo "$(YELLOW)📌 查看日志: make logs$(NC)"; \
 	echo "$(YELLOW)📌 停止服务: make stop$(NC)"; \
@@ -175,11 +175,11 @@ status: ## 显示系统状态
 			echo "  $(GREEN)✓ $$PORT$(NC) (配置)"; \
 			echo "  $(GREEN)✓ http://localhost:$$PORT$(NC)"; \
 		else \
-			echo "  $(GREEN)✓ 88000$(NC) (默认)"; \
-			echo "  $(GREEN)✓ http://localhost:88000$(NC)"; \
+			echo "  $(GREEN)✓ 46000$(NC) (默认)"; \
+			echo "  $(GREEN)✓ http://localhost:46000$(NC)"; \
 		fi; \
 	else \
-		echo "  $(GREEN)✓ 88000$(NC) (默认)"; \
+		echo "  $(GREEN)✓ 46000$(NC) (默认)"; \
 	fi
 	@echo "  查看详情: make port"
 
@@ -203,12 +203,12 @@ port: ## 查看服务端口信息
 			echo "  端口: $$PORT"; \
 			echo "  地址: http://localhost:$$PORT"; \
 		else \
-			echo "  端口: 88000 (默认)"; \
-			echo "  地址: http://localhost:88000"; \
+			echo "  端口: 46000 (默认)"; \
+			echo "  地址: http://localhost:46000"; \
 		fi; \
 	else \
-		echo "  端口: 88000 (默认)"; \
-		echo "  地址: http://localhost:88000"; \
+		echo "  端口: 46000 (默认)"; \
+		echo "  地址: http://localhost:46000"; \
 	fi
 	@echo ""
 	@echo "$(GREEN)实际监听端口:$(NC)"
@@ -243,8 +243,8 @@ port: ## 查看服务端口信息
 	@echo ""
 	@echo "$(YELLOW)提示:$(NC)"
 	@echo "  - 检查所有监听端口: lsof -i -P | grep LISTEN"
-	@echo "  - 检查特定端口: lsof -i :88000"
-	@echo "  - 测试端口连接: curl http://localhost:88000/api/status"
+	@echo "  - 检查特定端口: lsof -i :46000"
+	@echo "  - 测试端口连接: curl http://localhost:46000/api/status"
 
 reinstall: clean ## 重新安装所有依赖
 	@echo "$(BLUE)🔄 重新安装依赖...$(NC)"

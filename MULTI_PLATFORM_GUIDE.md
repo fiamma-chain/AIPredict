@@ -90,7 +90,7 @@ python consensus_arena.py
 
 打开浏览器访问：
 ```
-http://localhost:88000
+http://localhost:46000
 ```
 
 ## API 端点
@@ -200,7 +200,7 @@ def _create_signature(self, message: str) -> str:
 
 ```bash
 # 获取详细对比数据
-curl http://localhost:88000/api/platform_comparison
+curl http://localhost:46000/api/platform_comparison
 ```
 
 #### 方法 3：Web 界面
