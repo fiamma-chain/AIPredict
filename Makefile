@@ -7,7 +7,7 @@
 VENV := venv
 PYTHON := $(VENV)/bin/python3
 PIP := $(VENV)/bin/pip
-PROJECT_DIR := /Users/payne/Fiamma/AIPredict
+PROJECT_DIR := $(shell pwd)
 
 # 颜色输出
 BLUE := \033[0;34m
