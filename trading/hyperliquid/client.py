@@ -8,6 +8,7 @@ from hyperliquid.exchange import Exchange
 from hyperliquid.utils import constants
 
 from trading.base_client import BaseExchangeClient
+from trading.precision_config import precision_config
 
 logger = logging.getLogger(__name__)
 
@@ -224,16 +225,10 @@ class HyperliquidClient(BaseExchangeClient):
             # 使用官方SDK下单
             # 官方SDK参数: name, is_buy, sz, limit_px, order_type, reduce_only
             
-            # 对size和price进行精度处理
-            from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
-            
-            # BTC使用5位小数
-            size_decimal = Decimal(str(size))
-            # 平仓订单不做ROUND_DOWN，保持精确值（避免残余仓位）
-            if reduce_only:
-                size_rounded = float(size_decimal.quantize(Decimal('0.00001'), rounding=ROUND_HALF_UP))
-            else:
-                size_rounded = float(size_decimal.quantize(Decimal('0.00001'), rounding=ROUND_DOWN))
+            # 使用统一的精度配置处理数量
+            size_rounded, _ = precision_config.format_hyperliquid_quantity(
+                coin, size, round_down=(not reduce_only)
+            )
             
             # 处理价格：如果为 None（市价单），则获取当前市价
             if price is None:
@@ -253,9 +248,13 @@ class HyperliquidClient(BaseExchangeClient):
                 
                 logger.info(f"📊 市价单价格: ${price:,.2f}")
             
-            # 价格取整到最近的整数（BTC价格不支持小数）
-            price_decimal = Decimal(str(price))
-            price_rounded = float(price_decimal.quantize(Decimal('1'), rounding=ROUND_HALF_UP))
+            # 使用统一的精度配置处理价格
+            price_rounded, _ = precision_config.format_hyperliquid_price(coin, price)
+            
+            # 验证订单参数
+            is_valid, error_msg = precision_config.validate_hyperliquid_order(coin, size_rounded, price_rounded)
+            if not is_valid:
+                raise ValueError(f"订单参数验证失败: {error_msg}")
             
             logger.info(f"📊 原始数量: {size}, 处理后: {size_rounded}")
             logger.info(f"📊 原始价格: {price}, 处理后: {price_rounded}")

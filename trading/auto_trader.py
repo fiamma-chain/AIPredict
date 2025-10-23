@@ -223,16 +223,13 @@ class AutoTrader:
             # 下单（市价单）
             is_buy = (side == 'long')
             
-            # 注意：Hyperliquid 使用市价单需要特殊处理
-            # 这里使用略微偏离市场价的限价单来模拟市价单
-            order_price = current_price * 1.001 if is_buy else current_price * 0.999
-            
+            # 使用市价单，传递None让客户端自动获取最优价格
             order_result = await self.client.place_order(
                 coin=coin,
                 is_buy=is_buy,
                 size=size,
-                price=order_price,
-                order_type="Limit",
+                price=None,  # 市价单
+                order_type="Market",
                 reduce_only=False
             )
             
@@ -373,16 +370,15 @@ class AutoTrader:
             logger.info(f"   原因: {reason}")
             logger.info("=" * 60)
             
-            # 下单平仓（反向操作）
+            # 下单平仓（反向操作，使用市价单）
             is_buy = (position['side'] == 'short')  # 平空仓需要买入
-            order_price = current_price * 1.001 if is_buy else current_price * 0.999
             
             order_result = await self.client.place_order(
                 coin=coin,
                 is_buy=is_buy,
                 size=close_size,  # 使用交易所实际数量
-                price=order_price,
-                order_type="Limit",
+                price=None,  # 市价单
+                order_type="Market",
                 reduce_only=True  # 只减仓
             )
             

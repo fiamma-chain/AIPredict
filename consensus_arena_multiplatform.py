@@ -784,7 +784,7 @@ async def get_decisions():
 @app.get("/")
 async def root():
     """根路径"""
-    return FileResponse("web/index.html")
+    return FileResponse("web/consensus_arena.html")
 
 
 app.mount("/web", StaticFiles(directory="web"), name="web")

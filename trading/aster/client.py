@@ -17,6 +17,7 @@ from web3 import Web3
 from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
 
 from trading.base_client import BaseExchangeClient
+from trading.precision_config import precision_config
 
 logger = logging.getLogger(__name__)
 
@@ -310,12 +311,10 @@ class AsterClient(BaseExchangeClient):
             # 转换币种格式
             symbol = f"{coin}USDT" if not coin.endswith('USDT') else coin
             
-            # 处理精度（BTC 使用 3 位小数）
-            size_decimal = Decimal(str(size))
-            if reduce_only:
-                size_rounded = float(size_decimal.quantize(Decimal('0.001'), rounding=ROUND_HALF_UP))
-            else:
-                size_rounded = float(size_decimal.quantize(Decimal('0.001'), rounding=ROUND_DOWN))
+            # 使用统一的精度配置处理数量
+            size_rounded, _ = precision_config.format_aster_quantity(
+                coin, size, round_down=(not reduce_only)
+            )
             
             # 处理价格
             if price is None:
@@ -334,9 +333,13 @@ class AsterClient(BaseExchangeClient):
                 
                 logger.info(f"[Aster] 市价单价格: ${price:,.2f}")
             
-            # 价格精度处理
-            price_decimal = Decimal(str(price))
-            price_rounded = float(price_decimal.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))
+            # 使用统一的精度配置处理价格
+            price_rounded, _ = precision_config.format_aster_price(coin, price)
+            
+            # 验证订单参数
+            is_valid, error_msg = precision_config.validate_aster_order(coin, size_rounded, price_rounded)
+            if not is_valid:
+                raise ValueError(f"订单参数验证失败: {error_msg}")
             
             logger.info(f"[Aster] 📊 下单: {symbol} {'BUY' if is_buy else 'SELL'} {size_rounded} @ ${price_rounded if price_rounded else 'MARKET'}")
             
@@ -352,7 +355,7 @@ class AsterClient(BaseExchangeClient):
             
             # 市价单不需要 price 和 timeInForce
             if order_type == "Limit":
-                order_params["price"] = price_rounded
+                order_params["price"] = price_rounded  # 已按照API规范处理精度
                 order_params["timeInForce"] = "GTC" if not reduce_only else "IOC"
             
             # 调试：打印订单参数

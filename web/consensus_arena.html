@@ -295,28 +295,49 @@
                 <div class="group-header">
                     <div>
                         <div class="group-name">🅰️ Alpha组</div>
-                        <div style="font-size: 0.9em; opacity: 0.8; margin-top: 5px;">DeepSeek + Claude + Grok4</div>
+                        <div style="font-size: 0.85em; opacity: 0.85; margin-top: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <span style="display: flex; align-items: center; gap: 3px;">🤖 DeepSeek</span>
+                            <span style="opacity: 0.5;">•</span>
+                            <span style="display: flex; align-items: center; gap: 3px;">🧠 Claude</span>
+                            <span style="opacity: 0.5;">•</span>
+                            <span style="display: flex; align-items: center; gap: 3px;">⚡ Grok</span>
+                        </div>
                     </div>
                 </div>
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-label">💰 余额</div>
+                        <div class="stat-label">💰 总余额</div>
                         <div class="stat-value" id="alpha-balance">$0</div>
+                        <div style="font-size: 0.75em; opacity: 0.7; margin-top: 3px;">
+                            <div>🌊 HL: <span id="alpha-hl-balance">$0</span></div>
+                            <div>⭐ AS: <span id="alpha-aster-balance">$0</span></div>
+                        </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">📈 盈亏</div>
+                        <div class="stat-label">📈 总盈亏</div>
                         <div class="stat-value" id="alpha-pnl">$0</div>
+                        <div style="font-size: 0.75em; opacity: 0.7; margin-top: 3px;">
+                            <div>🌊 HL: <span id="alpha-hl-pnl">$0</span></div>
+                            <div>⭐ AS: <span id="alpha-aster-pnl">$0</span></div>
+                        </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">📊 ROI</div>
+                        <div class="stat-label">📊 平均ROI</div>
                         <div class="stat-value" id="alpha-roi">0%</div>
+                        <div style="font-size: 0.75em; opacity: 0.7; margin-top: 3px;">
+                            <div>🌊 HL: <span id="alpha-hl-roi">0%</span></div>
+                            <div>⭐ AS: <span id="alpha-aster-roi">0%</span></div>
+                        </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">🔄 交易</div>
+                        <div class="stat-label">🔄 总交易</div>
                         <div class="stat-value" id="alpha-trades">0</div>
+                        <div style="font-size: 0.75em; opacity: 0.7; margin-top: 3px;">
+                            <div>🌊 HL: <span id="alpha-hl-trades">0</span></div>
+                            <div>⭐ AS: <span id="alpha-aster-trades">0</span></div>
+                        </div>
                     </div>
                 </div>
-                <div class="group-address" id="alpha-address">地址: 加载中...</div>
             </div>
             
             <!-- Beta组 -->
@@ -324,28 +345,57 @@
                 <div class="group-header">
                     <div>
                         <div class="group-name">🅱️ Beta组</div>
-                        <div style="font-size: 0.9em; opacity: 0.8; margin-top: 5px;">GPT-4 + Gemini + Qwen</div>
+                        <div style="font-size: 0.85em; opacity: 0.85; margin-top: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <span style="display: flex; align-items: center; gap: 3px;">🟢 GPT-4</span>
+                            <span style="opacity: 0.5;">•</span>
+                            <span style="display: flex; align-items: center; gap: 3px;">💎 Gemini</span>
+                            <span style="opacity: 0.5;">•</span>
+                            <span style="display: flex; align-items: center; gap: 3px;">🌟 Qwen</span>
+                        </div>
                     </div>
                 </div>
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-label">💰 余额</div>
+                        <div class="stat-label">💰 总余额</div>
                         <div class="stat-value" id="beta-balance">$0</div>
+                        <div style="font-size: 0.75em; opacity: 0.7; margin-top: 3px;">
+                            <div>🌊 HL: <span id="beta-hl-balance">$0</span></div>
+                            <div>⭐ AS: <span id="beta-aster-balance">$0</span></div>
+                        </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">📈 盈亏</div>
+                        <div class="stat-label">📈 总盈亏</div>
                         <div class="stat-value" id="beta-pnl">$0</div>
+                        <div style="font-size: 0.75em; opacity: 0.7; margin-top: 3px;">
+                            <div>🌊 HL: <span id="beta-hl-pnl">$0</span></div>
+                            <div>⭐ AS: <span id="beta-aster-pnl">$0</span></div>
+                        </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">📊 ROI</div>
+                        <div class="stat-label">📊 平均ROI</div>
                         <div class="stat-value" id="beta-roi">0%</div>
+                        <div style="font-size: 0.75em; opacity: 0.7; margin-top: 3px;">
+                            <div>🌊 HL: <span id="beta-hl-roi">0%</span></div>
+                            <div>⭐ AS: <span id="beta-aster-roi">0%</span></div>
+                        </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">🔄 交易</div>
+                        <div class="stat-label">🔄 总交易</div>
                         <div class="stat-value" id="beta-trades">0</div>
+                        <div style="font-size: 0.75em; opacity: 0.7; margin-top: 3px;">
+                            <div>🌊 HL: <span id="beta-hl-trades">0</span></div>
+                            <div>⭐ AS: <span id="beta-aster-trades">0</span></div>
+                        </div>
                     </div>
                 </div>
-                <div class="group-address" id="beta-address">地址: 加载中...</div>
+            </div>
+        </div>
+        
+        <!-- 权益曲线对比 -->
+        <div class="chart-container">
+            <h2 style="margin-bottom: 20px;">📈 权益曲线对比</h2>
+            <div class="chart-wrapper">
+                <canvas id="equityChart"></canvas>
             </div>
         </div>
         
@@ -379,14 +429,6 @@
                 </div>
             </div>
             <div id="klineChart"></div>
-        </div>
-        
-        <!-- 权益曲线对比 -->
-        <div class="chart-container">
-            <h2 style="margin-bottom: 20px;">📈 权益曲线对比</h2>
-            <div class="chart-wrapper">
-                <canvas id="equityChart"></canvas>
-            </div>
         </div>
         
         <!-- 共识决策记录 -->
@@ -480,7 +522,7 @@
                     return;
                 }
                 
-                const response = await fetch(`/api/kline?interval=${currentInterval}&lookback=200`);
+                const response = await fetch(`/api/chart`);
                 const data = await response.json();
                 
                 if (data.error) {
@@ -564,20 +606,36 @@
                     labels: [],
                     datasets: [
                         {
-                            label: 'Alpha组',
+                            label: '🅰️🌊 Alpha-HL',
                             data: [],
-                            borderColor: 'rgb(74, 222, 128)',
-                            backgroundColor: 'rgba(74, 222, 128, 0.1)',
+                            borderColor: 'rgb(34, 197, 94)',  // 鲜绿色
+                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
                             tension: 0.4,
-                            borderWidth: 3
+                            borderWidth: 2.5
                         },
                         {
-                            label: 'Beta组',
+                            label: '🅰️⭐ Alpha-AS',
                             data: [],
-                            borderColor: 'rgb(96, 165, 250)',
-                            backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                            borderColor: 'rgb(250, 204, 21)',  // 金黄色
+                            backgroundColor: 'rgba(250, 204, 21, 0.1)',
                             tension: 0.4,
-                            borderWidth: 3
+                            borderWidth: 2.5
+                        },
+                        {
+                            label: '🅱️🌊 Beta-HL',
+                            data: [],
+                            borderColor: 'rgb(59, 130, 246)',  // 蓝色
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.4,
+                            borderWidth: 2.5
+                        },
+                        {
+                            label: '🅱️⭐ Beta-AS',
+                            data: [],
+                            borderColor: 'rgb(239, 68, 68)',  // 鲜红色
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            tension: 0.4,
+                            borderWidth: 2.5
                         }
                     ]
                 },
@@ -618,52 +676,118 @@
                 const alphaGroup = data.groups[0];
                 const betaGroup = data.groups[1];
                 
+                // 从platforms中聚合Alpha组数据
+                let alphaBalance = 0, alphaPnl = 0, alphaRoi = 0, alphaTrades = 0;
+                let alphaAddresses = [];
+                if (alphaGroup.platforms) {
+                    Object.values(alphaGroup.platforms).forEach(p => {
+                        alphaBalance += p.balance || 0;
+                        alphaPnl += p.pnl || 0;
+                        alphaRoi += p.roi || 0;
+                        alphaTrades += p.total_trades || 0;
+                    });
+                    alphaRoi = alphaRoi / Object.keys(alphaGroup.platforms).length; // 平均ROI
+                    // 获取第一个平台的地址（通常两个平台用同一个地址）
+                    const firstPlatform = Object.values(alphaGroup.platforms)[0];
+                    if (firstPlatform && firstPlatform.name) {
+                        alphaAddresses.push(firstPlatform.name.split('-')[0]);
+                    }
+                }
+                
+                // 从platforms中聚合Beta组数据
+                let betaBalance = 0, betaPnl = 0, betaRoi = 0, betaTrades = 0;
+                let betaAddresses = [];
+                if (betaGroup.platforms) {
+                    Object.values(betaGroup.platforms).forEach(p => {
+                        betaBalance += p.balance || 0;
+                        betaPnl += p.pnl || 0;
+                        betaRoi += p.roi || 0;
+                        betaTrades += p.total_trades || 0;
+                    });
+                    betaRoi = betaRoi / Object.keys(betaGroup.platforms).length; // 平均ROI
+                    const firstPlatform = Object.values(betaGroup.platforms)[0];
+                    if (firstPlatform && firstPlatform.name) {
+                        betaAddresses.push(firstPlatform.name.split('-')[0]);
+                    }
+                }
+                
                 // 更新Alpha组统计
-                document.getElementById('alpha-balance').textContent = `$${alphaGroup.balance.toFixed(2)}`;
-                document.getElementById('alpha-pnl').textContent = `$${alphaGroup.pnl.toFixed(2)}`;
-                document.getElementById('alpha-pnl').className = 'stat-value ' + (alphaGroup.pnl >= 0 ? 'positive' : 'negative');
-                document.getElementById('alpha-roi').textContent = `${alphaGroup.roi >= 0 ? '+' : ''}${alphaGroup.roi.toFixed(2)}%`;
-                document.getElementById('alpha-roi').className = 'stat-value ' + (alphaGroup.roi >= 0 ? 'positive' : 'negative');
-                document.getElementById('alpha-trades').textContent = alphaGroup.total_trades;
-                document.getElementById('alpha-address').textContent = `地址: ${alphaGroup.address}`;
+                document.getElementById('alpha-balance').textContent = `$${alphaBalance.toFixed(2)}`;
+                document.getElementById('alpha-pnl').textContent = `$${alphaPnl.toFixed(2)}`;
+                document.getElementById('alpha-pnl').className = 'stat-value ' + (alphaPnl >= 0 ? 'positive' : 'negative');
+                document.getElementById('alpha-roi').textContent = `${alphaRoi >= 0 ? '+' : ''}${alphaRoi.toFixed(2)}%`;
+                document.getElementById('alpha-roi').className = 'stat-value ' + (alphaRoi >= 0 ? 'positive' : 'negative');
+                document.getElementById('alpha-trades').textContent = alphaTrades;
+                
+                // 更新Alpha平台细分
+                const alphaHL = alphaGroup.platforms['Alpha组-Hyperliquid'] || {};
+                const alphaAster = alphaGroup.platforms['Alpha组-Aster'] || {};
+                document.getElementById('alpha-hl-balance').textContent = `$${(alphaHL.balance || 0).toFixed(2)}`;
+                document.getElementById('alpha-aster-balance').textContent = `$${(alphaAster.balance || 0).toFixed(2)}`;
+                document.getElementById('alpha-hl-pnl').textContent = `$${(alphaHL.pnl || 0).toFixed(2)}`;
+                document.getElementById('alpha-aster-pnl').textContent = `$${(alphaAster.pnl || 0).toFixed(2)}`;
+                document.getElementById('alpha-hl-roi').textContent = `${(alphaHL.roi || 0).toFixed(2)}%`;
+                document.getElementById('alpha-aster-roi').textContent = `${(alphaAster.roi || 0).toFixed(2)}%`;
+                document.getElementById('alpha-hl-trades').textContent = alphaHL.total_trades || 0;
+                document.getElementById('alpha-aster-trades').textContent = alphaAster.total_trades || 0;
                 
                 // 更新Beta组统计
-                document.getElementById('beta-balance').textContent = `$${betaGroup.balance.toFixed(2)}`;
-                document.getElementById('beta-pnl').textContent = `$${betaGroup.pnl.toFixed(2)}`;
-                document.getElementById('beta-pnl').className = 'stat-value ' + (betaGroup.pnl >= 0 ? 'positive' : 'negative');
-                document.getElementById('beta-roi').textContent = `${betaGroup.roi >= 0 ? '+' : ''}${betaGroup.roi.toFixed(2)}%`;
-                document.getElementById('beta-roi').className = 'stat-value ' + (betaGroup.roi >= 0 ? 'positive' : 'negative');
-                document.getElementById('beta-trades').textContent = betaGroup.total_trades;
-                document.getElementById('beta-address').textContent = `地址: ${betaGroup.address}`;
+                document.getElementById('beta-balance').textContent = `$${betaBalance.toFixed(2)}`;
+                document.getElementById('beta-pnl').textContent = `$${betaPnl.toFixed(2)}`;
+                document.getElementById('beta-pnl').className = 'stat-value ' + (betaPnl >= 0 ? 'positive' : 'negative');
+                document.getElementById('beta-roi').textContent = `${betaRoi >= 0 ? '+' : ''}${betaRoi.toFixed(2)}%`;
+                document.getElementById('beta-roi').className = 'stat-value ' + (betaRoi >= 0 ? 'positive' : 'negative');
+                document.getElementById('beta-trades').textContent = betaTrades;
                 
-                // 更新图表
-                if (alphaGroup.equity_curve && alphaGroup.equity_curve.length > 0) {
-                    const labels = alphaGroup.equity_curve.map(p => new Date(p.time).toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'}));
-                    const alphaValues = alphaGroup.equity_curve.map(p => p.balance);
-                    const betaValues = betaGroup.equity_curve.map(p => p.balance);
+                // 更新Beta平台细分
+                const betaHL = betaGroup.platforms['Beta组-Hyperliquid'] || {};
+                const betaAster = betaGroup.platforms['Beta组-Aster'] || {};
+                document.getElementById('beta-hl-balance').textContent = `$${(betaHL.balance || 0).toFixed(2)}`;
+                document.getElementById('beta-aster-balance').textContent = `$${(betaAster.balance || 0).toFixed(2)}`;
+                document.getElementById('beta-hl-pnl').textContent = `$${(betaHL.pnl || 0).toFixed(2)}`;
+                document.getElementById('beta-aster-pnl').textContent = `$${(betaAster.pnl || 0).toFixed(2)}`;
+                document.getElementById('beta-hl-roi').textContent = `${(betaHL.roi || 0).toFixed(2)}%`;
+                document.getElementById('beta-aster-roi').textContent = `${(betaAster.roi || 0).toFixed(2)}%`;
+                document.getElementById('beta-hl-trades').textContent = betaHL.total_trades || 0;
+                document.getElementById('beta-aster-trades').textContent = betaAster.total_trades || 0;
+                
+                // 更新权益曲线 - 添加四个平台的当前数据点
+                const currentTime = new Date().toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'});
+                
+                // 如果图表为空或最后一个时间点不是当前时间，添加新数据点
+                if (equityChart.data.labels.length === 0 || 
+                    equityChart.data.labels[equityChart.data.labels.length - 1] !== currentTime) {
                     
-                    // 确保起点都是500
-                    if (alphaValues.length > 0 && alphaValues[0] !== 500) {
-                        alphaValues.unshift(500);
-                        labels.unshift('起点');
+                    equityChart.data.labels.push(currentTime);
+                    
+                    // 获取四个平台的余额
+                    const alphaHL = alphaGroup.platforms['Alpha组-Hyperliquid']?.balance || 0;
+                    const alphaAster = alphaGroup.platforms['Alpha组-Aster']?.balance || 0;
+                    const betaHL = betaGroup.platforms['Beta组-Hyperliquid']?.balance || 0;
+                    const betaAster = betaGroup.platforms['Beta组-Aster']?.balance || 0;
+                    
+                    equityChart.data.datasets[0].data.push(alphaHL);     // Alpha-Hyperliquid
+                    equityChart.data.datasets[1].data.push(alphaAster);  // Alpha-Aster
+                    equityChart.data.datasets[2].data.push(betaHL);      // Beta-Hyperliquid
+                    equityChart.data.datasets[3].data.push(betaAster);   // Beta-Aster
+                    
+                    // 限制数据点数量，保留最近50个
+                    if (equityChart.data.labels.length > 50) {
+                        equityChart.data.labels.shift();
+                        equityChart.data.datasets.forEach(ds => ds.data.shift());
                     }
-                    if (betaValues.length > 0 && betaValues[0] !== 500) {
-                        betaValues.unshift(500);
+                    
+                    // 动态调整Y轴范围
+                    const allValues = equityChart.data.datasets.flatMap(ds => ds.data);
+                    if (allValues.length > 0) {
+                        const minVal = Math.min(...allValues);
+                        const maxVal = Math.max(...allValues);
+                        const range = maxVal - minVal;
+                        const padding = Math.max(range * 0.2, 10);
+                        
+                        equityChart.options.scales.y.min = Math.floor(minVal - padding);
+                        equityChart.options.scales.y.max = Math.ceil(maxVal + padding);
                     }
-                    
-                    equityChart.data.labels = labels;
-                    equityChart.data.datasets[0].data = alphaValues;
-                    equityChart.data.datasets[1].data = betaValues;
-                    
-                    // 动态调整Y轴范围以显示差异
-                    const allValues = [...alphaValues, ...betaValues];
-                    const minVal = Math.min(...allValues);
-                    const maxVal = Math.max(...allValues);
-                    const range = maxVal - minVal;
-                    const padding = Math.max(range * 0.2, 20);  // 至少20的padding
-                    
-                    equityChart.options.scales.y.min = Math.floor(minVal - padding);
-                    equityChart.options.scales.y.max = Math.ceil(maxVal + padding);
                     
                     equityChart.update('none');
                 }
@@ -723,7 +847,7 @@
         }
         
         // 等待页面完全加载后再初始化
-        window.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('DOMContentLoaded', async function() {
             console.log('页面加载完成，开始初始化...');
             
             try {
@@ -740,21 +864,23 @@
                 console.error('❌ 权益曲线初始化失败:', e);
             }
             
+            // 立即加载数据
             try {
-                updateData();
+                await updateData();
                 console.log('✅ 数据更新成功');
             } catch (e) {
                 console.error('❌ 数据更新失败:', e);
             }
             
             try {
-                updateKlineChart();
+                await updateKlineChart();
                 console.log('✅ K线数据加载成功');
             } catch (e) {
                 console.error('❌ K线数据加载失败:', e);
             }
             
-            setInterval(updateData, 5000);
+            // 设置定时刷新
+            setInterval(updateData, 5000);        // 每5秒更新数据
             setInterval(updateKlineChart, 30000); // K线每30秒更新一次
             
             console.log('✅ 所有初始化完成');
