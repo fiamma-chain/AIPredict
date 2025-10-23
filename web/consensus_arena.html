@@ -658,7 +658,14 @@
                             grid: { color: 'rgba(255, 255, 255, 0.1)' }
                         },
                         x: {
-                            ticks: { color: '#fff' },
+                            ticks: { 
+                                color: '#fff',
+                                maxTicksLimit: 10,  // 最多显示10个标签
+                                autoSkip: true,     // 自动跳过标签避免重叠
+                                autoSkipPadding: 10, // 标签之间的最小间距
+                                maxRotation: 45,    // 最大旋转角度
+                                minRotation: 0      // 最小旋转角度（0=水平）
+                            },
                             grid: { color: 'rgba(255, 255, 255, 0.1)' }
                         }
                     }
