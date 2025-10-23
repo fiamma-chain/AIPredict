@@ -42,9 +42,10 @@ class Settings(BaseSettings):
     deepseek_api_key: str = ""
     
     # AI 交易配置
-    ai_initial_balance: float = 240.0
-    ai_min_position_size: float = 150.0
-    ai_max_position_size: float = 240.0
+    ai_initial_balance: float = 240.54  # 根据实际USDC余额设置
+    ai_min_margin: float = 25.0  # 最小保证金（U）
+    ai_max_margin: float = 100.0  # 最大保证金（U）
+    ai_max_leverage: float = 5.0  # 最大杠杆倍数（AI可根据信心度动态调整1-5x）
     
     # 分组共识配置（默认主网）
     group_1_name: str = "Alpha组"

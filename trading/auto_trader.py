@@ -24,14 +24,14 @@ class AutoTrader:
         """
         self.client = hyperliquid_client
         
-        # 交易配置（激进波段交易）
+        # 交易配置（激进波段交易 + 动态杠杆）
         self.min_confidence = settings.min_confidence  # 从配置读取
-        self.min_position_size = settings.ai_min_position_size  # 从配置读取
-        self.max_position_size = settings.ai_max_position_size  # 从配置读取
+        self.min_margin = settings.ai_min_margin  # 最小保证金（从配置读取）
+        self.max_margin = settings.ai_max_margin  # 最大保证金（从配置读取）
+        self.max_leverage = settings.ai_max_leverage  # 最大杠杆（从配置读取，默认5x）
         self.stop_loss_pct = 0.05  # 止损比例 5%（给AI更多空间）
         self.take_profit_pct = 0.10  # 止盈比例 10%（追求更大收益）
-        self.leverage = 1  # 杠杆倍数
-        self.max_balance_usage_pct = 0.20  # 最大使用余额的20%
+        self.max_balance_usage_pct = 0.30  # 最大使用余额的30%用作保证金
         
         # 持仓管理
         self.positions: Dict[str, Dict] = {}  # {coin: position_info}
@@ -45,7 +45,8 @@ class AutoTrader:
         
         logger.info("🤖 自动交易器初始化完成")
         logger.info(f"   最小信心阈值: {self.min_confidence}%")
-        logger.info(f"   仓位范围: ${self.min_position_size:.0f} - ${self.max_position_size:.0f}")
+        logger.info(f"   保证金范围: ${self.min_margin:.0f} - ${self.max_margin:.0f}")
+        logger.info(f"   最大杠杆: {self.max_leverage:.0f}x (AI动态调整1-{self.max_leverage:.0f}x)")
         logger.info(f"   止损/止盈: {self.stop_loss_pct*100:.1f}% / {self.take_profit_pct*100:.1f}%")
     
     def reset_daily_stats(self):
@@ -190,19 +191,31 @@ class AutoTrader:
             交易结果
         """
         try:
-            # 计算仓位大小（根据信心度和余额）
-            position_value = min(
-                self.max_position_size,
-                balance * 0.2,  # 最多使用20%的资金
-                (confidence / 100) * self.max_position_size  # 根据信心度调整
+            # 🎯 动态杠杆策略：根据AI信心度调整杠杆（1-5x）
+            # 信心度50% -> 1x, 信心度100% -> 5x (线性映射)
+            leverage = 1.0 + ((confidence - 50.0) / 50.0) * (self.max_leverage - 1.0)
+            leverage = max(1.0, min(leverage, self.max_leverage))  # 确保在1x-5x范围内
+            
+            # 📊 计算保证金（根据信心度线性插值：50%->min_margin, 100%->max_margin）
+            # 信心度越高，使用的保证金越多
+            margin_by_confidence = self.min_margin + ((confidence - 50) / 50.0) * (self.max_margin - self.min_margin)
+            
+            # 限制在合理范围内
+            margin = min(
+                margin_by_confidence,
+                self.max_margin,
+                balance * self.max_balance_usage_pct  # 最多使用30%的余额作为保证金
             )
             
-            # 确保满足最小仓位要求
-            if position_value < self.min_position_size:
-                position_value = self.min_position_size
-                logger.info(f"   仓位已调整至最小值: ${position_value}")
+            # 确保满足最小保证金要求
+            if margin < self.min_margin:
+                margin = self.min_margin
+                logger.info(f"   ⚠️  保证金已调整至最小值: ${margin:.2f}")
             
-            # 计算数量（币的数量）
+            # 💰 计算仓位价值 = 保证金 × 杠杆倍数
+            position_value = margin * leverage
+            
+            # 📉 计算数量（币的数量）
             size = position_value / current_price
             
             # 确保满足最小交易单位
@@ -211,25 +224,30 @@ class AutoTrader:
                 return None
             
             logger.info("=" * 60)
-            logger.info(f"📈 开{'多' if side == 'long' else '空'}仓")
+            logger.info(f"📈 开{'多' if side == 'long' else '空'}仓 (AI动态杠杆策略)")
             logger.info(f"   币种: {coin}")
             logger.info(f"   价格: ${current_price:,.2f}")
-            logger.info(f"   数量: {size:.5f} {coin}")
-            logger.info(f"   价值: ${position_value:.2f}")
-            logger.info(f"   信心: {confidence:.1f}%")
-            logger.info(f"   理由: {reasoning[:100]}...")
+            logger.info(f"   信心度: {confidence:.1f}%")
+            logger.info(f"   🎯 AI决策杠杆: {leverage:.2f}x (基于信心度)")
+            logger.info(f"   💰 保证金: ${margin:.2f}")
+            logger.info(f"   📊 仓位价值: ${position_value:.2f} (保证金 × 杠杆)")
+            logger.info(f"   🔢 数量: {size:.5f} {coin}")
+            logger.info(f"   💡 理由: {reasoning[:100]}...")
             logger.info("=" * 60)
             
             # 下单（市价单）
             is_buy = (side == 'long')
             
-            # 使用市价单，传递None让客户端自动获取最优价格
+            # 注意：Hyperliquid 使用市价单需要特殊处理
+            # 这里使用略微偏离市场价的限价单来模拟市价单
+            order_price = current_price * 1.001 if is_buy else current_price * 0.999
+            
             order_result = await self.client.place_order(
                 coin=coin,
                 is_buy=is_buy,
                 size=size,
-                price=None,  # 市价单
-                order_type="Market",
+                price=order_price,
+                order_type="Limit",
                 reduce_only=False
             )
             
@@ -268,6 +286,9 @@ class AutoTrader:
                 'side': side,
                 'entry_price': current_price,
                 'size': size,
+                'position_value': position_value,
+                'margin': margin,
+                'leverage': leverage,
                 'entry_time': datetime.now(),
                 'confidence': confidence,
                 'reasoning': reasoning,
@@ -370,15 +391,16 @@ class AutoTrader:
             logger.info(f"   原因: {reason}")
             logger.info("=" * 60)
             
-            # 下单平仓（反向操作，使用市价单）
+            # 下单平仓（反向操作）
             is_buy = (position['side'] == 'short')  # 平空仓需要买入
+            order_price = current_price * 1.001 if is_buy else current_price * 0.999
             
             order_result = await self.client.place_order(
                 coin=coin,
                 is_buy=is_buy,
                 size=close_size,  # 使用交易所实际数量
-                price=None,  # 市价单
-                order_type="Market",
+                price=order_price,
+                order_type="Limit",
                 reduce_only=True  # 只减仓
             )
             

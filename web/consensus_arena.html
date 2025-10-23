@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🤖 AI共识交易竞技场</title>
+    <title>🤖 AI Consensus Trading Arena [v2.0]</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
     <style>
@@ -217,6 +217,49 @@
             background: #4a4f5b;
         }
         
+        /* Trading decision colors */
+        .decision-strong-buy {
+            color: #10b981;
+            font-weight: bold;
+            background: rgba(16, 185, 129, 0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+        }
+        
+        .decision-buy {
+            color: #22c55e;
+            font-weight: bold;
+            background: rgba(34, 197, 94, 0.15);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        
+        .decision-hold {
+            color: #eab308;
+            font-weight: bold;
+            background: rgba(234, 179, 8, 0.15);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        
+        .decision-sell {
+            color: #ef4444;
+            font-weight: bold;
+            background: rgba(239, 68, 68, 0.15);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        
+        .decision-strong-sell {
+            color: #dc2626;
+            font-weight: bold;
+            background: rgba(220, 38, 38, 0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-shadow: 0 0 8px rgba(220, 38, 38, 0.5);
+        }
+        
         .kline-chart-container {
             background: #1e222d;
             border: 1px solid #2b3139;
@@ -285,115 +328,116 @@
 <body>
     <div class="container">
         <header>
-            <h1>🤖 AI共识交易竞技场</h1>
+            <h1>🤖 AI Consensus Trading Arena</h1>
         </header>
         
-        <!-- 对抗展示区 -->
+        <!-- Battle Display -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
-            <!-- AI组对抗 -->
+            <!-- AI Team Battle -->
             <div style="background: linear-gradient(135deg, #1e222d 0%, #252936 100%); border: 2px solid #2b3139; border-radius: 16px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
-                <h2 style="text-align: center; font-size: 1.8em; margin-bottom: 30px; color: #fff;">🤖 AI组对抗</h2>
+                <h2 style="text-align: center; font-size: 1.8em; margin-bottom: 30px; color: #fff;">🤖 AI Team Battle</h2>
                 <div style="display: flex; justify-content: space-around; align-items: center;">
                     <div style="text-align: center;">
                         <div style="font-size: 2.5em; font-weight: bold; color: #22c55e; margin-bottom: 15px;">Alpha</div>
                         <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px;">
-                            <img src="https://pbs.twimg.com/profile_images/1870005100204552192/zEufQ0YT_400x400.jpg" 
-                                 alt="DeepSeek" title="DeepSeek"
-                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #22c55e;">
-                            <img src="https://pbs.twimg.com/profile_images/1856749528633081856/LzJqNAbH_400x400.jpg" 
-                                 alt="Claude" title="Claude (Anthropic)"
-                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #22c55e;">
-                            <img src="https://pbs.twimg.com/profile_images/1683947994863017984/YScP-R3G_400x400.jpg" 
-                                 alt="Grok" title="Grok (xAI)"
-                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #22c55e;">
+                            <img src="/web/images/deepseek.jpg" 
+                                 alt="DeepSeek" title="DeepSeek" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
+                            <img src="/web/images/claude.jpg" 
+                                 alt="Claude" title="Claude (Anthropic)" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
+                            <img src="/web/images/grok.jpg" 
+                                 alt="Grok" title="Grok (xAI)" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
                     </div>
                         <div style="font-size: 1.8em; font-weight: bold; color: #22c55e;" id="alpha-total-roi">0%</div>
-                    </div>
+                </div>
                     <div style="font-size: 2.5em; opacity: 0.5; font-weight: bold;">VS</div>
                     <div style="text-align: center;">
                         <div style="font-size: 2.5em; font-weight: bold; color: #3b82f6; margin-bottom: 15px;">Beta</div>
                         <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px;">
-                            <img src="https://pbs.twimg.com/profile_images/1634058036934500352/b4F1eVpJ_400x400.jpg" 
-                                 alt="GPT-4" title="GPT-4 (OpenAI)"
-                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #3b82f6;">
-                            <img src="https://pbs.twimg.com/profile_images/1875272164850458624/bsE8k0zI_400x400.jpg" 
-                                 alt="Gemini" title="Gemini (Google)"
-                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #3b82f6;">
-                            <img src="https://pbs.twimg.com/profile_images/1814552053898625024/ZjfbdFW__400x400.jpg" 
-                                 alt="Qwen" title="Qwen (Alibaba)"
-                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #3b82f6;">
+                            <img src="/web/images/gpt4.jpg" 
+                                 alt="GPT-4" title="GPT-4 (OpenAI)" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
+                            <img src="/web/images/gemini.jpg" 
+                                 alt="Gemini" title="Gemini (Google)" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
+                            <img src="/web/images/qwen.jpg" 
+                                 alt="Qwen" title="Qwen (Alibaba)" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
                     </div>
                         <div style="font-size: 1.8em; font-weight: bold; color: #3b82f6;" id="beta-total-roi">0%</div>
                     </div>
-                </div>
-            </div>
+                    </div>
+                    </div>
             
-            <!-- 平台对抗 -->
+            <!-- Platform Battle -->
             <div style="background: linear-gradient(135deg, #1e222d 0%, #252936 100%); border: 2px solid #2b3139; border-radius: 16px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
-                <h2 style="text-align: center; font-size: 1.8em; margin-bottom: 30px; color: #fff;">🏆 平台对抗</h2>
+                <h2 style="text-align: center; font-size: 1.8em; margin-bottom: 30px; color: #fff;">🏆 Platform Battle</h2>
                 <div style="display: flex; justify-content: space-around; align-items: center;">
                     <div style="text-align: center;">
                         <div style="margin-bottom: 15px;">
-                            <img src="https://pbs.twimg.com/profile_images/1643418951373950976/H2d83ZaY_400x400.jpg" 
-                                 alt="Hyperliquid" title="Hyperliquid"
-                                 style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #06b6d4;">
-                    </div>
+                            <img src="/web/images/hyperliquid.jpg" 
+                                 alt="Hyperliquid" title="Hyperliquid" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                                 style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #000;">
+                </div>
                         <div style="font-size: 1.4em; font-weight: bold; color: #06b6d4; margin-bottom: 10px;">Hyperliquid</div>
                         <div style="font-size: 0.85em; opacity: 0.7; margin-bottom: 15px;">
                             <div>Alpha + Beta</div>
-                </div>
+            </div>
                         <div style="font-size: 1.8em; font-weight: bold; color: #06b6d4;" id="hl-total-roi">0%</div>
                     </div>
                     <div style="font-size: 2.5em; opacity: 0.5; font-weight: bold;">VS</div>
                     <div style="text-align: center;">
                         <div style="margin-bottom: 15px;">
-                            <img src="https://pbs.twimg.com/profile_images/1856620569877315584/JDSg5_8A_400x400.jpg" 
-                                 alt="Aster" title="AsterDex"
-                                 style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #f59e0b;">
-                    </div>
+                            <img src="/web/images/aster.jpg" 
+                                 alt="Aster" title="AsterDex" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                                 style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #000;">
+                </div>
                         <div style="font-size: 1.4em; font-weight: bold; color: #f59e0b; margin-bottom: 10px;">Aster</div>
                         <div style="font-size: 0.85em; opacity: 0.7; margin-bottom: 15px;">
                             <div>Alpha + Beta</div>
                     </div>
                         <div style="font-size: 1.8em; font-weight: bold; color: #f59e0b;" id="as-total-roi">0%</div>
                     </div>
+                    </div>
+                    </div>
                 </div>
-            </div>
-        </div>
         
-        <!-- 权益曲线对比 -->
+        <!-- Performance Curve -->
         <div class="chart-container">
-            <h2 style="margin-bottom: 20px;">📈 权益曲线对比</h2>
+            <h2 style="margin-bottom: 20px;">📈 Performance Curve</h2>
+            <div id="equity-legend" style="display: flex; justify-content: center; gap: 20px; margin-bottom: 15px; flex-wrap: wrap;"></div>
             <div class="chart-wrapper">
                 <canvas id="equityChart"></canvas>
             </div>
         </div>
         
-        <!-- K线图 -->
+        <!-- Market Chart -->
         <div class="kline-chart-container">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2>📊 市场K线图 & 交易标记</h2>
+                <h2>📊 Market Chart & Trade Markers</h2>
                 <div class="kline-controls">
-                    <button onclick="changeInterval('5m')">5分钟</button>
-                    <button onclick="changeInterval('15m')" class="active">15分钟</button>
-                    <button onclick="changeInterval('1h')">1小时</button>
-                    <button onclick="changeInterval('4h')">4小时</button>
+                    <button onclick="changeInterval('5m')">5m</button>
+                    <button onclick="changeInterval('15m')" class="active">15m</button>
+                    <button onclick="changeInterval('1h')">1h</button>
+                    <button onclick="changeInterval('4h')">4h</button>
                     <div class="trade-legend">
                         <div class="trade-legend-item">
-                            <div class="legend-marker" style="background: #4ade80;"></div>
-                            <span>Alpha开仓</span>
+                            <div class="legend-marker" style="background: #8b5cf6; color: white;">▲</div>
+                            <span>Alpha Open</span>
                         </div>
                         <div class="trade-legend-item">
-                            <div class="legend-marker" style="background: #86efac;"></div>
-                            <span>Alpha平仓</span>
+                            <div class="legend-marker" style="background: #8b5cf6; color: white;">▼</div>
+                            <span>Alpha Close</span>
                         </div>
                         <div class="trade-legend-item">
-                            <div class="legend-marker" style="background: #60a5fa;"></div>
-                            <span>Beta开仓</span>
+                            <div class="legend-marker" style="background: #f97316; color: white;">▲</div>
+                            <span>Beta Open</span>
                         </div>
                         <div class="trade-legend-item">
-                            <div class="legend-marker" style="background: #93c5fd;"></div>
-                            <span>Beta平仓</span>
+                            <div class="legend-marker" style="background: #f97316; color: white;">▼</div>
+                            <span>Beta Close</span>
                         </div>
                     </div>
                 </div>
@@ -401,15 +445,15 @@
             <div id="klineChart"></div>
         </div>
         
-        <!-- 共识决策记录 -->
+        <!-- Consensus Decisions -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
             <div class="decisions-container">
-                <h2 style="margin-bottom: 20px;">🅰️ Alpha组 - 共识决策</h2>
+                <h2 style="margin-bottom: 20px;">🅰️ Alpha Team - Consensus</h2>
                 <div id="alpha-decisions"></div>
             </div>
             
             <div class="decisions-container">
-                <h2 style="margin-bottom: 20px;">🅱️ Beta组 - 共识决策</h2>
+                <h2 style="margin-bottom: 20px;">🅱️ Beta Team - Consensus</h2>
                 <div id="beta-decisions"></div>
             </div>
         </div>
@@ -420,6 +464,67 @@
         let klineChart = null;
         let candlestickSeries = null;
         let currentInterval = '15m';
+        
+        // Equity curve management variables
+        let lastDecisionCount = 0;  // Last decision count
+        let currentPeriodStartIndex = 0;  // Current period start index
+        
+        // Update custom legend
+        function updateEquityLegend(alphaHLRoi, alphaAsterRoi, betaHLRoi, betaAsterRoi) {
+            const legendContainer = document.getElementById('equity-legend');
+            
+            const legendItems = [
+                {
+                    label: 'Alpha-Hyperliquid',
+                    color: 'rgb(34, 197, 94)',
+                    roi: alphaHLRoi,
+                    aiLogos: ['deepseek', 'claude', 'grok'],
+                    platformLogo: 'hyperliquid'
+                },
+                {
+                    label: 'Alpha-Aster',
+                    color: 'rgb(250, 204, 21)',
+                    roi: alphaAsterRoi,
+                    aiLogos: ['deepseek', 'claude', 'grok'],
+                    platformLogo: 'aster'
+                },
+                {
+                    label: 'Beta-Hyperliquid',
+                    color: 'rgb(59, 130, 246)',
+                    roi: betaHLRoi,
+                    aiLogos: ['gpt4', 'gemini', 'qwen'],
+                    platformLogo: 'hyperliquid'
+                },
+                {
+                    label: 'Beta-Aster',
+                    color: 'rgb(239, 68, 68)',
+                    roi: betaAsterRoi,
+                    aiLogos: ['gpt4', 'gemini', 'qwen'],
+                    platformLogo: 'aster'
+                }
+            ];
+            
+            legendContainer.innerHTML = legendItems.map(item => `
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 15px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 2px solid ${item.color};">
+                    <div style="display: flex; gap: 3px;">
+                        ${item.aiLogos.map(ai => `
+                            <img src="/web/images/${ai}.jpg" 
+                                 onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                                 style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid #000;"
+                                 title="${ai}">
+                        `).join('')}
+                    </div>
+                    <div style="width: 20px; height: 4px; background: ${item.color}; border-radius: 2px;"></div>
+                    <img src="/web/images/${item.platformLogo}.jpg" 
+                         onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                         style="width: 24px; height: 24px; border-radius: 50%; border: 1px solid #000;"
+                         title="${item.platformLogo}">
+                    <span style="color: #fff; font-size: 13px; font-weight: 600;">
+                        ${item.roi >= 0 ? '+' : ''}${item.roi.toFixed(2)}%
+                    </span>
+                </div>
+            `).join('');
+        }
         
         function initKlineChart() {
             const chartContainer = document.getElementById('klineChart');
@@ -446,6 +551,10 @@
                 timeScale: {
                     timeVisible: true,
                     secondsVisible: false,
+                },
+                localization: {
+                    locale: 'en-US',
+                    dateFormat: 'yyyy-MM-dd',
                 },
             });
             
@@ -492,7 +601,8 @@
                     return;
                 }
                 
-                const response = await fetch(`/api/chart`);
+                // 使用当前选择的时间周期
+                const response = await fetch(`/api/chart?interval=${currentInterval}`);
                 const data = await response.json();
                 
                 if (data.error) {
@@ -517,23 +627,32 @@
                 candlestickSeries.setData(candlesData);
                 console.log(`✅ K线数据已更新: ${candlesData.length} 根`);
                 
-                // 添加交易标记
+                // 添加交易标记 [v2.0] - 紫色箭头(Alpha) + 橙色箭头(Beta)
+                console.log('🎨 [v2.0] 正在渲染交易标记，数量:', data.trade_markers?.length || 0);
                 if (data.trade_markers && data.trade_markers.length > 0) {
                     const markers = data.trade_markers.map(trade => {
-                        const isAlpha = trade.group === 'Alpha组';
-                        const isOpen = trade.action === 'OPEN';
+                        const isAlpha = trade.group.includes('Alpha') || trade.group === 'Alpha组';
+                        const isOpen = trade.action === 'open' || trade.action === 'OPEN';
                         
-                        // Alpha组: 绿色系, Beta组: 蓝色系
-                        // 开仓: 深色, 平仓: 浅色
-                        let color = '#4ade80'; // Alpha开仓
-                        if (isAlpha && !isOpen) color = '#86efac'; // Alpha平仓
-                        if (!isAlpha && isOpen) color = '#60a5fa'; // Beta开仓
-                        if (!isAlpha && !isOpen) color = '#93c5fd'; // Beta平仓
+                        // 颜色方案：Alpha=紫色, Beta=橙色
+                        let color, shape;
                         
-                        const shape = isOpen ? 'arrowUp' : 'arrowDown';
+                        if (isAlpha) {
+                            color = '#8b5cf6';  // 紫色箭头 - Alpha
+                        } else {
+                            color = '#f97316';  // 橙色箭头 - Beta
+                        }
                         
-                        // 构建标签文本
-                        let text = `${trade.group} ${isOpen ? '开' : '平'}${trade.side}`;
+                        // Open用向上箭头，Close用向下箭头
+                        shape = isOpen ? 'arrowUp' : 'arrowDown';
+                        
+                        console.log(`  标记: ${isAlpha ? '🟣紫' : '🟠橙'} ${shape} - ${trade.group} ${isOpen ? 'Open' : 'Close'}`);
+                        
+                        // Build label text (English)
+                        const groupName = isAlpha ? 'Alpha' : 'Beta';
+                        const actionText = isOpen ? 'Open' : 'Close';
+                        const sideText = trade.side === 'long' ? 'Long' : 'Short';
+                        let text = `${groupName} ${actionText} ${sideText}`;
                         if (!isOpen && trade.pnl !== 0) {
                             text += ` P/L: $${trade.pnl.toFixed(2)}`;
                         }
@@ -556,15 +675,19 @@
         }
         
         function changeInterval(interval) {
+            console.log('📊 切换K线周期:', interval);
             currentInterval = interval;
             
             // 更新按钮状态
             document.querySelectorAll('.kline-controls button').forEach(btn => {
                 btn.classList.remove('active');
+                if (btn.textContent === interval) {
+                    btn.classList.add('active');
+                }
             });
-            event.target.classList.add('active');
             
             // 重新加载K线数据
+            console.log('🔄 重新加载K线数据，周期:', currentInterval);
             updateKlineChart();
         }
         
@@ -576,7 +699,7 @@
                     labels: [],
                     datasets: [
                         {
-                            label: '🅰️🌊 Alpha-HL',
+                            label: 'Alpha-HL',
                             data: [],
                             borderColor: 'rgb(34, 197, 94)',  // 鲜绿色
                             backgroundColor: 'rgba(34, 197, 94, 0.1)',
@@ -584,7 +707,7 @@
                             borderWidth: 2.5
                         },
                         {
-                            label: '🅰️⭐ Alpha-AS',
+                            label: 'Alpha-AS',
                             data: [],
                             borderColor: 'rgb(250, 204, 21)',  // 金黄色
                             backgroundColor: 'rgba(250, 204, 21, 0.1)',
@@ -592,7 +715,7 @@
                             borderWidth: 2.5
                         },
                         {
-                            label: '🅱️🌊 Beta-HL',
+                            label: 'Beta-HL',
                             data: [],
                             borderColor: 'rgb(59, 130, 246)',  // 蓝色
                             backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -600,7 +723,7 @@
                             borderWidth: 2.5
                         },
                         {
-                            label: '🅱️⭐ Beta-AS',
+                            label: 'Beta-AS',
                             data: [],
                             borderColor: 'rgb(239, 68, 68)',  // 鲜红色
                             backgroundColor: 'rgba(239, 68, 68, 0.1)',
@@ -614,18 +737,24 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            labels: { color: '#fff', font: { size: 14 } }
+                            display: false  // 禁用默认图例，使用自定义HTML图例
                         },
                         tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(255, 255, 255, 0.3)',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true,
                             callbacks: {
-                                afterLabel: function(context) {
-                                    // 在tooltip中显示ROI
-                                    const datasetLabel = context.dataset.label;
-                                    const roiId = datasetLabel.includes('Alpha-HL') ? 'alpha-hl-roi' :
-                                                  datasetLabel.includes('Alpha-AS') ? 'alpha-aster-roi' :
-                                                  datasetLabel.includes('Beta-HL') ? 'beta-hl-roi' : 'beta-aster-roi';
-                                    const roiElem = document.getElementById(roiId);
-                                    return roiElem ? `ROI: ${roiElem.textContent}` : '';
+                                title: function(context) {
+                                    return `时间: ${context[0].label}`;
+                                },
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    return `${label}: $${value.toFixed(2)}`;
                                 }
                             }
                         }
@@ -643,11 +772,11 @@
                         x: {
                             ticks: { 
                                 color: '#fff',
-                                maxTicksLimit: 10,  // 最多显示10个标签
+                                maxTicksLimit: 12,  // 最多显示12个标签（约1小时数据）
                                 autoSkip: true,     // 自动跳过标签避免重叠
                                 autoSkipPadding: 10, // 标签之间的最小间距
-                                maxRotation: 45,    // 最大旋转角度
-                                minRotation: 0      // 最小旋转角度（0=水平）
+                                maxRotation: 0,     // 水平显示
+                                minRotation: 0
                             },
                             grid: { color: 'rgba(255, 255, 255, 0.1)' }
                         }
@@ -658,6 +787,9 @@
         
         async function updateData() {
             try {
+                const now = new Date().toLocaleTimeString('en-US');
+                console.log(`⏰ [${now}] 开始更新数据...`);
+                
                 const response = await fetch('/api/status');
                 const data = await response.json();
                 
@@ -717,57 +849,127 @@
                 document.getElementById('hl-total-roi').textContent = `${hlTotalRoi >= 0 ? '+' : ''}${hlTotalRoi.toFixed(2)}%`;
                 document.getElementById('as-total-roi').textContent = `${asTotalRoi >= 0 ? '+' : ''}${asTotalRoi.toFixed(2)}%`;
                 
-                // 更新权益曲线 - 添加四个平台的当前数据点
-                const currentTime = new Date().toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'});
+                // 输出数据对比信息
+                console.log('📊 数据对比 [AI组对抗 vs 曲线图例]:');
+                console.log(`  Alpha组平均ROI: ${alphaRoi.toFixed(2)}%`);
+                console.log(`  Beta组平均ROI: ${betaRoi.toFixed(2)}%`);
+                console.log('📊 数据对比 [平台对抗 vs 曲线图例]:');
+                console.log(`  Hyperliquid平均ROI: ${hlTotalRoi.toFixed(2)}%`);
+                console.log(`  Aster平均ROI: ${asTotalRoi.toFixed(2)}%`);
                 
-                // 如果图表为空或最后一个时间点不是当前时间，添加新数据点
-                if (equityChart.data.labels.length === 0 || 
-                    equityChart.data.labels[equityChart.data.labels.length - 1] !== currentTime) {
+                // 更新权益曲线 - 智能数据点管理
+                const currentTime = new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
+                
+                // 获取四个平台的余额
+                const alphaHLBalance = alphaGroup.platforms['Alpha组-Hyperliquid']?.balance || 0;
+                const alphaAsterBalance = alphaGroup.platforms['Alpha组-Aster']?.balance || 0;
+                const betaHLBalance = betaGroup.platforms['Beta组-Hyperliquid']?.balance || 0;
+                const betaAsterBalance = betaGroup.platforms['Beta组-Aster']?.balance || 0;
+                
+                // 更新图例标签以显示ROI
+                const alphaHLRoi = alphaGroup.platforms['Alpha组-Hyperliquid']?.roi || 0;
+                const alphaAsterRoi = alphaGroup.platforms['Alpha组-Aster']?.roi || 0;
+                const betaHLRoi = betaGroup.platforms['Beta组-Hyperliquid']?.roi || 0;
+                const betaAsterRoi = betaGroup.platforms['Beta组-Aster']?.roi || 0;
+                
+                // 输出曲线图例的ROI数据
+                console.log('📈 收益曲线图例ROI:');
+                console.log(`  Alpha-HL: ${alphaHLRoi.toFixed(2)}%`);
+                console.log(`  Alpha-AS: ${alphaAsterRoi.toFixed(2)}%`);
+                console.log(`  Beta-HL: ${betaHLRoi.toFixed(2)}%`);
+                console.log(`  Beta-AS: ${betaAsterRoi.toFixed(2)}%`);
+                
+                // 更新图例标签（用于tooltip）
+                equityChart.data.datasets[0].label = `Alpha-HL`;
+                equityChart.data.datasets[1].label = `Alpha-AS`;
+                equityChart.data.datasets[2].label = `Beta-HL`;
+                equityChart.data.datasets[3].label = `Beta-AS`;
+                
+                // 更新自定义HTML图例
+                updateEquityLegend(alphaHLRoi, alphaAsterRoi, betaHLRoi, betaAsterRoi);
+                
+                // 检测是否有新决策（通过决策数量变化判断）
+                const currentDecisionCount = (alphaGroup.consensus_decisions?.length || 0) + (betaGroup.consensus_decisions?.length || 0);
+                const hasNewDecision = currentDecisionCount > lastDecisionCount;
+                
+                if (hasNewDecision) {
+                    // 新决策产生：清理当前周期的临时点，保留决策点
+                    console.log(`🎯 新决策检测: ${lastDecisionCount} -> ${currentDecisionCount}`);
                     
-                    equityChart.data.labels.push(currentTime);
-                    
-                    // 获取四个平台的余额
-                    const alphaHL = alphaGroup.platforms['Alpha组-Hyperliquid']?.balance || 0;
-                    const alphaAster = alphaGroup.platforms['Alpha组-Aster']?.balance || 0;
-                    const betaHL = betaGroup.platforms['Beta组-Hyperliquid']?.balance || 0;
-                    const betaAster = betaGroup.platforms['Beta组-Aster']?.balance || 0;
-                    
-                    equityChart.data.datasets[0].data.push(alphaHL);     // Alpha-Hyperliquid
-                    equityChart.data.datasets[1].data.push(alphaAster);  // Alpha-Aster
-                    equityChart.data.datasets[2].data.push(betaHL);      // Beta-Hyperliquid
-                    equityChart.data.datasets[3].data.push(betaAster);   // Beta-Aster
-                    
-                    // 更新图例标签以显示ROI
-                    const alphaHLRoi = alphaGroup.platforms['Alpha组-Hyperliquid']?.roi || 0;
-                    const alphaAsterRoi = alphaGroup.platforms['Alpha组-Aster']?.roi || 0;
-                    const betaHLRoi = betaGroup.platforms['Beta组-Hyperliquid']?.roi || 0;
-                    const betaAsterRoi = betaGroup.platforms['Beta组-Aster']?.roi || 0;
-                    
-                    equityChart.data.datasets[0].label = `🅰️🌊 Alpha-HL (${alphaHLRoi >= 0 ? '+' : ''}${alphaHLRoi.toFixed(2)}%)`;
-                    equityChart.data.datasets[1].label = `🅰️⭐ Alpha-AS (${alphaAsterRoi >= 0 ? '+' : ''}${alphaAsterRoi.toFixed(2)}%)`;
-                    equityChart.data.datasets[2].label = `🅱️🌊 Beta-HL (${betaHLRoi >= 0 ? '+' : ''}${betaHLRoi.toFixed(2)}%)`;
-                    equityChart.data.datasets[3].label = `🅱️⭐ Beta-AS (${betaAsterRoi >= 0 ? '+' : ''}${betaAsterRoi.toFixed(2)}%)`;
-                    
-                    // 限制数据点数量，保留最近50个
-                    if (equityChart.data.labels.length > 50) {
-                        equityChart.data.labels.shift();
-                        equityChart.data.datasets.forEach(ds => ds.data.shift());
+                    // 如果当前周期有临时点，删除除最后一个之外的所有临时点
+                    const tempPointsCount = equityChart.data.labels.length - currentPeriodStartIndex;
+                    if (tempPointsCount > 1) {
+                        // 保留决策点（当前周期的最后一个点），删除其他临时点
+                        equityChart.data.labels.splice(currentPeriodStartIndex, tempPointsCount - 1);
+                        equityChart.data.datasets.forEach(ds => {
+                            ds.data.splice(currentPeriodStartIndex, tempPointsCount - 1);
+                        });
                     }
                     
-                    // 动态调整Y轴范围
-                    const allValues = equityChart.data.datasets.flatMap(ds => ds.data);
-                    if (allValues.length > 0) {
+                    // 更新决策点索引和决策计数
+                    currentPeriodStartIndex = equityChart.data.labels.length;
+                    lastDecisionCount = currentDecisionCount;
+                    
+                    // 添加新周期的第一个数据点（决策点）
+                    equityChart.data.labels.push(currentTime);
+                    equityChart.data.datasets[0].data.push(alphaHLBalance);
+                    equityChart.data.datasets[1].data.push(alphaAsterBalance);
+                    equityChart.data.datasets[2].data.push(betaHLBalance);
+                    equityChart.data.datasets[3].data.push(betaAsterBalance);
+                    
+                } else {
+                    // 同一周期内：更新或添加临时点
+                    if (equityChart.data.labels.length === 0) {
+                        // 首次加载，添加初始点
+                        console.log('📊 首次加载曲线数据');
+                        equityChart.data.labels.push(currentTime);
+                        equityChart.data.datasets[0].data.push(alphaHLBalance);
+                        equityChart.data.datasets[1].data.push(alphaAsterBalance);
+                        equityChart.data.datasets[2].data.push(betaHLBalance);
+                        equityChart.data.datasets[3].data.push(betaAsterBalance);
+                        currentPeriodStartIndex = 0;
+                    } else {
+                        // 更新当前周期的最后一个点（临时点）
+                        const lastIndex = equityChart.data.labels.length - 1;
+                        const oldValues = [
+                            equityChart.data.datasets[0].data[lastIndex],
+                            equityChart.data.datasets[1].data[lastIndex],
+                            equityChart.data.datasets[2].data[lastIndex],
+                            equityChart.data.datasets[3].data[lastIndex]
+                        ];
+                        const newValues = [alphaHLBalance, alphaAsterBalance, betaHLBalance, betaAsterBalance];
+                        
+                        console.log(`🔄 更新曲线尾部 [${currentTime}]:`, 
+                            `Alpha-HL: $${oldValues[0].toFixed(2)} → $${newValues[0].toFixed(2)}`,
+                            `Alpha-AS: $${oldValues[1].toFixed(2)} → $${newValues[1].toFixed(2)}`,
+                            `Beta-HL: $${oldValues[2].toFixed(2)} → $${newValues[2].toFixed(2)}`,
+                            `Beta-AS: $${oldValues[3].toFixed(2)} → $${newValues[3].toFixed(2)}`
+                        );
+                        
+                        equityChart.data.labels[lastIndex] = currentTime;
+                        equityChart.data.datasets[0].data[lastIndex] = alphaHLBalance;
+                        equityChart.data.datasets[1].data[lastIndex] = alphaAsterBalance;
+                        equityChart.data.datasets[2].data[lastIndex] = betaHLBalance;
+                        equityChart.data.datasets[3].data[lastIndex] = betaAsterBalance;
+                    }
+                }
+                
+                
+                // 动态调整Y轴范围 - 更紧密贴合实际值
+                const allValues = equityChart.data.datasets.flatMap(ds => ds.data.filter(v => v > 0));
+                if (allValues.length > 0) {
                     const minVal = Math.min(...allValues);
                     const maxVal = Math.max(...allValues);
                     const range = maxVal - minVal;
-                        const padding = Math.max(range * 0.2, 10);
+                    // 使用更小的padding（2%或最小2美元），让差异更明显
+                    const padding = Math.max(range * 0.02, 2);
                     
                     equityChart.options.scales.y.min = Math.floor(minVal - padding);
                     equityChart.options.scales.y.max = Math.ceil(maxVal + padding);
-                    }
-                    
-                    equityChart.update('none');
                 }
+                
+                // 使用默认动画模式更新，让变化更明显
+                equityChart.update('active');
                 
                 // 更新Alpha组决策
                 updateDecisions('alpha-decisions', alphaGroup.consensus_decisions);
@@ -775,21 +977,36 @@
                 // 更新Beta组决策
                 updateDecisions('beta-decisions', betaGroup.consensus_decisions);
                 
+                console.log('✅ 数据更新完成\n');
+                
             } catch (error) {
-                console.error('更新数据失败:', error);
+                console.error('❌ 更新数据失败:', error);
             }
+        }
+        
+        // Helper function to highlight Buy/Sell/Hold (all variants)
+        function highlightDecisions(text) {
+            if (!text) return text;
+            return text
+                // Strong variants first (to avoid partial replacement)
+                .replace(/(STRONG[_ ]?BUY|strong[_ ]?buy)/gi, '<span class="decision-strong-buy">STRONG BUY</span>')
+                .replace(/(STRONG[_ ]?SELL|strong[_ ]?sell)/gi, '<span class="decision-strong-sell">STRONG SELL</span>')
+                // Regular variants (with optional case-insensitive matching)
+                .replace(/\b(Buy|BUY|buy)(?=[\s:,.]|$)/g, '<span class="decision-buy">Buy</span>')
+                .replace(/\b(Sell|SELL|sell)(?=[\s:,.]|$)/g, '<span class="decision-sell">Sell</span>')
+                .replace(/\b(Hold|HOLD|hold)(?=[\s:,.]|$)/g, '<span class="decision-hold">Hold</span>');
         }
         
         function updateDecisions(containerId, decisions) {
             const container = document.getElementById(containerId);
             if (!decisions || decisions.length === 0) {
-                container.innerHTML = '<p style="opacity: 0.7;">等待共识决策...</p>';
+                container.innerHTML = '<p style="opacity: 0.7;">Waiting for consensus...</p>';
                 return;
             }
             
             container.innerHTML = decisions.map(decision => {
                 const date = new Date(decision.time);
-                const timeStr = date.toLocaleString('zh-CN');
+                const timeStr = date.toLocaleString('en-US');
                 
                 let aiVotesHtml = '';
                 if (decision.ai_votes && decision.ai_votes.length > 0) {
@@ -797,8 +1014,8 @@
                         decision.ai_votes.map(vote => `
                             <div class="ai-vote">
                                 <div class="ai-name">${vote.ai_name}</div>
-                                <div>${vote.decision}</div>
-                                <div style="font-size: 0.85em; opacity: 0.8;">信心: ${vote.confidence.toFixed(0)}%</div>
+                                <div>${highlightDecisions(vote.decision)}</div>
+                                <div style="font-size: 0.85em; opacity: 0.8;">Confidence: ${vote.confidence.toFixed(0)}%</div>
                             </div>
                         `).join('') +
                         '</div>';
@@ -807,16 +1024,16 @@
                 return `
                     <div class="decision-item">
                         <div class="decision-header">
-                            <span class="decision-action">${decision.decision}</span>
+                            <span class="decision-action">${highlightDecisions(decision.decision)}</span>
                             <span class="decision-time">${timeStr}</span>
                         </div>
                         <div>
-                            <strong>价格:</strong> $${decision.price.toLocaleString()}
+                            <strong>Price:</strong> $${decision.price.toLocaleString()}
                         </div>
                         ${aiVotesHtml}
                         <div class="consensus-summary">
-                            <strong>共识总结:</strong><br>
-                            ${decision.summary.replace(/\n/g, '<br>')}
+                            <strong>Consensus Summary:</strong><br>
+                            ${highlightDecisions(decision.summary.replace(/\n/g, '<br>'))}
                         </div>
                     </div>
                 `;
@@ -824,6 +1041,59 @@
         }
         
         // 等待页面完全加载后再初始化
+        // 从Redis加载历史余额数据
+        async function loadHistoricalBalanceData() {
+            try {
+                console.log('📚 正在从Redis加载所有历史数据...');
+                const response = await fetch('/api/balance_history');  // 不传limit参数，默认返回所有数据
+                const data = await response.json();
+                
+                if (data.history && data.history.length > 0) {
+                    console.log(`✅ 加载了 ${data.history.length} 条历史记录`);
+                    
+                    // 清空现有数据
+                    equityChart.data.labels = [];
+                    equityChart.data.datasets.forEach(ds => ds.data = []);
+                    
+                    // 填充历史数据
+                    data.history.forEach(record => {
+                        const time = new Date(record.timestamp).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
+                        equityChart.data.labels.push(time);
+                        
+                        // 将accounts数组转换为字典
+                        const balances = {};
+                        record.accounts.forEach(acc => {
+                            balances[acc.platform] = acc.balance;
+                        });
+                        
+                        // Alpha-Hyperliquid
+                        equityChart.data.datasets[0].data.push(balances['Alpha组-Hyperliquid'] || 0);
+                        // Alpha-Aster
+                        equityChart.data.datasets[1].data.push(balances['Alpha组-Aster'] || 0);
+                        // Beta-Hyperliquid
+                        equityChart.data.datasets[2].data.push(balances['Beta组-Hyperliquid'] || 0);
+                        // Beta-Aster
+                        equityChart.data.datasets[3].data.push(balances['Beta组-Aster'] || 0);
+                    });
+                    
+                    // 更新当前周期起始索引为最后一个数据点
+                    currentPeriodStartIndex = equityChart.data.labels.length - 1;
+                    
+                    // 更新图表
+                    equityChart.update('none'); // 'none'模式快速更新，不播放动画
+                    
+                    console.log('✅ 历史数据加载完成');
+                    return true;
+                } else {
+                    console.log('ℹ️  暂无历史数据');
+                    return false;
+                }
+            } catch (error) {
+                console.error('❌ 加载历史数据失败:', error);
+                return false;
+            }
+        }
+
         window.addEventListener('DOMContentLoaded', async function() {
             console.log('页面加载完成，开始初始化...');
             
@@ -841,7 +1111,14 @@
                 console.error('❌ 权益曲线初始化失败:', e);
             }
             
-            // 立即加载数据
+            // 先加载历史数据
+            try {
+                await loadHistoricalBalanceData();
+            } catch (e) {
+                console.error('❌ 历史数据加载失败:', e);
+            }
+            
+            // 立即加载当前数据
             try {
                 await updateData();
                 console.log('✅ 数据更新成功');

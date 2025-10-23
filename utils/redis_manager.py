@@ -96,8 +96,8 @@ class RedisManager:
             key = "balance_history"
             self.redis_client.lpush(key, json.dumps(snapshot))
             
-            # 限制列表长度（保留最近 1000 个数据点，约 83 小时的数据，5秒一个点）
-            self.redis_client.ltrim(key, 0, 999)
+            # 限制列表长度（保留最近 10000 个数据点，约 34.7 天的数据，5秒一个点）
+            self.redis_client.ltrim(key, 0, 9999)
             
             # 设置过期时间
             self.redis_client.expire(key, settings.balance_history_ttl)
@@ -107,12 +107,12 @@ class RedisManager:
         except Exception as e:
             logger.error(f"保存余额快照失败: {e}")
     
-    def get_balance_history(self, limit: int = 100) -> List[Dict]:
+    def get_balance_history(self, limit: int = -1) -> List[Dict]:
         """
         获取余额历史
         
         Args:
-            limit: 返回最近的N条记录
+            limit: 返回最近的N条记录，-1表示返回所有记录
             
         Returns:
             余额历史列表，按时间倒序（最新的在前）
@@ -123,8 +123,11 @@ class RedisManager:
         
         try:
             key = "balance_history"
-            # 获取最近的 limit 条记录
-            raw_data = self.redis_client.lrange(key, 0, limit - 1)
+            # 获取最近的 limit 条记录，-1表示获取所有
+            if limit == -1:
+                raw_data = self.redis_client.lrange(key, 0, -1)
+            else:
+                raw_data = self.redis_client.lrange(key, 0, limit - 1)
             
             history = []
             for item in raw_data:

@@ -201,9 +201,9 @@ class AIGroup:
         hold_count = len(hold_votes)
         
         vote_counts = [
-            (buy_count, TradingDecision.BUY, buy_votes, "看涨"),
-            (sell_count, TradingDecision.SELL, sell_votes, "看跌"),
-            (hold_count, TradingDecision.HOLD, hold_votes, "观望")
+            (buy_count, TradingDecision.BUY, buy_votes, "Buy"),
+            (sell_count, TradingDecision.SELL, sell_votes, "Sell"),
+            (hold_count, TradingDecision.HOLD, hold_votes, "Hold")
         ]
         vote_counts.sort(key=lambda x: x[0], reverse=True)
         
@@ -214,18 +214,18 @@ class AIGroup:
         else:
             avg_confidence = 0
         
-        vote_summary = f"看涨{buy_count}票, 看跌{sell_count}票, 观望{hold_count}票"
-        consensus_summary = f"共识结果: {direction_name} ({vote_count}/{len(ai_decisions)}票, 平均信心{avg_confidence:.1f}%)\n投票详情: {vote_summary}"
+        vote_summary = f"Buy: {buy_count}, Sell: {sell_count}, Hold: {hold_count}"
+        consensus_summary = f"Consensus: {direction_name} ({vote_count}/{len(ai_decisions)} votes, Avg Confidence {avg_confidence:.1f}%)\nVoting Details: {vote_summary}"
         
         logger.info(f"[{self.name}] 📊 {consensus_summary}")
         
         min_votes = settings.consensus_min_votes
         if vote_count >= min_votes:
-            logger.info(f"[{self.name}] ✅ 达成共识！将执行: {direction_name} ({consensus_decision})")
+            logger.info(f"[{self.name}] ✅ Consensus reached! Executing: {direction_name} ({consensus_decision})")
             return consensus_decision, avg_confidence, consensus_summary, ai_decisions
         else:
-            logger.info(f"[{self.name}] ⚠️  未达成共识（需要至少{min_votes}票），保持观望")
-            return TradingDecision.HOLD, avg_confidence, f"未达成共识（需要{min_votes}票，实际最多{vote_count}票），保持观望\n{vote_summary}", ai_decisions
+            logger.info(f"[{self.name}] ⚠️  No consensus reached (need at least {min_votes} votes), holding position")
+            return TradingDecision.HOLD, avg_confidence, f"No consensus reached (need {min_votes} votes, got {vote_count} votes max), holding\n{vote_summary}", ai_decisions
     
     async def execute_decision_on_all_platforms(
         self, 
@@ -762,8 +762,8 @@ async def get_realtime_balance():
 
 
 @app.get("/api/balance_history")
-async def get_balance_history(limit: int = 100):
-    """获取余额历史数据（从Redis）"""
+async def get_balance_history(limit: int = -1):
+    """获取余额历史数据（从Redis）- 默认返回所有历史数据"""
     try:
         history = redis_manager.get_balance_history(limit=limit)
         return {"history": history, "count": len(history)}
@@ -784,7 +784,13 @@ async def get_decisions():
 @app.get("/")
 async def root():
     """根路径"""
-    return FileResponse("web/consensus_arena.html")
+    from fastapi.responses import FileResponse
+    response = FileResponse("web/consensus_arena.html")
+    # 禁用缓存，确保每次都加载最新版本
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 
 app.mount("/web", StaticFiles(directory="web"), name="web")

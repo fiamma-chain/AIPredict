@@ -205,10 +205,11 @@ class HyperliquidClient(BaseExchangeClient):
         size: float,
         price: float,
         order_type: str = "Limit",
-        reduce_only: bool = False
+        reduce_only: bool = False,
+        max_retries: int = 3
     ) -> Dict:
         """
-        下单
+        下单（支持失败重试）
         
         Args:
             coin: 币种符号
@@ -217,77 +218,136 @@ class HyperliquidClient(BaseExchangeClient):
             price: 价格
             order_type: 订单类型 ("Limit" 或 "Market")
             reduce_only: 是否只减仓
+            max_retries: 最大重试次数（默认3次）
             
         Returns:
             订单结果
         """
-        try:
-            # 使用官方SDK下单
-            # 官方SDK参数: name, is_buy, sz, limit_px, order_type, reduce_only
-            
-            # 使用统一的精度配置处理数量
-            size_rounded, _ = precision_config.format_hyperliquid_quantity(
-                coin, size, round_down=(not reduce_only)
-            )
-            
-            # 处理价格：如果为 None（市价单），则获取当前市价
-            if price is None:
-                logger.info("📊 市价单，正在获取当前市价...")
-                orderbook = await self.get_orderbook(coin)
-                bids = orderbook.get("bids", [])
-                asks = orderbook.get("asks", [])
+        last_error = None
+        
+        for attempt in range(max_retries):
+            try:
+                if attempt > 0:
+                    logger.info(f"🔄 第 {attempt + 1} 次尝试下单...")
+                    await asyncio.sleep(0.5)  # 重试前等待0.5秒
                 
-                # 买单用卖一价，卖单用买一价（确保立即成交）
-                if is_buy:
-                    price = float(asks[0][0]) if asks else None
-                else:
-                    price = float(bids[0][0]) if bids else None
+                # 使用官方SDK下单
+                # 官方SDK参数: name, is_buy, sz, limit_px, order_type, reduce_only
                 
+                # 使用统一的精度配置处理数量
+                size_rounded, _ = precision_config.format_hyperliquid_quantity(
+                    coin, size, round_down=(not reduce_only)
+                )
+                
+                # 处理价格：如果为 None（市价单），则获取当前市价
                 if price is None:
-                    raise ValueError(f"无法获取 {coin} 的市价")
+                    logger.info("📊 市价单，正在获取当前市价...")
+                    orderbook = await self.get_orderbook(coin)
+                    bids = orderbook.get("bids", [])
+                    asks = orderbook.get("asks", [])
+                    
+                    # 买单用卖一价，卖单用买一价（确保立即成交）
+                    if is_buy:
+                        base_price = float(asks[0][0]) if asks else None
+                    else:
+                        base_price = float(bids[0][0]) if bids else None
+                    
+                    if base_price is None:
+                        raise ValueError(f"无法获取 {coin} 的市价")
+                    
+                    # 添加价格滑点保护，重试时增加滑点
+                    # 第1次: 0.1%, 第2次: 0.15%, 第3次: 0.2%
+                    slippage = 0.001 * (1 + attempt * 0.5)  # 0.1%, 0.15%, 0.2%
+                    if is_buy:
+                        # 买入时向上滑点，确保能买到
+                        price = base_price * (1 + slippage)
+                    else:
+                        # 卖出时向下滑点，确保能卖出
+                        price = base_price * (1 - slippage)
+                    
+                    logger.info(f"📊 市价单基准价格: ${base_price:,.2f}")
+                    logger.info(f"📊 添加{slippage*100:.2f}%滑点后: ${price:,.2f} ({'买入向上' if is_buy else '卖出向下'})")
                 
-                logger.info(f"📊 市价单价格: ${price:,.2f}")
-            
-            # 使用统一的精度配置处理价格
-            price_rounded, _ = precision_config.format_hyperliquid_price(coin, price)
-            
-            # 验证订单参数
-            is_valid, error_msg = precision_config.validate_hyperliquid_order(coin, size_rounded, price_rounded)
-            if not is_valid:
-                raise ValueError(f"订单参数验证失败: {error_msg}")
-            
-            logger.info(f"📊 原始数量: {size}, 处理后: {size_rounded}")
-            logger.info(f"📊 原始价格: {price}, 处理后: {price_rounded}")
-            
-            # 平仓单使用 Ioc（立即成交或取消），开仓单使用 Gtc（有效直到取消）
-            if reduce_only:
-                # 平仓单：使用 Ioc 确保立即成交
-                order_type_param = {"limit": {"tif": "Ioc"}}
-            else:
-                # 开仓单：根据 order_type 参数决定
-                if order_type == "Limit":
-                    order_type_param = {"limit": {"tif": "Gtc"}}
+                # 使用统一的精度配置处理价格
+                price_rounded, _ = precision_config.format_hyperliquid_price(coin, price)
+                
+                # 验证订单参数
+                is_valid, error_msg = precision_config.validate_hyperliquid_order(coin, size_rounded, price_rounded)
+                if not is_valid:
+                    raise ValueError(f"订单参数验证失败: {error_msg}")
+                
+                logger.info(f"📊 原始数量: {size}, 处理后: {size_rounded}")
+                logger.info(f"📊 原始价格: {price}, 处理后: {price_rounded}")
+                
+                # 平仓单使用 Ioc（立即成交或取消），开仓单使用 Gtc（有效直到取消）
+                if reduce_only:
+                    # 平仓单：使用 Ioc 确保立即成交
+                    order_type_param = {"limit": {"tif": "Ioc"}}
                 else:
-                    order_type_param = {"limit": {"tif": "Ioc"}}  # 市价单也用 Ioc
-            
-            order_result = self.exchange.order(
-                name=coin,
-                is_buy=is_buy,
-                sz=size_rounded,
-                limit_px=price_rounded,
-                order_type=order_type_param,
-                reduce_only=reduce_only
-            )
-            
-            logger.info(f"📝 官方SDK订单结果: {order_result}")
-            
-            return order_result
-            
-        except Exception as e:
-            logger.error(f"下单失败: {e}")
-            import traceback
-            logger.error(traceback.format_exc())
-            return {"status": "err", "response": str(e)}
+                    # 开仓单：根据 order_type 参数决定
+                    if order_type == "Limit":
+                        order_type_param = {"limit": {"tif": "Gtc"}}
+                    else:
+                        order_type_param = {"limit": {"tif": "Ioc"}}  # 市价单也用 Ioc
+                
+                order_result = self.exchange.order(
+                    name=coin,
+                    is_buy=is_buy,
+                    sz=size_rounded,
+                    limit_px=price_rounded,
+                    order_type=order_type_param,
+                    reduce_only=reduce_only
+                )
+                
+                logger.info(f"📝 官方SDK订单结果: {order_result}")
+                
+                # 检查订单是否成功
+                if order_result.get('status') == 'ok':
+                    response = order_result.get('response', {})
+                    data = response.get('data', {})
+                    statuses = data.get('statuses', [])
+                    
+                    # 检查是否有错误
+                    if statuses and 'error' in statuses[0]:
+                        error_msg = statuses[0]['error']
+                        last_error = error_msg
+                        logger.warning(f"⚠️  订单失败 (尝试 {attempt + 1}/{max_retries}): {error_msg}")
+                        
+                        # 如果不是最后一次尝试，继续重试
+                        if attempt < max_retries - 1:
+                            continue
+                        else:
+                            logger.error(f"❌ 所有重试均失败，最后错误: {error_msg}")
+                            return order_result
+                    else:
+                        # 成功，直接返回
+                        logger.info(f"✅ 订单成功 (尝试 {attempt + 1}/{max_retries})")
+                        return order_result
+                else:
+                    # 订单被拒绝
+                    last_error = order_result.get('response', 'Unknown error')
+                    logger.warning(f"⚠️  订单被拒绝 (尝试 {attempt + 1}/{max_retries}): {last_error}")
+                    
+                    if attempt < max_retries - 1:
+                        continue
+                    else:
+                        return order_result
+                
+            except Exception as e:
+                last_error = str(e)
+                logger.warning(f"⚠️  下单异常 (尝试 {attempt + 1}/{max_retries}): {e}")
+                
+                if attempt < max_retries - 1:
+                    continue
+                else:
+                    logger.error(f"❌ 所有重试均失败")
+                    import traceback
+                    logger.error(traceback.format_exc())
+                    return {"status": "err", "response": str(e)}
+        
+        # 如果所有重试都失败
+        logger.error(f"❌ 订单最终失败，已尝试 {max_retries} 次")
+        return {"status": "err", "response": f"All {max_retries} attempts failed. Last error: {last_error}"}
     
     async def cancel_order(self, coin: str, order_id) -> Dict:
         """

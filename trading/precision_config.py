@@ -18,7 +18,7 @@ class PrecisionConfig:
             "quantity_step": "0.001", # 数量步长
             "price_tick": "0.1",      # 价格步长
             "min_quantity": "0.001",  # 最小数量
-            "min_notional": "5"       # 最小名义价值（USDT）
+            "min_notional": "50"      # 最小名义价值（USDT）- 与AI_MIN_POSITION_SIZE一致
         },
         "ETH": {
             "quantity_precision": 3,
@@ -26,7 +26,7 @@ class PrecisionConfig:
             "quantity_step": "0.001",
             "price_tick": "0.01",
             "min_quantity": "0.001",
-            "min_notional": "5"
+            "min_notional": "50"      # 最小名义价值（USDT）- 与AI_MIN_POSITION_SIZE一致
         }
     }
     
@@ -38,7 +38,7 @@ class PrecisionConfig:
             "quantity_step": "0.00001",
             "price_tick": "1",
             "min_quantity": "0.00001",
-            "min_notional": "10"
+            "min_notional": "50"      # 最小名义价值（USD）- 与AI_MIN_POSITION_SIZE一致
         },
         "ETH": {
             "quantity_precision": 4,
@@ -46,7 +46,7 @@ class PrecisionConfig:
             "quantity_step": "0.0001",
             "price_tick": "1",
             "min_quantity": "0.0001",
-            "min_notional": "10"
+            "min_notional": "50"      # 最小名义价值（USD）- 与AI_MIN_POSITION_SIZE一致
         }
     }
     

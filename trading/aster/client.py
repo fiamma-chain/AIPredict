@@ -213,7 +213,8 @@ class AsterClient(BaseExchangeClient):
             # 获取账户信息 (V3)
             result = await self._request("GET", "/fapi/v3/account", signed=True)
             
-            # 获取余额（支持 USDT 和 USDC）
+            # 获取余额（统计 USDC + USDT，使用marginBalance包含未实现盈亏）
+            # Aster使用USDT作为合约保证金，需要同时统计USDC和USDT
             total_wallet_balance = 0.0
             total_unrealized_profit = 0.0
             total_margin_balance = 0.0
@@ -222,18 +223,28 @@ class AsterClient(BaseExchangeClient):
             if 'assets' in result:
                 for asset in result['assets']:
                     asset_type = asset.get('asset', '')
-                    if asset_type in ['USDT', 'USDC']:
+                    if asset_type in ['USDC', 'USDT']:  # 统计USDC和USDT余额
                         wallet_balance = float(asset.get('walletBalance', 0))
+                        margin_balance = float(asset.get('marginBalance', 0))  # marginBalance = walletBalance + unrealizedProfit
+                        unrealized_profit = float(asset.get('unrealizedProfit', 0))
+                        available_balance = float(asset.get('availableBalance', 0))
+                        
+                        # 使用marginBalance作为实际余额（包含未实现盈亏）
                         total_wallet_balance += wallet_balance
-                        total_unrealized_profit += float(asset.get('unrealizedProfit', 0))
-                        total_margin_balance += float(asset.get('marginBalance', 0))
-                        total_available_balance += float(asset.get('availableBalance', 0))
-                        logger.info(f"[Aster] 检测到 {asset_type} 余额: ${wallet_balance:,.2f}")
+                        total_margin_balance += margin_balance
+                        total_unrealized_profit += unrealized_profit
+                        total_available_balance += available_balance
+                        
+                        logger.info(f"[Aster] {asset_type} - 钱包:{wallet_balance:.6f} 保证金:{margin_balance:.6f} 未实现盈亏:{unrealized_profit:.6f}")
+            
+            # 输出总余额（USDC + USDT）
+            logger.info(f"[Aster] 📊 合约账户总余额: ${total_margin_balance:.6f} (USDC+USDT)")
             
             # 标准化返回格式，兼容 Hyperliquid 格式，同时包含 Aster 详细信息
+            # 使用marginBalance（包含未实现盈亏）作为账户价值
             return {
                 "marginSummary": {
-                    "accountValue": total_wallet_balance
+                    "accountValue": total_margin_balance  # 使用marginBalance而不是walletBalance
                 },
                 "assetPositions": result.get('positions', []),
                 "withdrawable": total_available_balance,  # 兼容 Hyperliquid 格式
