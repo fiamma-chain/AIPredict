@@ -31,7 +31,6 @@ class AutoTrader:
         self.max_leverage = settings.ai_max_leverage  # 最大杠杆（从配置读取，默认5x）
         self.stop_loss_pct = 0.05  # 止损比例 5%（给AI更多空间）
         self.take_profit_pct = 0.10  # 止盈比例 10%（追求更大收益）
-        self.max_balance_usage_pct = 0.30  # 最大使用余额的30%用作保证金
         
         # 持仓管理
         self.positions: Dict[str, Dict] = {}  # {coin: position_info}
@@ -200,17 +199,18 @@ class AutoTrader:
             # 信心度越高，使用的保证金越多
             margin_by_confidence = self.min_margin + ((confidence - 50) / 50.0) * (self.max_margin - self.min_margin)
             
-            # 限制在合理范围内
-            margin = min(
-                margin_by_confidence,
-                self.max_margin,
-                balance * self.max_balance_usage_pct  # 最多使用30%的余额作为保证金
-            )
+            # 限制在配置的最大保证金范围内
+            margin = min(margin_by_confidence, self.max_margin)
             
             # 确保满足最小保证金要求
             if margin < self.min_margin:
                 margin = self.min_margin
                 logger.info(f"   ⚠️  保证金已调整至最小值: ${margin:.2f}")
+            
+            # 检查余额是否充足
+            if margin > balance:
+                logger.warning(f"⚠️  保证金${margin:.2f}超过账户余额${balance:.2f}，无法开仓")
+                return None
             
             # 💰 计算仓位价值 = 保证金 × 杠杆倍数
             position_value = margin * leverage
@@ -242,14 +242,23 @@ class AutoTrader:
             # 这里使用略微偏离市场价的限价单来模拟市价单
             order_price = current_price * 1.001 if is_buy else current_price * 0.999
             
-            order_result = await self.client.place_order(
-                coin=coin,
-                is_buy=is_buy,
-                size=size,
-                price=order_price,
-                order_type="Limit",
-                reduce_only=False
-            )
+            # 准备下单参数（传入AI计算的杠杆）
+            order_params = {
+                "coin": coin,
+                "is_buy": is_buy,
+                "size": size,
+                "price": order_price,
+                "order_type": "Limit",
+                "reduce_only": False
+            }
+            
+            # 如果是Hyperliquid客户端，传入杠杆参数
+            if hasattr(self.client, 'update_leverage'):
+                leverage_int = max(1, min(int(round(leverage)), 50))  # 限制在1-50之间
+                order_params["leverage"] = leverage_int
+                logger.info(f"   🎯 设置Hyperliquid杠杆: {leverage_int}x")
+            
+            order_result = await self.client.place_order(**order_params)
             
             # 检查订单是否成功（适配官方SDK返回格式）
             if order_result.get('status') == 'err':

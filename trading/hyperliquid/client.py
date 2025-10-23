@@ -198,6 +198,27 @@ class HyperliquidClient(BaseExchangeClient):
             logger.warning(f"获取最近成交失败: {e}, 返回空列表")
             return []
     
+    def update_leverage(self, coin: str, leverage: int, is_cross: bool = True) -> Dict:
+        """
+        更新杠杆倍数
+        
+        Args:
+            coin: 币种
+            leverage: 杠杆倍数 (1-50)
+            is_cross: 是否全仓模式 (True=全仓, False=逐仓)
+            
+        Returns:
+            更新结果
+        """
+        try:
+            # 使用官方SDK的 update_leverage 方法
+            result = self.exchange.update_leverage(leverage, coin, is_cross)
+            logger.info(f"✅ 杠杆已更新: {coin} -> {leverage}x ({'全仓' if is_cross else '逐仓'})")
+            return result
+        except Exception as e:
+            logger.error(f"❌ 更新杠杆失败: {e}")
+            raise
+    
     async def place_order(
         self,
         coin: str,
@@ -206,10 +227,11 @@ class HyperliquidClient(BaseExchangeClient):
         price: float,
         order_type: str = "Limit",
         reduce_only: bool = False,
-        max_retries: int = 3
+        max_retries: int = 3,
+        leverage: int = None
     ) -> Dict:
         """
-        下单（支持失败重试）
+        下单（支持失败重试和杠杆设置）
         
         Args:
             coin: 币种符号
@@ -219,10 +241,18 @@ class HyperliquidClient(BaseExchangeClient):
             order_type: 订单类型 ("Limit" 或 "Market")
             reduce_only: 是否只减仓
             max_retries: 最大重试次数（默认3次）
+            leverage: 杠杆倍数（1-50，None表示使用当前设置）
             
         Returns:
             订单结果
         """
+        # 如果指定了杠杆，先设置杠杆
+        if leverage is not None and not reduce_only:
+            try:
+                self.update_leverage(coin, leverage, is_cross=True)
+            except Exception as e:
+                logger.warning(f"⚠️ 设置杠杆失败，使用当前杠杆: {e}")
+        
         last_error = None
         
         for attempt in range(max_retries):
