@@ -127,7 +127,7 @@ python3 examples/strategy_examples.py
   "strategy_type": "trend_following",
   "timeframe": "1h",
   
-  "applicable_coins": ["BTC", "ETH"],
+  "applicable_coins": ["BTC"],
   "applicable_platforms": ["hyperliquid", "aster"],
   
   "min_confidence": 60.0,

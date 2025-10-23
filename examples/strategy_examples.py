@@ -52,7 +52,7 @@ def example_2_create_custom_strategy():
         author="交易员小明",
         strategy_type=StrategyType.TREND_FOLLOWING,
         timeframe=TimeFrame.H1,
-        applicable_coins=["BTC", "ETH"],
+        applicable_coins=["BTC"],
         applicable_platforms=["hyperliquid", "aster"],
         min_confidence=65.0,
         
@@ -360,7 +360,7 @@ def example_7_strategy_validation():
         return
     
     # 验证币种
-    coins_to_test = ["BTC", "ETH", "SOL"]
+    coins_to_test = ["BTC"]
     print("\n验证适用币种:")
     for coin in coins_to_test:
         is_valid = strategy.validate_for_coin(coin)
