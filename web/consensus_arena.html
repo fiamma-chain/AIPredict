@@ -424,20 +424,20 @@
                     <button onclick="changeInterval('4h')">4h</button>
                     <div class="trade-legend">
                         <div class="trade-legend-item">
-                            <div class="legend-marker" style="background: #8b5cf6; color: white;">▲</div>
-                            <span>Alpha Open</span>
+                                <div class="legend-marker" style="background: #8b5cf6; color: white;">▲</div>
+                                <span>🔷⭐ Alpha Open</span>
                         </div>
                         <div class="trade-legend-item">
-                            <div class="legend-marker" style="background: #8b5cf6; color: white;">▼</div>
-                            <span>Alpha Close</span>
+                                <div class="legend-marker" style="background: #8b5cf6; color: white;">▼</div>
+                                <span>🔷⭐ Alpha Close</span>
                         </div>
                         <div class="trade-legend-item">
-                            <div class="legend-marker" style="background: #f97316; color: white;">▲</div>
-                            <span>Beta Open</span>
+                                <div class="legend-marker" style="background: #f97316; color: white;">▲</div>
+                                <span>🔷⭐ Beta Open</span>
                         </div>
                         <div class="trade-legend-item">
-                            <div class="legend-marker" style="background: #f97316; color: white;">▼</div>
-                            <span>Beta Close</span>
+                                <div class="legend-marker" style="background: #f97316; color: white;">▼</div>
+                                <span>🔷⭐ Beta Close</span>
                         </div>
                     </div>
                 </div>
@@ -531,11 +531,11 @@
             
             // 检查 LightweightCharts 是否加载
             if (typeof LightweightCharts === 'undefined') {
-                console.error('❌ LightweightCharts 未加载');
+                console.error('❌ LightweightCharts not loaded');
                 return;
             }
             
-            console.log('LightweightCharts 版本:', LightweightCharts);
+            console.log('LightweightCharts version:', LightweightCharts);
             
             klineChart = LightweightCharts.createChart(chartContainer, {
                 width: chartContainer.clientWidth,
@@ -558,8 +558,8 @@
                 },
             });
             
-            console.log('klineChart 创建成功:', klineChart);
-            console.log('可用方法:', Object.keys(klineChart));
+            console.log('klineChart created:', klineChart);
+            console.log('Available methods:', Object.keys(klineChart));
             
             // 使用正确的API方法名
             if (typeof klineChart.addCandlestickSeries === 'function') {
@@ -573,7 +573,7 @@
                 });
             } else if (typeof klineChart.addAreaSeries === 'function') {
                 // 如果addCandlestickSeries不存在，尝试其他方法
-                console.log('使用备用方案: addAreaSeries');
+                console.log('Using fallback: addAreaSeries');
                 candlestickSeries = klineChart.addAreaSeries({
                     topColor: 'rgba(74, 222, 128, 0.4)',
                     bottomColor: 'rgba(74, 222, 128, 0)',
@@ -581,11 +581,11 @@
                     lineWidth: 2,
                 });
             } else {
-                console.error('❌ 无可用的图表类型');
+                console.error('❌ No available chart type');
                 return;
             }
             
-            console.log('candlestickSeries 创建成功');
+            console.log('candlestickSeries created successfully');
             
             // 响应式调整
             window.addEventListener('resize', () => {
@@ -597,7 +597,7 @@
             try {
                 // 检查candlestickSeries是否已初始化
                 if (!candlestickSeries) {
-                    console.error('❌ candlestickSeries 未初始化');
+                    console.error('❌ candlestickSeries not initialized');
                     return;
                 }
                 
@@ -606,12 +606,12 @@
                 const data = await response.json();
                 
                 if (data.error) {
-                    console.error('获取K线数据失败:', data.error);
+                    console.error('Failed to fetch K-line data:', data.error);
                     return;
                 }
                 
                 if (!data.candles || data.candles.length === 0) {
-                    console.warn('⚠️ K线数据为空');
+                    console.warn('⚠️ K-line data is empty');
                     return;
                 }
                 
@@ -625,34 +625,39 @@
                 }));
                 
                 candlestickSeries.setData(candlesData);
-                console.log(`✅ K线数据已更新: ${candlesData.length} 根`);
+                console.log(`✅ K-line data updated: ${candlesData.length} candles`);
                 
-                // 添加交易标记 [v2.0] - 紫色箭头(Alpha) + 橙色箭头(Beta)
-                console.log('🎨 [v2.0] 正在渲染交易标记，数量:', data.trade_markers?.length || 0);
+                // Add trade markers [v2.0] - Purple arrows(Alpha) + Orange arrows(Beta)
+                console.log('🎨 [v2.0] Rendering trade markers, count:', data.trade_markers?.length || 0);
                 if (data.trade_markers && data.trade_markers.length > 0) {
                     const markers = data.trade_markers.map(trade => {
+                        console.log('🔍 [DEBUG] trade.group =', trade.group, 'trade.platform =', trade.platform, 'trade.action =', trade.action, 'trade.side =', trade.side);
                         const isAlpha = trade.group.includes('Alpha') || trade.group === 'Alpha组';
                         const isOpen = trade.action === 'open' || trade.action === 'OPEN';
                         
-                        // 颜色方案：Alpha=紫色, Beta=橙色
+                        // Color scheme: Alpha=Purple, Beta=Orange
                         let color, shape;
                         
                         if (isAlpha) {
-                            color = '#8b5cf6';  // 紫色箭头 - Alpha
+                            color = '#8b5cf6';  // Purple arrow - Alpha
                         } else {
-                            color = '#f97316';  // 橙色箭头 - Beta
+                            color = '#f97316';  // Orange arrow - Beta
                         }
                         
-                        // Open用向上箭头，Close用向下箭头
+                        // Open uses up arrow, Close uses down arrow
                         shape = isOpen ? 'arrowUp' : 'arrowDown';
                         
-                        console.log(`  标记: ${isAlpha ? '🟣紫' : '🟠橙'} ${shape} - ${trade.group} ${isOpen ? 'Open' : 'Close'}`);
+                        console.log(`  Marker: ${isAlpha ? '🟣Purple' : '🟠Orange'} ${shape} - ${trade.group} ${isOpen ? 'Open' : 'Close'}`);
                         
-                        // Build label text (English)
+                        // Build label text with platform logo emoji
                         const groupName = isAlpha ? 'Alpha' : 'Beta';
                         const actionText = isOpen ? 'Open' : 'Close';
                         const sideText = trade.side === 'long' ? 'Long' : 'Short';
-                        let text = `${groupName} ${actionText} ${sideText}`;
+                        // Platform logo: Hyperliquid -> 🔷, Aster -> ⭐
+                        const platformLogo = trade.platform === 'Hyperliquid' ? '🔷' : 
+                                            trade.platform === 'Aster' ? '⭐' : 
+                                            trade.platform;
+                        let text = `${platformLogo} ${groupName} ${actionText} ${sideText}`;
                         if (!isOpen && trade.pnl !== 0) {
                             text += ` P/L: $${trade.pnl.toFixed(2)}`;
                         }
@@ -670,12 +675,12 @@
                 }
                 
             } catch (error) {
-                console.error('更新K线图失败:', error);
+                console.error('Failed to update K-line chart:', error);
             }
         }
         
         function changeInterval(interval) {
-            console.log('📊 切换K线周期:', interval);
+            console.log('📊 Switch K-line interval:', interval);
             currentInterval = interval;
             
             // 更新按钮状态
@@ -687,7 +692,7 @@
             });
             
             // 重新加载K线数据
-            console.log('🔄 重新加载K线数据，周期:', currentInterval);
+            console.log('🔄 Reload K-line data, interval:', currentInterval);
             updateKlineChart();
         }
         
@@ -850,12 +855,12 @@
                 document.getElementById('as-total-roi').textContent = `${asTotalRoi >= 0 ? '+' : ''}${asTotalRoi.toFixed(2)}%`;
                 
                 // 输出数据对比信息
-                console.log('📊 数据对比 [AI组对抗 vs 曲线图例]:');
-                console.log(`  Alpha组平均ROI: ${alphaRoi.toFixed(2)}%`);
-                console.log(`  Beta组平均ROI: ${betaRoi.toFixed(2)}%`);
-                console.log('📊 数据对比 [平台对抗 vs 曲线图例]:');
-                console.log(`  Hyperliquid平均ROI: ${hlTotalRoi.toFixed(2)}%`);
-                console.log(`  Aster平均ROI: ${asTotalRoi.toFixed(2)}%`);
+                console.log('📊 Data comparison [AI Groups vs Chart Legend]:');
+                console.log(`  Alpha avg ROI: ${alphaRoi.toFixed(2)}%`);
+                console.log(`  Beta avg ROI: ${betaRoi.toFixed(2)}%`);
+                console.log('📊 Data comparison [Platforms vs Chart Legend]:');
+                console.log(`  Hyperliquid avg ROI: ${hlTotalRoi.toFixed(2)}%`);
+                console.log(`  Aster avg ROI: ${asTotalRoi.toFixed(2)}%`);
                 
                 // 更新权益曲线 - 智能数据点管理
                 const currentTime = new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
@@ -873,7 +878,7 @@
                 const betaAsterRoi = betaGroup.platforms['Beta组-Aster']?.roi || 0;
                 
                 // 输出曲线图例的ROI数据
-                console.log('📈 收益曲线图例ROI:');
+                console.log('📈 Equity Curve Legend ROI:');
                 console.log(`  Alpha-HL: ${alphaHLRoi.toFixed(2)}%`);
                 console.log(`  Alpha-AS: ${alphaAsterRoi.toFixed(2)}%`);
                 console.log(`  Beta-HL: ${betaHLRoi.toFixed(2)}%`);
@@ -894,7 +899,7 @@
                 
                 if (hasNewDecision) {
                     // 新决策产生：清理当前周期的临时点，保留决策点
-                    console.log(`🎯 新决策检测: ${lastDecisionCount} -> ${currentDecisionCount}`);
+                    console.log(`🎯 New decision detected: ${lastDecisionCount} -> ${currentDecisionCount}`);
                     
                     // 如果当前周期有临时点，删除除最后一个之外的所有临时点
                     const tempPointsCount = equityChart.data.labels.length - currentPeriodStartIndex;
@@ -921,7 +926,7 @@
                     // 同一周期内：更新或添加临时点
                     if (equityChart.data.labels.length === 0) {
                         // 首次加载，添加初始点
-                        console.log('📊 首次加载曲线数据');
+                        console.log('📊 First time loading curve data');
                         equityChart.data.labels.push(currentTime);
                         equityChart.data.datasets[0].data.push(alphaHLBalance);
                         equityChart.data.datasets[1].data.push(alphaAsterBalance);
@@ -939,7 +944,7 @@
                         ];
                         const newValues = [alphaHLBalance, alphaAsterBalance, betaHLBalance, betaAsterBalance];
                         
-                        console.log(`🔄 更新曲线尾部 [${currentTime}]:`, 
+                        console.log(`🔄 Update curve tail [${currentTime}]:`, 
                             `Alpha-HL: $${oldValues[0].toFixed(2)} → $${newValues[0].toFixed(2)}`,
                             `Alpha-AS: $${oldValues[1].toFixed(2)} → $${newValues[1].toFixed(2)}`,
                             `Beta-HL: $${oldValues[2].toFixed(2)} → $${newValues[2].toFixed(2)}`,
@@ -977,10 +982,10 @@
                 // 更新Beta组决策
                 updateDecisions('beta-decisions', betaGroup.consensus_decisions);
                 
-                console.log('✅ 数据更新完成\n');
+                console.log('✅ Data update completed\n');
                 
             } catch (error) {
-                console.error('❌ 更新数据失败:', error);
+                console.error('❌ Failed to update data:', error);
             }
         }
         
@@ -1044,12 +1049,12 @@
         // 从Redis加载历史余额数据
         async function loadHistoricalBalanceData() {
             try {
-                console.log('📚 正在从Redis加载所有历史数据...');
+                console.log('📚 Loading all historical data from Redis...');
                 const response = await fetch('/api/balance_history');  // 不传limit参数，默认返回所有数据
                 const data = await response.json();
                 
                 if (data.history && data.history.length > 0) {
-                    console.log(`✅ 加载了 ${data.history.length} 条历史记录`);
+                    console.log(`✅ Loaded ${data.history.length} historical records`);
                     
                     // 清空现有数据
                     equityChart.data.labels = [];
@@ -1082,62 +1087,62 @@
                     // 更新图表
                     equityChart.update('none'); // 'none'模式快速更新，不播放动画
                     
-                    console.log('✅ 历史数据加载完成');
+                    console.log('✅ Historical data loaded successfully');
                     return true;
                 } else {
-                    console.log('ℹ️  暂无历史数据');
+                    console.log('ℹ️  No historical data available');
                     return false;
                 }
             } catch (error) {
-                console.error('❌ 加载历史数据失败:', error);
+                console.error('❌ Failed to load historical data:', error);
                 return false;
             }
         }
 
         window.addEventListener('DOMContentLoaded', async function() {
-            console.log('页面加载完成，开始初始化...');
+            console.log('Page loaded, starting initialization...');
             
             try {
                 initKlineChart();
-                console.log('✅ K线图初始化成功');
+                console.log('✅ K-line chart initialized');
             } catch (e) {
-                console.error('❌ K线图初始化失败:', e);
+                console.error('❌ Failed to initialize K-line chart:', e);
             }
             
             try {
                 initChart();
-                console.log('✅ 权益曲线初始化成功');
+                console.log('✅ Equity curve initialized');
             } catch (e) {
-                console.error('❌ 权益曲线初始化失败:', e);
+                console.error('❌ Failed to initialize equity curve:', e);
             }
             
             // 先加载历史数据
             try {
                 await loadHistoricalBalanceData();
             } catch (e) {
-                console.error('❌ 历史数据加载失败:', e);
+                console.error('❌ Failed to load historical data:', e);
             }
             
             // 立即加载当前数据
             try {
                 await updateData();
-                console.log('✅ 数据更新成功');
+                console.log('✅ Data updated successfully');
             } catch (e) {
-                console.error('❌ 数据更新失败:', e);
+                console.error('❌ Failed to update data:', e);
             }
             
             try {
                 await updateKlineChart();
-                console.log('✅ K线数据加载成功');
+                console.log('✅ K-line data loaded');
             } catch (e) {
-                console.error('❌ K线数据加载失败:', e);
+                console.error('❌ Failed to load K-line data:', e);
             }
             
             // 设置定时刷新
             setInterval(updateData, 5000);        // 每5秒更新数据
             setInterval(updateKlineChart, 30000); // K线每30秒更新一次
             
-            console.log('✅ 所有初始化完成');
+            console.log('✅ All initialization completed');
         });
     </script>
 </body>

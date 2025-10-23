@@ -252,11 +252,15 @@ class AutoTrader:
                 "reduce_only": False
             }
             
-            # 如果是Hyperliquid客户端，传入杠杆参数
+            # 如果客户端支持杠杆设置，传入杠杆参数
             if hasattr(self.client, 'update_leverage'):
-                leverage_int = max(1, min(int(round(leverage)), 50))  # 限制在1-50之间
+                # Hyperliquid: 1-50x, Aster: 1-125x
+                # 使用更宽松的上限以兼容不同平台
+                max_platform_leverage = 125
+                leverage_int = max(1, min(int(round(leverage)), max_platform_leverage))
                 order_params["leverage"] = leverage_int
-                logger.info(f"   🎯 设置Hyperliquid杠杆: {leverage_int}x")
+                platform_name = getattr(self.client, 'platform_name', 'Platform')
+                logger.info(f"   🎯 设置{platform_name}杠杆: {leverage_int}x")
             
             order_result = await self.client.place_order(**order_params)
             
