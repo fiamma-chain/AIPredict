@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     
     # API 配置
     api_host: str = "0.0.0.0"
-    api_port: int = 8000
+    api_port: int = 88000
     
     # Redis 配置
     redis_host: str = "localhost"
