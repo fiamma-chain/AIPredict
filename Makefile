@@ -69,7 +69,7 @@ run: ## 运行AI交易系统（后台模式）
 	@echo "$(GREEN)  🚀 启动 AI Trading Arena$(NC)"
 	@echo "$(BLUE)═══════════════════════════════════════════════════════════$(NC)"
 	@echo ""
-	@if pgrep -f "consensus_arena_multiplatform.py" > /dev/null; then \
+	@if ps aux | grep -v grep | grep -v make | grep "[p]ython.*consensus_arena_multiplatform.py" > /dev/null; then \
 		echo "$(YELLOW)⚠️  服务已在运行！$(NC)"; \
 		echo "$(YELLOW)   查看日志: make logs$(NC)"; \
 		echo "$(YELLOW)   停止服务: make stop$(NC)"; \
@@ -85,7 +85,7 @@ run: ## 运行AI交易系统（后台模式）
 	cd $(PROJECT_DIR) && nohup $(PYTHON) consensus_arena_multiplatform.py >> $$LOG_FILE 2>&1 & \
 	echo $$! > logs/server.pid; \
 	sleep 2; \
-	if pgrep -f "consensus_arena_multiplatform.py" > /dev/null; then \
+	if ps aux | grep -v grep | grep -v make | grep "[p]ython.*consensus_arena_multiplatform.py" > /dev/null; then \
 		echo "$(GREEN)✓ 服务启动成功！$(NC)"; \
 	else \
 		echo "$(RED)❌ 服务启动失败，请查看日志$(NC)"; \
@@ -128,8 +128,8 @@ status: ## 显示系统状态
 	@echo "$(BLUE)═══════════════════════════════════════════════════════════$(NC)"
 	@echo ""
 	@echo "$(GREEN)服务状态:$(NC)"
-	@if pgrep -f "consensus_arena_multiplatform.py" > /dev/null; then \
-		PID=$$(pgrep -f "consensus_arena_multiplatform.py"); \
+	@if ps aux | grep -v grep | grep -v make | grep "[p]ython.*consensus_arena_multiplatform.py" > /dev/null; then \
+		PID=$$(ps aux | grep -v grep | grep -v make | grep "[p]ython.*consensus_arena_multiplatform.py" | awk '{print $$2}' | head -1); \
 		echo "  $(GREEN)✓ 运行中 (PID: $$PID)$(NC)"; \
 		if [ -f "logs/server.pid" ]; then \
 			SAVED_PID=$$(cat logs/server.pid); \
@@ -170,10 +170,10 @@ status: ## 显示系统状态
 
 ps: ## 显示服务进程信息
 	@echo "$(BLUE)🔍 进程信息:$(NC)"
-	@if pgrep -f "consensus_arena_multiplatform.py" > /dev/null; then \
+	@if ps aux | grep -v grep | grep -v make | grep "[p]ython.*consensus_arena_multiplatform.py" > /dev/null; then \
 		echo "$(GREEN)✓ 服务运行中$(NC)"; \
 		echo ""; \
-		ps aux | grep "[c]onsensus_arena_multiplatform.py" | awk '{printf "  PID: %s\n  CPU: %s%%\n  MEM: %s%%\n  启动时间: %s %s\n  命令: %s\n", $$2, $$3, $$4, $$9, $$10, $$11}'; \
+		ps aux | grep -v grep | grep -v make | grep "[p]ython.*consensus_arena_multiplatform.py" | awk '{printf "  PID: %s\n  CPU: %s%%\n  MEM: %s%%\n  启动时间: %s %s\n  命令: %s\n", $$2, $$3, $$4, $$9, $$10, $$11}'; \
 	else \
 		echo "$(RED)❌ 服务未运行$(NC)"; \
 	fi
@@ -203,12 +203,20 @@ stop: ## 停止所有服务
 		fi; \
 		rm -f logs/server.pid; \
 	else \
-		pkill -f "consensus_arena_multiplatform.py" 2>/dev/null && \
-			echo "$(GREEN)✓ 服务已停止$(NC)" || \
+		PID=$$(ps aux | grep -v grep | grep -v make | grep "[p]ython.*consensus_arena_multiplatform.py" | awk '{print $$2}' | head -1); \
+		if [ -n "$$PID" ]; then \
+			kill $$PID 2>/dev/null && \
+				echo "$(GREEN)✓ 服务已停止 (PID: $$PID)$(NC)" || \
+				echo "$(RED)❌ 停止失败$(NC)"; \
+		else \
 			echo "$(YELLOW)⚠️  服务未运行$(NC)"; \
+		fi; \
 	fi
 
-restart: stop run ## 重启服务
+restart: ## 重启服务
+	@$(MAKE) stop || true
+	@sleep 1
+	@$(MAKE) run
 
 logs: ## 实时查看日志
 	@echo "$(BLUE)📜 实时查看日志...$(NC)"
