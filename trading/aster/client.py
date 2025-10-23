@@ -308,6 +308,51 @@ class AsterClient(BaseExchangeClient):
             logger.warning(f"[Aster] 获取最近成交失败: {e}")
             return []
     
+    def update_leverage(self, coin: str, leverage: int) -> Dict:
+        """
+        更新杠杆倍数 (同步方法)
+        Args:
+            coin: 币种
+            leverage: 杠杆倍数 (1-125)
+        Returns:
+            更新结果
+        """
+        import asyncio
+        try:
+            # 创建新的event loop来运行异步方法
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            result = loop.run_until_complete(self.update_leverage_async(coin, leverage))
+            loop.close()
+            return result
+        except Exception as e:
+            logger.error(f"❌ [Aster] 更新杠杆失败: {e}")
+            raise
+
+    async def update_leverage_async(self, coin: str, leverage: int) -> Dict:
+        """
+        更新杠杆倍数 (异步方法)
+        Args:
+            coin: 币种
+            leverage: 杠杆倍数 (1-125)
+        Returns:
+            更新结果
+        """
+        try:
+            symbol = f"{coin}USDT" if not coin.endswith('USDT') else coin
+            
+            params = {
+                "symbol": symbol,
+                "leverage": leverage
+            }
+            
+            result = await self._request("POST", "/fapi/v1/leverage", params=params, signed=True)
+            logger.info(f"✅ [Aster] 杠杆已更新: {coin} -> {leverage}x")
+            return result
+        except Exception as e:
+            logger.error(f"❌ [Aster] 更新杠杆失败: {e}")
+            raise
+
     async def place_order(
         self,
         coin: str,
@@ -315,10 +360,28 @@ class AsterClient(BaseExchangeClient):
         size: float,
         price: float,
         order_type: str = "Limit",
-        reduce_only: bool = False
+        reduce_only: bool = False,
+        leverage: int = None
     ) -> Dict:
-        """下单"""
+        """
+        下单（支持杠杆设置）
+        Args:
+            coin: 币种
+            is_buy: 是否买入
+            size: 数量
+            price: 价格
+            order_type: 订单类型
+            reduce_only: 是否只减仓
+            leverage: 杠杆倍数（可选，如果提供则在下单前设置杠杆）
+        """
         try:
+            # 如果指定了杠杆，先设置杠杆
+            if leverage is not None and not reduce_only:
+                try:
+                    await self.update_leverage_async(coin, leverage)
+                except Exception as e:
+                    logger.warning(f"⚠️ [Aster] 设置杠杆失败，使用当前杠杆: {e}")
+            
             # 转换币种格式
             symbol = f"{coin}USDT" if not coin.endswith('USDT') else coin
             
