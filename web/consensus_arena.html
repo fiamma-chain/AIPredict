@@ -307,103 +307,66 @@
             </p>
         </header>
         
-        <div class="groups-container">
-            <!-- Alpha组 -->
-            <div class="group-card">
-                <div class="group-header">
-                    <div>
-                        <div class="group-name">🅰️ Alpha组</div>
-                        <div style="font-size: 0.85em; opacity: 0.85; margin-top: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                            <span style="display: flex; align-items: center; gap: 3px;">🤖 DeepSeek</span>
-                            <span style="opacity: 0.5;">•</span>
-                            <span style="display: flex; align-items: center; gap: 3px;">🧠 Claude</span>
-                            <span style="opacity: 0.5;">•</span>
-                            <span style="display: flex; align-items: center; gap: 3px;">⚡ Grok</span>
+        <!-- 对抗展示区 -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+            <!-- AI组对抗 -->
+            <div style="background: linear-gradient(135deg, #1e222d 0%, #252936 100%); border: 2px solid #2b3139; border-radius: 16px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
+                <h2 style="text-align: center; font-size: 1.8em; margin-bottom: 30px; color: #fff;">🤖 AI组对抗</h2>
+                <div style="display: flex; justify-content: space-around; align-items: center;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 3em; margin-bottom: 15px;">🅰️</div>
+                        <div style="font-size: 1.4em; font-weight: bold; color: #22c55e; margin-bottom: 10px;">Alpha</div>
+                        <div style="font-size: 0.9em; opacity: 0.8; margin-bottom: 15px;">
+                            <div>🤖 DeepSeek</div>
+                            <div>🧠 Claude</div>
+                            <div>⚡ Grok</div>
                         </div>
+                        <div style="font-size: 1.8em; font-weight: bold; color: #22c55e;" id="alpha-total-roi">0%</div>
                     </div>
-                </div>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-label">💰 总余额</div>
-                        <div class="stat-value" id="alpha-balance">$0</div>
-                        <div style="font-size: 0.75em; opacity: 0.7; margin-top: 3px;">
-                            <div>🌊 HL: <span id="alpha-hl-balance">$0</span></div>
-                            <div>⭐ AS: <span id="alpha-aster-balance">$0</span></div>
+                    <div style="font-size: 2.5em; opacity: 0.5; font-weight: bold;">VS</div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 3em; margin-bottom: 15px;">🅱️</div>
+                        <div style="font-size: 1.4em; font-weight: bold; color: #3b82f6; margin-bottom: 10px;">Beta</div>
+                        <div style="font-size: 0.9em; opacity: 0.8; margin-bottom: 15px;">
+                            <div>🟢 GPT-4</div>
+                            <div>💎 Gemini</div>
+                            <div>🌟 Qwen</div>
                         </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">📈 总盈亏</div>
-                        <div class="stat-value" id="alpha-pnl">$0</div>
-                        <div style="font-size: 0.75em; opacity: 0.7; margin-top: 3px;">
-                            <div>🌊 HL: <span id="alpha-hl-pnl">$0</span></div>
-                            <div>⭐ AS: <span id="alpha-aster-pnl">$0</span></div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">📊 平均ROI</div>
-                        <div class="stat-value" id="alpha-roi">0%</div>
-                        <div style="font-size: 0.75em; opacity: 0.7; margin-top: 3px;">
-                            <div>🌊 HL: <span id="alpha-hl-roi">0%</span></div>
-                            <div>⭐ AS: <span id="alpha-aster-roi">0%</span></div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">🔄 总交易</div>
-                        <div class="stat-value" id="alpha-trades">0</div>
-                        <div style="font-size: 0.75em; opacity: 0.7; margin-top: 3px;">
-                            <div>🌊 HL: <span id="alpha-hl-trades">0</span></div>
-                            <div>⭐ AS: <span id="alpha-aster-trades">0</span></div>
-                        </div>
+                        <div style="font-size: 1.8em; font-weight: bold; color: #3b82f6;" id="beta-total-roi">0%</div>
                     </div>
                 </div>
             </div>
             
-            <!-- Beta组 -->
-            <div class="group-card">
-                <div class="group-header">
-                    <div>
-                        <div class="group-name">🅱️ Beta组</div>
-                        <div style="font-size: 0.85em; opacity: 0.85; margin-top: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                            <span style="display: flex; align-items: center; gap: 3px;">🟢 GPT-4</span>
-                            <span style="opacity: 0.5;">•</span>
-                            <span style="display: flex; align-items: center; gap: 3px;">💎 Gemini</span>
-                            <span style="opacity: 0.5;">•</span>
-                            <span style="display: flex; align-items: center; gap: 3px;">🌟 Qwen</span>
+            <!-- 平台对抗 -->
+            <div style="background: linear-gradient(135deg, #1e222d 0%, #252936 100%); border: 2px solid #2b3139; border-radius: 16px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
+                <h2 style="text-align: center; font-size: 1.8em; margin-bottom: 30px; color: #fff;">🏆 平台对抗</h2>
+                <div style="display: flex; justify-content: space-around; align-items: center;">
+                    <div style="text-align: center;">
+                        <div style="margin-bottom: 15px;">
+                            <img src="https://pbs.twimg.com/profile_images/1643418951373950976/H2d83ZaY_400x400.jpg" 
+                                 alt="Hyperliquid" 
+                                 style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #06b6d4;">
                         </div>
+                        <div style="font-size: 1.4em; font-weight: bold; color: #06b6d4; margin-bottom: 10px;">Hyperliquid</div>
+                        <div style="font-size: 0.9em; opacity: 0.8; margin-bottom: 15px;">
+                            <div>🅰️ Alpha</div>
+                            <div>🅱️ Beta</div>
+                        </div>
+                        <div style="font-size: 1.8em; font-weight: bold; color: #06b6d4;" id="hl-total-roi">0%</div>
                     </div>
-                </div>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-label">💰 总余额</div>
-                        <div class="stat-value" id="beta-balance">$0</div>
-                        <div style="font-size: 0.75em; opacity: 0.7; margin-top: 3px;">
-                            <div>🌊 HL: <span id="beta-hl-balance">$0</span></div>
-                            <div>⭐ AS: <span id="beta-aster-balance">$0</span></div>
+                    <div style="font-size: 2.5em; opacity: 0.5; font-weight: bold;">VS</div>
+                    <div style="text-align: center;">
+                        <div style="margin-bottom: 15px;">
+                            <img src="https://pbs.twimg.com/profile_images/1856620569877315584/JDSg5_8A_400x400.jpg" 
+                                 alt="Aster" 
+                                 style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #f59e0b;">
                         </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">📈 总盈亏</div>
-                        <div class="stat-value" id="beta-pnl">$0</div>
-                        <div style="font-size: 0.75em; opacity: 0.7; margin-top: 3px;">
-                            <div>🌊 HL: <span id="beta-hl-pnl">$0</span></div>
-                            <div>⭐ AS: <span id="beta-aster-pnl">$0</span></div>
+                        <div style="font-size: 1.4em; font-weight: bold; color: #f59e0b; margin-bottom: 10px;">Aster</div>
+                        <div style="font-size: 0.9em; opacity: 0.8; margin-bottom: 15px;">
+                            <div>🅰️ Alpha</div>
+                            <div>🅱️ Beta</div>
                         </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">📊 平均ROI</div>
-                        <div class="stat-value" id="beta-roi">0%</div>
-                        <div style="font-size: 0.75em; opacity: 0.7; margin-top: 3px;">
-                            <div>🌊 HL: <span id="beta-hl-roi">0%</span></div>
-                            <div>⭐ AS: <span id="beta-aster-roi">0%</span></div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">🔄 总交易</div>
-                        <div class="stat-value" id="beta-trades">0</div>
-                        <div style="font-size: 0.75em; opacity: 0.7; margin-top: 3px;">
-                            <div>🌊 HL: <span id="beta-hl-trades">0</span></div>
-                            <div>⭐ AS: <span id="beta-aster-trades">0</span></div>
-                        </div>
+                        <div style="font-size: 1.8em; font-weight: bold; color: #f59e0b;" id="as-total-roi">0%</div>
                     </div>
                 </div>
             </div>
@@ -663,6 +626,19 @@
                     plugins: {
                         legend: {
                             labels: { color: '#fff', font: { size: 14 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                afterLabel: function(context) {
+                                    // 在tooltip中显示ROI
+                                    const datasetLabel = context.dataset.label;
+                                    const roiId = datasetLabel.includes('Alpha-HL') ? 'alpha-hl-roi' :
+                                                  datasetLabel.includes('Alpha-AS') ? 'alpha-aster-roi' :
+                                                  datasetLabel.includes('Beta-HL') ? 'beta-hl-roi' : 'beta-aster-roi';
+                                    const roiElem = document.getElementById(roiId);
+                                    return roiElem ? `ROI: ${roiElem.textContent}` : '';
+                                }
+                            }
                         }
                     },
                     scales: {
@@ -736,45 +712,21 @@
                     }
                 }
                 
-                // 更新Alpha组统计
-                document.getElementById('alpha-balance').textContent = `$${alphaBalance.toFixed(2)}`;
-                document.getElementById('alpha-pnl').textContent = `$${alphaPnl.toFixed(2)}`;
-                document.getElementById('alpha-pnl').className = 'stat-value ' + (alphaPnl >= 0 ? 'positive' : 'negative');
-                document.getElementById('alpha-roi').textContent = `${alphaRoi >= 0 ? '+' : ''}${alphaRoi.toFixed(2)}%`;
-                document.getElementById('alpha-roi').className = 'stat-value ' + (alphaRoi >= 0 ? 'positive' : 'negative');
-                document.getElementById('alpha-trades').textContent = alphaTrades;
-                
-                // 更新Alpha平台细分
+                // 获取平台数据
                 const alphaHL = alphaGroup.platforms['Alpha组-Hyperliquid'] || {};
                 const alphaAster = alphaGroup.platforms['Alpha组-Aster'] || {};
-                document.getElementById('alpha-hl-balance').textContent = `$${(alphaHL.balance || 0).toFixed(2)}`;
-                document.getElementById('alpha-aster-balance').textContent = `$${(alphaAster.balance || 0).toFixed(2)}`;
-                document.getElementById('alpha-hl-pnl').textContent = `$${(alphaHL.pnl || 0).toFixed(2)}`;
-                document.getElementById('alpha-aster-pnl').textContent = `$${(alphaAster.pnl || 0).toFixed(2)}`;
-                document.getElementById('alpha-hl-roi').textContent = `${(alphaHL.roi || 0).toFixed(2)}%`;
-                document.getElementById('alpha-aster-roi').textContent = `${(alphaAster.roi || 0).toFixed(2)}%`;
-                document.getElementById('alpha-hl-trades').textContent = alphaHL.total_trades || 0;
-                document.getElementById('alpha-aster-trades').textContent = alphaAster.total_trades || 0;
-                
-                // 更新Beta组统计
-                document.getElementById('beta-balance').textContent = `$${betaBalance.toFixed(2)}`;
-                document.getElementById('beta-pnl').textContent = `$${betaPnl.toFixed(2)}`;
-                document.getElementById('beta-pnl').className = 'stat-value ' + (betaPnl >= 0 ? 'positive' : 'negative');
-                document.getElementById('beta-roi').textContent = `${betaRoi >= 0 ? '+' : ''}${betaRoi.toFixed(2)}%`;
-                document.getElementById('beta-roi').className = 'stat-value ' + (betaRoi >= 0 ? 'positive' : 'negative');
-                document.getElementById('beta-trades').textContent = betaTrades;
-                
-                // 更新Beta平台细分
                 const betaHL = betaGroup.platforms['Beta组-Hyperliquid'] || {};
                 const betaAster = betaGroup.platforms['Beta组-Aster'] || {};
-                document.getElementById('beta-hl-balance').textContent = `$${(betaHL.balance || 0).toFixed(2)}`;
-                document.getElementById('beta-aster-balance').textContent = `$${(betaAster.balance || 0).toFixed(2)}`;
-                document.getElementById('beta-hl-pnl').textContent = `$${(betaHL.pnl || 0).toFixed(2)}`;
-                document.getElementById('beta-aster-pnl').textContent = `$${(betaAster.pnl || 0).toFixed(2)}`;
-                document.getElementById('beta-hl-roi').textContent = `${(betaHL.roi || 0).toFixed(2)}%`;
-                document.getElementById('beta-aster-roi').textContent = `${(betaAster.roi || 0).toFixed(2)}%`;
-                document.getElementById('beta-hl-trades').textContent = betaHL.total_trades || 0;
-                document.getElementById('beta-aster-trades').textContent = betaAster.total_trades || 0;
+                
+                // 更新AI组对抗 - 显示平均ROI
+                document.getElementById('alpha-total-roi').textContent = `${alphaRoi >= 0 ? '+' : ''}${alphaRoi.toFixed(2)}%`;
+                document.getElementById('beta-total-roi').textContent = `${betaRoi >= 0 ? '+' : ''}${betaRoi.toFixed(2)}%`;
+                
+                // 更新平台对抗 - 计算每个平台的总ROI（Alpha+Beta）
+                const hlTotalRoi = ((alphaHL.roi || 0) + (betaHL.roi || 0)) / 2;
+                const asTotalRoi = ((alphaAster.roi || 0) + (betaAster.roi || 0)) / 2;
+                document.getElementById('hl-total-roi').textContent = `${hlTotalRoi >= 0 ? '+' : ''}${hlTotalRoi.toFixed(2)}%`;
+                document.getElementById('as-total-roi').textContent = `${asTotalRoi >= 0 ? '+' : ''}${asTotalRoi.toFixed(2)}%`;
                 
                 // 更新权益曲线 - 添加四个平台的当前数据点
                 const currentTime = new Date().toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'});
@@ -795,6 +747,17 @@
                     equityChart.data.datasets[1].data.push(alphaAster);  // Alpha-Aster
                     equityChart.data.datasets[2].data.push(betaHL);      // Beta-Hyperliquid
                     equityChart.data.datasets[3].data.push(betaAster);   // Beta-Aster
+                    
+                    // 更新图例标签以显示ROI
+                    const alphaHLRoi = alphaGroup.platforms['Alpha组-Hyperliquid']?.roi || 0;
+                    const alphaAsterRoi = alphaGroup.platforms['Alpha组-Aster']?.roi || 0;
+                    const betaHLRoi = betaGroup.platforms['Beta组-Hyperliquid']?.roi || 0;
+                    const betaAsterRoi = betaGroup.platforms['Beta组-Aster']?.roi || 0;
+                    
+                    equityChart.data.datasets[0].label = `🅰️🌊 Alpha-HL (${alphaHLRoi >= 0 ? '+' : ''}${alphaHLRoi.toFixed(2)}%)`;
+                    equityChart.data.datasets[1].label = `🅰️⭐ Alpha-AS (${alphaAsterRoi >= 0 ? '+' : ''}${alphaAsterRoi.toFixed(2)}%)`;
+                    equityChart.data.datasets[2].label = `🅱️🌊 Beta-HL (${betaHLRoi >= 0 ? '+' : ''}${betaHLRoi.toFixed(2)}%)`;
+                    equityChart.data.datasets[3].label = `🅱️⭐ Beta-AS (${betaAsterRoi >= 0 ? '+' : ''}${betaAsterRoi.toFixed(2)}%)`;
                     
                     // 限制数据点数量，保留最近50个
                     if (equityChart.data.labels.length > 50) {
