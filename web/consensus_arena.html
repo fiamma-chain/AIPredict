@@ -654,10 +654,10 @@
                         const actionText = isOpen ? 'Open' : 'Close';
                         const sideText = trade.side === 'long' ? 'Long' : 'Short';
                         // Platform logo: Hyperliquid -> 🔷, Aster -> ⭐
-                        const platformLogo = trade.platform === 'Hyperliquid' ? '🔷' : 
-                                            trade.platform === 'Aster' ? '⭐' : 
+                        const platform = trade.platform === 'Hyperliquid' ? 'HL' : 
+                                            trade.platform === 'Aster' ? 'AS' : 
                                             trade.platform;
-                        let text = `${platformLogo} ${groupName} ${actionText} ${sideText}`;
+                        let text = `${platform} ${actionText} ${sideText}`;
                         if (!isOpen && trade.pnl !== 0) {
                             text += ` P/L: $${trade.pnl.toFixed(2)}`;
                         }
