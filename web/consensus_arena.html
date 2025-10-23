@@ -286,25 +286,6 @@
     <div class="container">
         <header>
             <h1>🤖 AI共识交易竞技场</h1>
-            <p class="subtitle" style="display: flex; align-items: center; justify-content: center; gap: 15px;">
-                <span style="color: #22c55e;">🤖🧠⚡ Alpha</span> 
-                <span style="opacity: 0.6;">VS</span> 
-                <span style="color: #3b82f6;">🟢💎🌟 Beta</span>
-                <span style="opacity: 0.4; margin: 0 15px;">|</span>
-                <span style="display: flex; align-items: center; gap: 8px;">
-                    <img src="https://pbs.twimg.com/profile_images/1643418951373950976/H2d83ZaY_400x400.jpg" 
-                         alt="Hyperliquid" 
-                         style="width: 24px; height: 24px; border-radius: 50%; vertical-align: middle;">
-                    <span style="color: #06b6d4; font-weight: 600;">Hyperliquid</span>
-                </span>
-                <span style="opacity: 0.6;">VS</span> 
-                <span style="display: flex; align-items: center; gap: 8px;">
-                    <img src="https://pbs.twimg.com/profile_images/1856620569877315584/JDSg5_8A_400x400.jpg" 
-                         alt="Aster" 
-                         style="width: 24px; height: 24px; border-radius: 50%; vertical-align: middle;">
-                    <span style="color: #f59e0b; font-weight: 600;">Aster</span>
-                </span>
-            </p>
         </header>
         
         <!-- 对抗展示区 -->
@@ -314,24 +295,34 @@
                 <h2 style="text-align: center; font-size: 1.8em; margin-bottom: 30px; color: #fff;">🤖 AI组对抗</h2>
                 <div style="display: flex; justify-content: space-around; align-items: center;">
                     <div style="text-align: center;">
-                        <div style="font-size: 3em; margin-bottom: 15px;">🅰️</div>
-                        <div style="font-size: 1.4em; font-weight: bold; color: #22c55e; margin-bottom: 10px;">Alpha</div>
-                        <div style="font-size: 0.9em; opacity: 0.8; margin-bottom: 15px;">
-                            <div>🤖 DeepSeek</div>
-                            <div>🧠 Claude</div>
-                            <div>⚡ Grok</div>
-                        </div>
+                        <div style="font-size: 2.5em; font-weight: bold; color: #22c55e; margin-bottom: 15px;">Alpha</div>
+                        <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px;">
+                            <img src="https://pbs.twimg.com/profile_images/1870005100204552192/zEufQ0YT_400x400.jpg" 
+                                 alt="DeepSeek" title="DeepSeek"
+                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #22c55e;">
+                            <img src="https://pbs.twimg.com/profile_images/1856749528633081856/LzJqNAbH_400x400.jpg" 
+                                 alt="Claude" title="Claude (Anthropic)"
+                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #22c55e;">
+                            <img src="https://pbs.twimg.com/profile_images/1683947994863017984/YScP-R3G_400x400.jpg" 
+                                 alt="Grok" title="Grok (xAI)"
+                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #22c55e;">
+                    </div>
                         <div style="font-size: 1.8em; font-weight: bold; color: #22c55e;" id="alpha-total-roi">0%</div>
                     </div>
                     <div style="font-size: 2.5em; opacity: 0.5; font-weight: bold;">VS</div>
                     <div style="text-align: center;">
-                        <div style="font-size: 3em; margin-bottom: 15px;">🅱️</div>
-                        <div style="font-size: 1.4em; font-weight: bold; color: #3b82f6; margin-bottom: 10px;">Beta</div>
-                        <div style="font-size: 0.9em; opacity: 0.8; margin-bottom: 15px;">
-                            <div>🟢 GPT-4</div>
-                            <div>💎 Gemini</div>
-                            <div>🌟 Qwen</div>
-                        </div>
+                        <div style="font-size: 2.5em; font-weight: bold; color: #3b82f6; margin-bottom: 15px;">Beta</div>
+                        <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px;">
+                            <img src="https://pbs.twimg.com/profile_images/1634058036934500352/b4F1eVpJ_400x400.jpg" 
+                                 alt="GPT-4" title="GPT-4 (OpenAI)"
+                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #3b82f6;">
+                            <img src="https://pbs.twimg.com/profile_images/1875272164850458624/bsE8k0zI_400x400.jpg" 
+                                 alt="Gemini" title="Gemini (Google)"
+                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #3b82f6;">
+                            <img src="https://pbs.twimg.com/profile_images/1814552053898625024/ZjfbdFW__400x400.jpg" 
+                                 alt="Qwen" title="Qwen (Alibaba)"
+                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #3b82f6;">
+                    </div>
                         <div style="font-size: 1.8em; font-weight: bold; color: #3b82f6;" id="beta-total-roi">0%</div>
                     </div>
                 </div>
@@ -344,28 +335,26 @@
                     <div style="text-align: center;">
                         <div style="margin-bottom: 15px;">
                             <img src="https://pbs.twimg.com/profile_images/1643418951373950976/H2d83ZaY_400x400.jpg" 
-                                 alt="Hyperliquid" 
+                                 alt="Hyperliquid" title="Hyperliquid"
                                  style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #06b6d4;">
-                        </div>
+                    </div>
                         <div style="font-size: 1.4em; font-weight: bold; color: #06b6d4; margin-bottom: 10px;">Hyperliquid</div>
-                        <div style="font-size: 0.9em; opacity: 0.8; margin-bottom: 15px;">
-                            <div>🅰️ Alpha</div>
-                            <div>🅱️ Beta</div>
-                        </div>
+                        <div style="font-size: 0.85em; opacity: 0.7; margin-bottom: 15px;">
+                            <div>Alpha + Beta</div>
+                </div>
                         <div style="font-size: 1.8em; font-weight: bold; color: #06b6d4;" id="hl-total-roi">0%</div>
                     </div>
                     <div style="font-size: 2.5em; opacity: 0.5; font-weight: bold;">VS</div>
                     <div style="text-align: center;">
                         <div style="margin-bottom: 15px;">
                             <img src="https://pbs.twimg.com/profile_images/1856620569877315584/JDSg5_8A_400x400.jpg" 
-                                 alt="Aster" 
+                                 alt="Aster" title="AsterDex"
                                  style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #f59e0b;">
-                        </div>
+                    </div>
                         <div style="font-size: 1.4em; font-weight: bold; color: #f59e0b; margin-bottom: 10px;">Aster</div>
-                        <div style="font-size: 0.9em; opacity: 0.8; margin-bottom: 15px;">
-                            <div>🅰️ Alpha</div>
-                            <div>🅱️ Beta</div>
-                        </div>
+                        <div style="font-size: 0.85em; opacity: 0.7; margin-bottom: 15px;">
+                            <div>Alpha + Beta</div>
+                    </div>
                         <div style="font-size: 1.8em; font-weight: bold; color: #f59e0b;" id="as-total-roi">0%</div>
                     </div>
                 </div>
@@ -768,13 +757,13 @@
                     // 动态调整Y轴范围
                     const allValues = equityChart.data.datasets.flatMap(ds => ds.data);
                     if (allValues.length > 0) {
-                        const minVal = Math.min(...allValues);
-                        const maxVal = Math.max(...allValues);
-                        const range = maxVal - minVal;
+                    const minVal = Math.min(...allValues);
+                    const maxVal = Math.max(...allValues);
+                    const range = maxVal - minVal;
                         const padding = Math.max(range * 0.2, 10);
-                        
-                        equityChart.options.scales.y.min = Math.floor(minVal - padding);
-                        equityChart.options.scales.y.max = Math.ceil(maxVal + padding);
+                    
+                    equityChart.options.scales.y.min = Math.floor(minVal - padding);
+                    equityChart.options.scales.y.max = Math.ceil(maxVal + padding);
                     }
                     
                     equityChart.update('none');
