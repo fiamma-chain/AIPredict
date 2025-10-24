@@ -929,12 +929,36 @@
                 const alphaGroup = data.groups[0];
                 const betaGroup = data.groups[1];
                 
-                // 获取Aster平台数据（唯一平台）
-                const alphaAster = alphaGroup.platforms['Alpha组-Aster'] || {};
-                const betaAster = betaGroup.platforms['Beta组-Aster'] || {};
+                // 调试：输出完整的groups数据结构
+                console.log('🔍 [DEBUG] Alpha Group 完整数据:', alphaGroup);
+                console.log('🔍 [DEBUG] Alpha platforms keys:', Object.keys(alphaGroup.platforms || {}));
+                console.log('🔍 [DEBUG] Beta Group 完整数据:', betaGroup);
+                console.log('🔍 [DEBUG] Beta platforms keys:', Object.keys(betaGroup.platforms || {}));
                 
-                const alphaRoi = alphaAster.roi || 0;
-                const betaRoi = betaAster.roi || 0;
+                // 获取Aster平台数据（支持多种可能的key格式）
+                const alphaPlatforms = alphaGroup.platforms || {};
+                const betaPlatforms = betaGroup.platforms || {};
+                
+                // 尝试多种可能的key格式
+                const alphaAster = alphaPlatforms['Alpha组-Aster'] || 
+                                   alphaPlatforms['Alpha-Aster'] || 
+                                   alphaPlatforms['Aster'] ||
+                                   Object.values(alphaPlatforms).find(p => p && p.platform === 'Aster') ||
+                                   Object.values(alphaPlatforms)[0] || // 如果只有一个平台，就用它
+                                   {};
+                
+                const betaAster = betaPlatforms['Beta组-Aster'] || 
+                                  betaPlatforms['Beta-Aster'] || 
+                                  betaPlatforms['Aster'] ||
+                                  Object.values(betaPlatforms).find(p => p && p.platform === 'Aster') ||
+                                  Object.values(betaPlatforms)[0] || // 如果只有一个平台，就用它
+                                  {};
+                
+                console.log('🔍 [DEBUG] Alpha Aster 数据:', alphaAster);
+                console.log('🔍 [DEBUG] Beta Aster 数据:', betaAster);
+                
+                const alphaRoi = (alphaAster && typeof alphaAster.roi === 'number') ? alphaAster.roi : 0;
+                const betaRoi = (betaAster && typeof betaAster.roi === 'number') ? betaAster.roi : 0;
                 
                 // 更新AI组对抗 - 显示ROI
                 document.getElementById('alpha-total-roi').textContent = `${alphaRoi >= 0 ? '+' : ''}${alphaRoi.toFixed(2)}%`;
@@ -983,13 +1007,20 @@
                 // 更新权益曲线 - 智能数据点管理
                 const currentTime = new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
                 
-                // 获取Aster平台的余额
-                const alphaBalance = alphaGroup.platforms['Alpha组-Aster']?.balance || 0;
-                const betaBalance = betaGroup.platforms['Beta组-Aster']?.balance || 0;
+                // 获取Aster平台的真实余额（不使用初始余额fallback）
+                const alphaBalance = (alphaAster && typeof alphaAster.balance === 'number') ? alphaAster.balance : 0;
+                const betaBalance = (betaAster && typeof betaAster.balance === 'number') ? betaAster.balance : 0;
+                
+                if (alphaBalance === 0) {
+                    console.warn('⚠️ Alpha余额为0或未获取到数据！alphaAster:', alphaAster);
+                }
+                if (betaBalance === 0) {
+                    console.warn('⚠️ Beta余额为0或未获取到数据！betaAster:', betaAster);
+                }
                 
                 console.log(`📊 组账户余额:`);
-                console.log(`  Alpha: $${alphaBalance.toFixed(2)}`);
-                console.log(`  Beta: $${betaBalance.toFixed(2)}`);
+                console.log(`  Alpha: $${alphaBalance.toFixed(2)} (balance字段: ${alphaAster?.balance}, from platforms: ${Object.keys(alphaPlatforms).join(', ') || 'none'})`);
+                console.log(`  Beta: $${betaBalance.toFixed(2)} (balance字段: ${betaAster?.balance}, from platforms: ${Object.keys(betaPlatforms).join(', ') || 'none'})`);
                 
                 // 获取独立AI交易者的余额数据（复用前面获取的individualTraders和soloRois）
                 const traderBalances = {};
