@@ -7,7 +7,7 @@ import logging
 from datetime import datetime
 from typing import List, Dict, Optional, Tuple
 
-from config.settings import settings, get_enabled_platforms
+from config.settings import settings, get_enabled_platforms, get_individual_traders_config
 from ai_models.deepseek_trader import DeepSeekTrader
 from ai_models.claude_trader import ClaudeTrader
 from ai_models.grok_trader import GrokTrader
@@ -34,6 +34,190 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
+
+class IndividualAITrader:
+    """独立AI交易者 - 单个AI独立决策和交易"""
+    
+    def __init__(self, name: str, ai_trader, private_key: str):
+        """
+        初始化独立AI交易者
+        
+        Args:
+            name: 交易者名称
+            ai_trader: AI交易者实例
+            private_key: 私钥
+        """
+        self.name = name
+        self.ai_trader = ai_trader
+        self.ai_name = ai_trader.__class__.__name__.replace('Trader', '')
+        self.kline_manager = KlineManager(max_klines=16)
+        self.start_time = datetime.now()
+        
+        # 创建多平台交易管理器
+        self.multi_trader = MultiPlatformTrader()
+        
+        # 根据配置初始化各个平台
+        enabled_platforms = get_enabled_platforms()
+        logger.info(f"[{name}] 启用的交易平台: {enabled_platforms}")
+        
+        for platform in enabled_platforms:
+            if platform == "hyperliquid":
+                client = HyperliquidClient(private_key, settings.hyperliquid_testnet)
+                self.multi_trader.add_platform(client, f"{name}-Hyperliquid")
+            elif platform == "aster":
+                client = AsterClient(private_key, settings.aster_testnet)
+                self.multi_trader.add_platform(client, f"{name}-Aster")
+        
+        # 创建用于获取市场数据的 Hyperliquid 客户端（即使不用于交易）
+        if "hyperliquid" not in enabled_platforms:
+            logger.info(f"[{name}] 📊 创建 Hyperliquid 数据源客户端（仅用于获取市场数据）")
+            self.data_source_client = HyperliquidClient(private_key, settings.hyperliquid_testnet)
+        else:
+            self.data_source_client = None
+        
+        # 保存用于获取市场数据的客户端
+        if self.data_source_client:
+            self.primary_client = self.data_source_client
+        else:
+            self.primary_client = list(self.multi_trader.platform_traders.values())[0].client if self.multi_trader.platform_traders else None
+        
+        # 统计数据
+        self.stats = {
+            "trader_name": name,
+            "ai_name": self.ai_name,
+            "type": "individual",
+            "platforms": {},
+            "decisions": [],
+            "platform_comparison": {}
+        }
+    
+    async def initialize(self):
+        """初始化交易者"""
+        await self.multi_trader.initialize_all(settings.ai_initial_balance)
+        
+        # 同步各平台持仓
+        for platform_name, trader in self.multi_trader.platform_traders.items():
+            await self._sync_existing_positions(trader)
+    
+    async def _sync_existing_positions(self, trader):
+        """同步平台持仓"""
+        try:
+            logger.info(f"[{trader.name}] 🔄 正在同步现有持仓...")
+            account = await trader.client.get_account_info()
+            positions = account.get('assetPositions', [])
+            
+            synced_count = 0
+            for pos in positions:
+                try:
+                    if 'position' not in pos:
+                        continue
+                    
+                    coin = pos['position']['coin']
+                    size = float(pos['position']['szi'])
+                    
+                    if size == 0:
+                        continue
+                    
+                    entry_px = float(pos['position']['entryPx'])
+                    is_long = size > 0
+                    abs_size = abs(size)
+                    
+                    trader.auto_trader.positions[coin] = {
+                        'side': 'long' if is_long else 'short',
+                        'entry_price': entry_px,
+                        'size': abs_size,
+                        'entry_time': datetime.now(),
+                        'confidence': 0,
+                        'reasoning': '系统启动时同步的历史持仓',
+                        'order_id': 'synced'
+                    }
+                    
+                    synced_count += 1
+                    logger.info(f"[{trader.name}]    ✅ {coin} {'LONG' if is_long else 'SHORT'} {abs_size:.5f} @ ${entry_px:,.2f}")
+                
+                except Exception as e:
+                    logger.warning(f"[{trader.name}] 解析持仓失败: {e}")
+                    continue
+            
+            if synced_count > 0:
+                logger.info(f"[{trader.name}] ✅ 已同步 {synced_count} 个现有持仓")
+            else:
+                logger.info(f"[{trader.name}] 📭 没有现有持仓")
+        
+        except Exception as e:
+            logger.error(f"[{trader.name}] ❌ 同步持仓失败: {e}")
+    
+    async def get_decision(
+        self, 
+        coin: str, 
+        market_data: Dict, 
+        orderbook: Dict, 
+        recent_trades: List,
+        position_info: Optional[Dict] = None
+    ) -> Tuple[Optional[TradingDecision], float, str]:
+        """获取AI决策（无需共识）"""
+        kline_history_data = self.kline_manager.format_for_prompt(max_rows=16)
+        
+        try:
+            logger.info(f"[{self.name}] 🤖 正在获取 {self.ai_name} 的决策...")
+            
+            # 注入K线数据
+            original_create_prompt = self.ai_trader.create_market_prompt
+            def wrapped_prompt(c, m, o, p=None, kline_history=None):
+                return original_create_prompt(c, m, o, p, kline_history=kline_history_data)
+            self.ai_trader.create_market_prompt = wrapped_prompt
+            
+            decision, confidence, reasoning = await self.ai_trader.analyze_market(
+                coin, market_data, orderbook, recent_trades, position_info
+            )
+            
+            # 恢复原始方法
+            self.ai_trader.create_market_prompt = original_create_prompt
+            
+            logger.info(f"[{self.name}]    {self.ai_name}: {decision} (信心: {confidence:.1f}%)")
+            
+            return decision, confidence, reasoning
+        
+        except Exception as e:
+            logger.error(f"[{self.name}] ❌ {self.ai_name} 决策失败: {e}")
+            return None, 0, f"决策失败: {str(e)}"
+    
+    async def execute_decision_on_all_platforms(
+        self, 
+        coin: str, 
+        decision: TradingDecision, 
+        confidence: float, 
+        reasoning: str, 
+        current_price: float
+    ):
+        """在所有平台上执行决策"""
+        if decision == TradingDecision.HOLD:
+            logger.debug(f"[{self.name}] 💤 AI 建议观望，不执行交易")
+            return
+        
+        logger.info(f"[{self.name}] 🚀 在所有平台上执行决策: {decision}")
+        results = await self.multi_trader.execute_decision_all(
+            coin, decision, confidence, reasoning, current_price
+        )
+        
+        for platform_name, result in results.items():
+            if result:
+                logger.info(f"[{platform_name}] ✅ 交易已执行")
+            else:
+                logger.info(f"[{platform_name}] ⚠️  交易未执行")
+    
+    async def update_stats(self):
+        """更新统计数据"""
+        await self.multi_trader.update_all_stats()
+        
+        # 更新统计
+        comparison = self.multi_trader.get_comparison_stats()
+        self.stats["platform_comparison"] = comparison
+        
+        # 为每个平台更新统计
+        for platform_name, trader in self.multi_trader.platform_traders.items():
+            self.stats["platforms"][platform_name] = trader.stats
 
 
 class AIGroup:
@@ -276,10 +460,11 @@ class AIGroup:
 
 
 class ConsensusArena:
-    """共识竞技场 - 多平台版本"""
+    """共识竞技场 - 多平台版本（支持组共识 + 独立AI交易者）"""
     
     def __init__(self):
         self.groups: List[AIGroup] = []
+        self.individual_traders: List[IndividualAITrader] = []
         self.running = False
         self.update_interval = settings.consensus_interval
         self.decision_history = []  # 决策历史记录（全局）
@@ -331,8 +516,82 @@ class ConsensusArena:
         self.groups.append(beta_group)
         logger.info(f"✅ Beta组初始化完成")
         
-        logger.info("\n🚀 系统初始化完成！")
+        # 初始化独立AI交易者
+        try:
+            individual_configs = get_individual_traders_config()
+        except ValueError as e:
+            logger.error(f"\n❌ 独立AI交易者配置错误:")
+            logger.error(str(e))
+            logger.error("\n请检查 .env 文件中的独立AI交易者私钥配置")
+            return False
+        
+        if individual_configs:
+            logger.info(f"\n🎯 初始化 {len(individual_configs)} 个独立AI交易者...")
+            for config in individual_configs:
+                ai_name = config["ai_name"]
+                private_key = config["private_key"]
+                
+                logger.info(f"\n  初始化 {ai_name}-Solo...")
+                
+                # 创建AI实例
+                ai_instance = self._create_ai_instance(ai_name)
+                if not ai_instance:
+                    error_msg = (
+                        f"❌ 无法创建 {ai_name} AI实例\n"
+                        f"   可能原因：\n"
+                        f"   1. AI模型名称不支持\n"
+                        f"   2. 对应的API密钥未配置或无效\n"
+                        f"   请检查 .env 文件中的 {ai_name.upper()}_API_KEY 配置"
+                    )
+                    logger.error(error_msg)
+                    return False
+                
+                # 创建独立交易者
+                try:
+                    trader = IndividualAITrader(
+                        name=f"{ai_name}-Solo",
+                        ai_trader=ai_instance,
+                        private_key=private_key
+                    )
+                    await trader.initialize()
+                    self.individual_traders.append(trader)
+                    logger.info(f"  ✅ {ai_name}-Solo 初始化成功")
+                except Exception as e:
+                    error_msg = (
+                        f"❌ {ai_name}-Solo 初始化失败: {e}\n"
+                        f"   可能原因：\n"
+                        f"   1. 私钥格式错误\n"
+                        f"   2. 账户余额不足\n"
+                        f"   3. 网络连接问题\n"
+                        f"   请检查私钥和账户状态"
+                    )
+                    logger.error(error_msg)
+                    import traceback
+                    logger.error(traceback.format_exc())
+                    return False
+        
+        total_participants = len(self.groups) + len(self.individual_traders)
+        logger.info(f"\n🚀 系统初始化完成！共 {len(self.groups)} 个组 + {len(self.individual_traders)} 个独立交易者 = {total_participants} 个参与者")
         return True
+    
+    def _create_ai_instance(self, ai_name: str):
+        """根据AI名称创建AI实例"""
+        ai_name_lower = ai_name.lower()
+        
+        if ai_name_lower == "deepseek":
+            return DeepSeekTrader(api_key=settings.deepseek_api_key)
+        elif ai_name_lower == "claude":
+            return ClaudeTrader(api_key=settings.claude_api_key)
+        elif ai_name_lower == "grok":
+            return GrokTrader(api_key=settings.grok_api_key)
+        elif ai_name_lower in ["gpt", "gpt4", "gpt-4"]:
+            return GPTTrader(api_key=settings.openai_api_key, model=settings.gpt_model)
+        elif ai_name_lower == "gemini":
+            return GeminiTrader(api_key=settings.gemini_api_key)
+        elif ai_name_lower == "qwen":
+            return QwenTrader(api_key=settings.qwen_api_key)
+        else:
+            return None
     
     async def decision_loop(self):
         """共识决策循环"""
@@ -460,14 +719,108 @@ class ConsensusArena:
                 # 并行处理所有组
                 await asyncio.gather(*[process_group(group) for group in self.groups])
                 
+                # 并行处理所有独立AI交易者
+                async def process_individual_trader(trader):
+                    try:
+                        logger.info(f"\n{'─'*80}")
+                        logger.info(f"🎯 {trader.name} 开始独立决策")
+                        logger.info(f"{'─'*80}")
+                        
+                        # 更新K线
+                        trader.kline_manager.update_price(
+                            price=current_price,
+                            volume=market_data.get('volume', 0)
+                        )
+                        
+                        # 获取持仓信息（使用任意平台的持仓信息即可）
+                        first_trader = list(trader.multi_trader.platform_traders.values())[0]
+                        position_info = first_trader.auto_trader.positions.get(trading_symbol)
+                        
+                        # 获取AI决策
+                        decision, confidence, reasoning = await trader.get_decision(
+                            trading_symbol, market_data, orderbook_data, recent_trades, position_info
+                        )
+                        
+                        # 记录决策
+                        decision_record = {
+                            "time": datetime.now().isoformat(),
+                            "decision": str(decision),
+                            "confidence": confidence,
+                            "reasoning": reasoning,
+                            "price": current_price
+                        }
+                        trader.stats["decisions"].insert(0, decision_record)
+                        trader.stats["decisions"] = trader.stats["decisions"][:100]
+                        
+                        # 记录到全局决策历史（用于前端展示）
+                        global_decision = {
+                            "time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                            "trader": trader.name,
+                            "ai_name": trader.ai_name,
+                            "type": "individual",
+                            "direction": str(decision),
+                            "confidence": round(confidence, 1),
+                            "price": current_price,
+                            "reasoning": reasoning[:200]  # 限制长度
+                        }
+                        self.decision_history.insert(0, global_decision)
+                        self.decision_history = self.decision_history[:100]  # 保留最近100条
+                        
+                        # 在所有平台上执行决策
+                        await trader.execute_decision_on_all_platforms(
+                            trading_symbol,
+                            decision,
+                            confidence,
+                            reasoning,
+                            current_price
+                        )
+                        
+                        # 更新统计
+                        await trader.update_stats()
+                        
+                        # 显示平台对比
+                        if settings.platform_comparison_enabled:
+                            logger.info(f"\n[{trader.name}] 📊 平台收益对比:")
+                            comparison = trader.stats["platform_comparison"]
+                            for platform_stats in comparison.get("platforms", []):
+                                logger.info(f"  {platform_stats['name']}: "
+                                          f"余额=${platform_stats['balance']:.2f}, "
+                                          f"盈亏=${platform_stats['pnl']:+.2f}, "
+                                          f"ROI={platform_stats['roi']:+.2f}%, "
+                                          f"胜率={platform_stats['win_rate']:.1f}%")
+                        
+                    except Exception as e:
+                        logger.error(f"[{trader.name}] ❌ 决策执行错误: {e}")
+                        import traceback
+                        logger.error(traceback.format_exc())
+                
+                if self.individual_traders:
+                    await asyncio.gather(*[process_individual_trader(trader) for trader in self.individual_traders])
+                
                 # 保存余额快照到 Redis
                 try:
                     accounts = []
+                    # 添加组账户
                     for group in self.groups:
                         for platform_name, trader in group.multi_trader.platform_traders.items():
                             accounts.append({
                                 "group": group.name,
                                 "platform": platform_name,
+                                "type": "group",
+                                "balance": trader.stats.get("balance", 0),
+                                "pnl": trader.stats.get("pnl", 0),
+                                "roi": trader.stats.get("roi", 0),
+                                "total_trades": trader.stats.get("total_trades", 0)
+                            })
+                    
+                    # 添加独立交易者账户
+                    for individual_trader in self.individual_traders:
+                        for platform_name, trader in individual_trader.multi_trader.platform_traders.items():
+                            accounts.append({
+                                "trader": individual_trader.name,
+                                "ai_name": individual_trader.ai_name,
+                                "platform": platform_name,
+                                "type": "individual",
                                 "balance": trader.stats.get("balance", 0),
                                 "pnl": trader.stats.get("pnl", 0),
                                 "roi": trader.stats.get("roi", 0),
@@ -502,6 +855,8 @@ class ConsensusArena:
         """停止系统"""
         self.running = False
         logger.info("🛑 共识交易系统正在停止...")
+        
+        # 关闭组的客户端
         for group in self.groups:
             # 关闭交易平台客户端
             for trader in group.multi_trader.platform_traders.values():
@@ -509,6 +864,16 @@ class ConsensusArena:
             # 关闭数据源客户端（如果存在）
             if hasattr(group, 'data_source_client') and group.data_source_client:
                 await group.data_source_client.close_session()
+        
+        # 关闭独立AI交易者的客户端
+        for individual_trader in self.individual_traders:
+            # 关闭交易平台客户端
+            for trader in individual_trader.multi_trader.platform_traders.values():
+                await trader.client.close_session()
+            # 关闭数据源客户端（如果存在）
+            if hasattr(individual_trader, 'data_source_client') and individual_trader.data_source_client:
+                await individual_trader.data_source_client.close_session()
+        
         logger.info("✅ 共识交易系统已停止")
 
 
@@ -537,6 +902,7 @@ async def get_status():
     groups_data = []
     for group in arena.groups:
         group_info = {
+            "type": "group",
             "group_name": group.stats["group_name"],
             "platforms": group.stats.get("platforms", {}),
             "platform_comparison": group.stats.get("platform_comparison", {}),
@@ -544,12 +910,26 @@ async def get_status():
         }
         groups_data.append(group_info)
     
+    individual_traders_data = []
+    for trader in arena.individual_traders:
+        trader_info = {
+            "type": "individual",
+            "trader_name": trader.stats["trader_name"],
+            "ai_name": trader.stats["ai_name"],
+            "platforms": trader.stats.get("platforms", {}),
+            "platform_comparison": trader.stats.get("platform_comparison", {}),
+            "decisions": trader.stats.get("decisions", [])
+        }
+        individual_traders_data.append(trader_info)
+    
     return {
         "status": "running" if arena.running else "stopped",
         "groups": groups_data,
+        "individual_traders": individual_traders_data,
         "update_interval": f"{arena.update_interval//60}分钟",
         "consensus_rule": f"至少{settings.consensus_min_votes}个AI同意",
-        "enabled_platforms": get_enabled_platforms()
+        "enabled_platforms": get_enabled_platforms(),
+        "total_participants": len(arena.groups) + len(arena.individual_traders)
     }
 
 
@@ -681,11 +1061,14 @@ async def get_leaderboard(metric: str = "total_pnl", limit: int = 10):
     
     # 收集所有AI的统计数据
     ai_stats = []
+    
+    # 添加组内AI（注意：组内AI是共识决策，不单独统计PnL）
     for group in arena.groups:
         for ai_trader in group.ai_traders:
             ai_name = ai_trader.__class__.__name__.replace('Trader', '')
             stats = {
                 "ai_name": ai_name,
+                "type": "group_member",
                 "group": group.stats["group_name"],
                 "total_pnl": 0,
                 "roi_percentage": 0,
@@ -693,6 +1076,34 @@ async def get_leaderboard(metric: str = "total_pnl", limit: int = 10):
                 "total_trades": 0
             }
             ai_stats.append(stats)
+    
+    # 添加独立AI交易者（有实际的交易统计）
+    for trader in arena.individual_traders:
+        # 汇总该交易者所有平台的统计
+        total_pnl = 0
+        total_trades = 0
+        total_wins = 0
+        total_initial = 0
+        
+        for platform_stats in trader.stats.get("platforms", {}).values():
+            total_pnl += platform_stats.get("total_pnl", 0)
+            total_trades += platform_stats.get("total_trades", 0)
+            total_wins += platform_stats.get("total_wins", 0)
+            total_initial += platform_stats.get("initial_balance", 0)
+        
+        win_rate = (total_wins / total_trades * 100) if total_trades > 0 else 0
+        roi = (total_pnl / total_initial * 100) if total_initial > 0 else 0
+        
+        stats = {
+            "ai_name": trader.ai_name,
+            "type": "individual",
+            "trader": trader.name,
+            "total_pnl": total_pnl,
+            "roi_percentage": roi,
+            "win_rate": win_rate,
+            "total_trades": total_trades
+        }
+        ai_stats.append(stats)
     
     # 按指标排序
     ai_stats.sort(key=lambda x: x.get(metric, 0), reverse=True)
@@ -713,16 +1124,30 @@ async def get_leaderboard_summary():
     total_trades = 0
     total_pnl = 0
     
+    # 统计组的数据
     for group in arena.groups:
         for platform_stats in group.stats.get("platforms", {}).values():
             total_trades += platform_stats.get("total_trades", 0)
             total_pnl += platform_stats.get("total_pnl", 0)
     
+    # 统计独立AI交易者的数据
+    for trader in arena.individual_traders:
+        for platform_stats in trader.stats.get("platforms", {}).values():
+            total_trades += platform_stats.get("total_trades", 0)
+            total_pnl += platform_stats.get("total_pnl", 0)
+    
+    # 计算总AI数（组内AI + 独立AI）
+    group_ais = len(arena.groups[0].ai_traders) * len(arena.groups) if arena.groups else 0
+    individual_ais = len(arena.individual_traders)
+    
     return {
-        "total_ais": len(arena.groups[0].ai_traders) * len(arena.groups) if arena.groups else 0,
+        "total_ais": group_ais + individual_ais,
+        "group_ais": group_ais,
+        "individual_ais": individual_ais,
         "total_trades": total_trades,
         "total_pnl": total_pnl,
-        "active_groups": len(arena.groups)
+        "active_groups": len(arena.groups),
+        "active_individual_traders": len(arena.individual_traders)
     }
 
 
@@ -733,16 +1158,30 @@ async def get_strategies():
         return {"strategies": []}
     
     strategies = []
+    
+    # 添加组内AI策略
     for group in arena.groups:
         for ai_trader in group.ai_traders:
             ai_name = ai_trader.__class__.__name__.replace('Trader', '')
             strategy = {
                 "name": ai_name,
+                "type": "group_member",
                 "group": group.stats["group_name"],
                 "status": "active",
-                "description": f"{ai_name} AI 交易策略"
+                "description": f"{ai_name} AI 交易策略 (组内共识)"
             }
             strategies.append(strategy)
+    
+    # 添加独立AI交易者策略
+    for trader in arena.individual_traders:
+        strategy = {
+            "name": trader.ai_name,
+            "type": "individual",
+            "trader": trader.name,
+            "status": "active",
+            "description": f"{trader.ai_name} AI 交易策略 (独立决策)"
+        }
+        strategies.append(strategy)
     
     return {"strategies": strategies}
 
@@ -754,6 +1193,8 @@ async def get_realtime_balance():
         return {"accounts": []}
     
     accounts = []
+    
+    # 添加组账户
     for group in arena.groups:
         group_name = group.stats["group_name"]
         
@@ -763,7 +1204,31 @@ async def get_realtime_balance():
             platform_display = platform_name.replace(f"{group_name}-", "")
             
             account = {
+                "type": "group",
                 "group": group_name,
+                "platform": platform_display,
+                "balance": platform_stats.get("balance", 0),
+                "initial_balance": platform_stats.get("initial_balance", 0),
+                "pnl": platform_stats.get("pnl", 0),
+                "roi": platform_stats.get("roi", 0),
+                "trades": platform_stats.get("total_trades", 0)
+            }
+            accounts.append(account)
+    
+    # 添加独立AI交易者账户
+    for trader in arena.individual_traders:
+        trader_name = trader.stats["trader_name"]
+        ai_name = trader.stats["ai_name"]
+        
+        # 获取该交易者所有平台的余额
+        for platform_name, platform_stats in trader.stats.get("platforms", {}).items():
+            # 提取平台简称（去掉交易者名前缀）
+            platform_display = platform_name.replace(f"{trader_name}-", "")
+            
+            account = {
+                "type": "individual",
+                "trader": trader_name,
+                "ai_name": ai_name,
                 "platform": platform_display,
                 "balance": platform_stats.get("balance", 0),
                 "initial_balance": platform_stats.get("initial_balance", 0),
