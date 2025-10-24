@@ -354,10 +354,10 @@
                 <div style="text-align: center;">
                     <div style="font-size: 2.5em; font-weight: bold; color: #3b82f6; margin-bottom: 15px;">Beta</div>
                     <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px;">
-                        <img src="/web/images/gpt4.jpg" 
+                        <img src="/web/images/gpt4.png" 
                              alt="GPT-4" title="GPT-4 (OpenAI)" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
                              style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
-                        <img src="/web/images/gemini.jpg" 
+                        <img src="/web/images/gemini.png" 
                              alt="Gemini" title="Gemini (Google)" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
                              style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
                         <img src="/web/images/qwen.jpg" 
@@ -730,8 +730,8 @@
                                 label: function(context) {
                                     const label = context.dataset.label || '';
                                     const value = context.parsed.y;
-                                    // 初始余额：组为480，独立AI为500
-                                    const initialBalance = label.includes('Team') ? 480 : 500;
+                                    // 初始余额：组为240 USDT，独立AI为200 USDT
+                                    const initialBalance = label.includes('Team') ? 240 : 200;
                                     const roi = ((value - initialBalance) / initialBalance * 100).toFixed(2);
                                     return `${label}: $${value.toFixed(2)} (${roi >= 0 ? '+' : ''}${roi}%)`;
                                 }
@@ -740,8 +740,9 @@
                     },
                     scales: {
                         y: {
-                            min: 450,  // 固定Y轴最小值
-                            max: 550,  // 固定Y轴最大值（根据止盈止损调整）
+                            // 动态调整Y轴范围（组初始240 USDT，独立AI初始200 USDT）
+                            min: 180,
+                            max: 280,
                             ticks: { 
                                 color: '#fff',
                                 stepSize: 10  // 每10刻度一格
@@ -800,10 +801,16 @@
                 const alphaBalance = alphaGroup.platforms['Alpha组-Aster']?.balance || 0;
                 const betaBalance = betaGroup.platforms['Beta组-Aster']?.balance || 0;
                 
+                console.log(`📊 组账户余额:`);
+                console.log(`  Alpha: $${alphaBalance.toFixed(2)}`);
+                console.log(`  Beta: $${betaBalance.toFixed(2)}`);
+                
                 // 获取独立AI交易者数据
                 const individualTraders = data.individual_traders || [];
                 const traderBalances = {};
                 const traderRois = {};
+                
+                console.log(`📊 独立AI交易者数量: ${individualTraders.length}`);
                 
                 individualTraders.forEach(trader => {
                     const traderName = trader.trader_name;
@@ -812,6 +819,9 @@
                     if (trader.platforms && trader.platforms[platformKey]) {
                         traderBalances[aiName] = trader.platforms[platformKey].balance || 0;
                         traderRois[aiName] = trader.platforms[platformKey].roi || 0;
+                        console.log(`  ${aiName}: 余额=$${traderBalances[aiName].toFixed(2)}, ROI=${traderRois[aiName].toFixed(2)}%`);
+                    } else {
+                        console.log(`  ${aiName}: ⚠️ 未找到 Aster 平台数据`);
                     }
                 });
                 
@@ -941,11 +951,26 @@
                     const minVal = Math.min(...allValues);
                     const maxVal = Math.max(...allValues);
                     const range = maxVal - minVal;
-                    // 使用更小的padding（2%或最小2美元），让差异更明显
-                    const padding = Math.max(range * 0.02, 2);
+                    // 使用较大的padding（10%或最小20美元），确保曲线可见
+                    const padding = Math.max(range * 0.1, 20);
                     
                     equityChart.options.scales.y.min = Math.floor(minVal - padding);
                     equityChart.options.scales.y.max = Math.ceil(maxVal + padding);
+                    
+                    console.log(`📊 Y轴范围: ${equityChart.options.scales.y.min} ~ ${equityChart.options.scales.y.max}`);
+                } else {
+                    // 如果没有有效数据，使用默认范围（独立AI初始200，组初始240）
+                    equityChart.options.scales.y.min = 180;
+                    equityChart.options.scales.y.max = 280;
+                    console.log('⚠️ 没有有效数据，使用默认Y轴范围');
+                }
+                
+                // 输出图表数据点信息
+                console.log(`📈 图表数据点数量: ${equityChart.data.labels.length}`);
+                if (equityChart.data.labels.length > 0) {
+                    console.log(`   最后一个时间点: ${equityChart.data.labels[equityChart.data.labels.length - 1]}`);
+                    console.log(`   Alpha余额: $${equityChart.data.datasets[0].data[equityChart.data.datasets[0].data.length - 1]?.toFixed(2) || '0.00'}`);
+                    console.log(`   Beta余额: $${equityChart.data.datasets[1].data[equityChart.data.datasets[1].data.length - 1]?.toFixed(2) || '0.00'}`);
                 }
                 
                 // 使用默认动画模式更新，让变化更明显

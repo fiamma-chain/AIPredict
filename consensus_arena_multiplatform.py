@@ -94,7 +94,8 @@ class IndividualAITrader:
     
     async def initialize(self):
         """初始化交易者"""
-        await self.multi_trader.initialize_all(settings.ai_initial_balance)
+        # 独立AI交易者使用独立的初始余额配置（200 USDT）
+        await self.multi_trader.initialize_all(settings.individual_ai_initial_balance, self.name)
         
         # 同步各平台持仓
         for platform_name, trader in self.multi_trader.platform_traders.items():
