@@ -499,6 +499,7 @@ class ConsensusArena:
             settings.group_1_private_key
         )
         await alpha_group.initialize()
+        await alpha_group.update_stats()  # 更新初始统计数据
         self.groups.append(alpha_group)
         logger.info(f"✅ Alpha组初始化完成")
         
@@ -515,6 +516,7 @@ class ConsensusArena:
             settings.group_2_private_key
         )
         await beta_group.initialize()
+        await beta_group.update_stats()  # 更新初始统计数据
         self.groups.append(beta_group)
         logger.info(f"✅ Beta组初始化完成")
         
@@ -556,6 +558,7 @@ class ConsensusArena:
                         private_key=private_key
                     )
                     await trader.initialize()
+                    await trader.update_stats()  # 更新初始统计数据
                     self.individual_traders.append(trader)
                     logger.info(f"  ✅ {ai_name}-Solo 初始化成功")
                 except Exception as e:
@@ -900,6 +903,12 @@ async def get_status():
     """获取系统状态"""
     if not arena:
         return {"status": "not_started"}
+    
+    # 更新所有组和交易者的统计数据（确保返回最新数据）
+    for group in arena.groups:
+        await group.update_stats()
+    for trader in arena.individual_traders:
+        await trader.update_stats()
     
     groups_data = []
     for group in arena.groups:

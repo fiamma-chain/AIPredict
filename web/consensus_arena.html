@@ -323,6 +323,17 @@
             height: 12px;
             border-radius: 50%;
         }
+        
+        /* Competitor card hover effects */
+        .competitor-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .competitor-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+        }
     </style>
 </head>
 <body>
@@ -331,40 +342,114 @@
             <h1>🤖 AI Consensus Trading Arena</h1>
         </header>
         
-        <!-- AI Team Battle -->
+        <!-- AI Trading Competitors -->
         <div style="background: linear-gradient(135deg, #1e222d 0%, #252936 100%); border: 2px solid #2b3139; border-radius: 16px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); margin-bottom: 30px;">
-            <h2 style="text-align: center; font-size: 1.8em; margin-bottom: 30px; color: #fff;">🤖 AI Team Battle - Aster Platform</h2>
-            <div style="display: flex; justify-content: space-around; align-items: center;">
-                <div style="text-align: center;">
-                    <div style="font-size: 2.5em; font-weight: bold; color: #22c55e; margin-bottom: 15px;">Alpha</div>
-                    <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px;">
+            <h2 style="text-align: center; font-size: 1.8em; margin-bottom: 35px; color: #fff;">🤖 AI Trading Competitors - Aster Platform</h2>
+            
+            <!-- Competitors Grid: 4 columns x 2 rows -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+                <!-- Alpha Team -->
+                <div style="text-align: center; background: linear-gradient(145deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05)); border: 2px solid rgba(34, 197, 94, 0.4); border-radius: 12px; padding: 25px; transition: all 0.3s; position: relative;">
+                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(34, 197, 94, 0.3); padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: bold;">TEAM</div>
+                    <div style="font-size: 1.3em; font-weight: bold; color: #22c55e; margin-bottom: 12px;">Alpha Team</div>
+                    <div style="display: flex; justify-content: center; gap: 5px; margin-bottom: 12px;">
                         <img src="/web/images/deepseek.jpg" 
                              alt="DeepSeek" title="DeepSeek" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                             style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
+                             style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid rgba(34, 197, 94, 0.6);">
                         <img src="/web/images/claude.jpg" 
-                             alt="Claude" title="Claude (Anthropic)" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                             style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
+                             alt="Claude" title="Claude" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                             style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid rgba(34, 197, 94, 0.6);">
                         <img src="/web/images/grok.jpg" 
-                             alt="Grok" title="Grok (xAI)" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                             style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
+                             alt="Grok" title="Grok" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                             style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid rgba(34, 197, 94, 0.6);">
                     </div>
-                    <div style="font-size: 1.8em; font-weight: bold; color: #22c55e;" id="alpha-total-roi">0%</div>
+                    <div style="font-size: 1.6em; font-weight: bold; color: #22c55e;" id="alpha-total-roi">0%</div>
+                    <div style="font-size: 0.8em; opacity: 0.7; margin-top: 5px;">ROI</div>
                 </div>
-                <div style="font-size: 2.5em; opacity: 0.5; font-weight: bold;">VS</div>
-                <div style="text-align: center;">
-                    <div style="font-size: 2.5em; font-weight: bold; color: #3b82f6; margin-bottom: 15px;">Beta</div>
-                    <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px;">
+                
+                <!-- Beta Team -->
+                <div style="text-align: center; background: linear-gradient(145deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.05)); border: 2px solid rgba(59, 130, 246, 0.4); border-radius: 12px; padding: 25px; transition: all 0.3s; position: relative;">
+                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(59, 130, 246, 0.3); padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: bold;">TEAM</div>
+                    <div style="font-size: 1.3em; font-weight: bold; color: #3b82f6; margin-bottom: 12px;">Beta Team</div>
+                    <div style="display: flex; justify-content: center; gap: 5px; margin-bottom: 12px;">
                         <img src="/web/images/gpt4.png" 
-                             alt="GPT-4" title="GPT-4 (OpenAI)" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                             style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
+                             alt="GPT-4" title="GPT-4" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                             style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid rgba(59, 130, 246, 0.6);">
                         <img src="/web/images/gemini.png" 
-                             alt="Gemini" title="Gemini (Google)" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                             style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
+                             alt="Gemini" title="Gemini" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                             style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid rgba(59, 130, 246, 0.6);">
                         <img src="/web/images/qwen.jpg" 
-                             alt="Qwen" title="Qwen (Alibaba)" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                             style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
+                             alt="Qwen" title="Qwen" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                             style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid rgba(59, 130, 246, 0.6);">
                     </div>
-                    <div style="font-size: 1.8em; font-weight: bold; color: #3b82f6;" id="beta-total-roi">0%</div>
+                    <div style="font-size: 1.6em; font-weight: bold; color: #3b82f6;" id="beta-total-roi">0%</div>
+                    <div style="font-size: 0.8em; opacity: 0.7; margin-top: 5px;">ROI</div>
+                </div>
+                
+                <!-- DeepSeek Solo -->
+                <div style="text-align: center; background: linear-gradient(145deg, rgba(147, 51, 234, 0.15), rgba(147, 51, 234, 0.05)); border: 2px solid rgba(147, 51, 234, 0.4); border-radius: 12px; padding: 25px; transition: all 0.3s; position: relative;">
+                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(147, 51, 234, 0.3); padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: bold;">SOLO</div>
+                    <img src="/web/images/deepseek.jpg" 
+                         alt="DeepSeek" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                         style="width: 50px; height: 50px; border-radius: 50%; border: 3px solid rgba(147, 51, 234, 0.6); margin-bottom: 10px;">
+                    <div style="font-size: 1.2em; font-weight: bold; color: #fff; margin-bottom: 8px;">DeepSeek</div>
+                    <div style="font-size: 1.6em; font-weight: bold; color: rgb(147, 51, 234);" id="deepseek-solo-roi">0%</div>
+                    <div style="font-size: 0.8em; opacity: 0.7; margin-top: 5px;">ROI</div>
+                </div>
+                
+                <!-- Claude Solo -->
+                <div style="text-align: center; background: linear-gradient(145deg, rgba(236, 72, 153, 0.15), rgba(236, 72, 153, 0.05)); border: 2px solid rgba(236, 72, 153, 0.4); border-radius: 12px; padding: 25px; transition: all 0.3s; position: relative;">
+                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(236, 72, 153, 0.3); padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: bold;">SOLO</div>
+                    <img src="/web/images/claude.jpg" 
+                         alt="Claude" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                         style="width: 50px; height: 50px; border-radius: 50%; border: 3px solid rgba(236, 72, 153, 0.6); margin-bottom: 10px;">
+                    <div style="font-size: 1.2em; font-weight: bold; color: #fff; margin-bottom: 8px;">Claude</div>
+                    <div style="font-size: 1.6em; font-weight: bold; color: rgb(236, 72, 153);" id="claude-solo-roi">0%</div>
+                    <div style="font-size: 0.8em; opacity: 0.7; margin-top: 5px;">ROI</div>
+                </div>
+                
+                <!-- Grok Solo -->
+                <div style="text-align: center; background: linear-gradient(145deg, rgba(251, 146, 60, 0.15), rgba(251, 146, 60, 0.05)); border: 2px solid rgba(251, 146, 60, 0.4); border-radius: 12px; padding: 25px; transition: all 0.3s; position: relative;">
+                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(251, 146, 60, 0.3); padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: bold;">SOLO</div>
+                    <img src="/web/images/grok.jpg" 
+                         alt="Grok" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                         style="width: 50px; height: 50px; border-radius: 50%; border: 3px solid rgba(251, 146, 60, 0.6); margin-bottom: 10px;">
+                    <div style="font-size: 1.2em; font-weight: bold; color: #fff; margin-bottom: 8px;">Grok</div>
+                    <div style="font-size: 1.6em; font-weight: bold; color: rgb(251, 146, 60);" id="grok-solo-roi">0%</div>
+                    <div style="font-size: 0.8em; opacity: 0.7; margin-top: 5px;">ROI</div>
+                </div>
+                
+                <!-- GPT Solo -->
+                <div style="text-align: center; background: linear-gradient(145deg, rgba(14, 165, 233, 0.15), rgba(14, 165, 233, 0.05)); border: 2px solid rgba(14, 165, 233, 0.4); border-radius: 12px; padding: 25px; transition: all 0.3s; position: relative;">
+                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(14, 165, 233, 0.3); padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: bold;">SOLO</div>
+                    <img src="/web/images/gpt4.png" 
+                         alt="GPT-4" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                         style="width: 50px; height: 50px; border-radius: 50%; border: 3px solid rgba(14, 165, 233, 0.6); margin-bottom: 10px;">
+                    <div style="font-size: 1.2em; font-weight: bold; color: #fff; margin-bottom: 8px;">GPT-4</div>
+                    <div style="font-size: 1.6em; font-weight: bold; color: rgb(14, 165, 233);" id="gpt-solo-roi">0%</div>
+                    <div style="font-size: 0.8em; opacity: 0.7; margin-top: 5px;">ROI</div>
+                </div>
+                
+                <!-- Gemini Solo -->
+                <div style="text-align: center; background: linear-gradient(145deg, rgba(234, 179, 8, 0.15), rgba(234, 179, 8, 0.05)); border: 2px solid rgba(234, 179, 8, 0.4); border-radius: 12px; padding: 25px; transition: all 0.3s; position: relative;">
+                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(234, 179, 8, 0.3); padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: bold;">SOLO</div>
+                    <img src="/web/images/gemini.png" 
+                         alt="Gemini" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                         style="width: 50px; height: 50px; border-radius: 50%; border: 3px solid rgba(234, 179, 8, 0.6); margin-bottom: 10px;">
+                    <div style="font-size: 1.2em; font-weight: bold; color: #fff; margin-bottom: 8px;">Gemini</div>
+                    <div style="font-size: 1.6em; font-weight: bold; color: rgb(234, 179, 8);" id="gemini-solo-roi">0%</div>
+                    <div style="font-size: 0.8em; opacity: 0.7; margin-top: 5px;">ROI</div>
+                </div>
+                
+                <!-- Qwen Solo -->
+                <div style="text-align: center; background: linear-gradient(145deg, rgba(244, 63, 94, 0.15), rgba(244, 63, 94, 0.05)); border: 2px solid rgba(244, 63, 94, 0.4); border-radius: 12px; padding: 25px; transition: all 0.3s; position: relative;">
+                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(244, 63, 94, 0.3); padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: bold;">SOLO</div>
+                    <img src="/web/images/qwen.jpg" 
+                         alt="Qwen" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                         style="width: 50px; height: 50px; border-radius: 50%; border: 3px solid rgba(244, 63, 94, 0.6); margin-bottom: 10px;">
+                    <div style="font-size: 1.2em; font-weight: bold; color: #fff; margin-bottom: 8px;">Qwen</div>
+                    <div style="font-size: 1.6em; font-weight: bold; color: rgb(244, 63, 94);" id="qwen-solo-roi">0%</div>
+                    <div style="font-size: 0.8em; opacity: 0.7; margin-top: 5px;">ROI</div>
                 </div>
             </div>
         </div>
@@ -789,10 +874,45 @@
                 document.getElementById('alpha-total-roi').textContent = `${alphaRoi >= 0 ? '+' : ''}${alphaRoi.toFixed(2)}%`;
                 document.getElementById('beta-total-roi').textContent = `${betaRoi >= 0 ? '+' : ''}${betaRoi.toFixed(2)}%`;
                 
+                // 获取独立AI交易者的ROI数据
+                const individualTraders = data.individual_traders || [];
+                const soloRois = {};
+                
+                individualTraders.forEach(trader => {
+                    const aiName = trader.ai_name;
+                    const platformKey = `${trader.trader_name}-Aster`;
+                    if (trader.platforms && trader.platforms[platformKey]) {
+                        soloRois[aiName] = trader.platforms[platformKey].roi || 0;
+                    }
+                });
+                
+                // 更新每个独立AI的ROI显示
+                const soloElements = {
+                    'DeepSeek': 'deepseek-solo-roi',
+                    'Claude': 'claude-solo-roi',
+                    'Grok': 'grok-solo-roi',
+                    'GPT': 'gpt-solo-roi',
+                    'Gemini': 'gemini-solo-roi',
+                    'Qwen': 'qwen-solo-roi'
+                };
+                
+                Object.keys(soloElements).forEach(aiName => {
+                    const elementId = soloElements[aiName];
+                    const roi = soloRois[aiName] || 0;
+                    const element = document.getElementById(elementId);
+                    if (element) {
+                        element.textContent = `${roi >= 0 ? '+' : ''}${roi.toFixed(2)}%`;
+                    }
+                });
+                
                 // 输出数据对比信息
                 console.log('📊 AI Teams Performance (Aster Platform):');
                 console.log(`  Alpha ROI: ${alphaRoi.toFixed(2)}%`);
                 console.log(`  Beta ROI: ${betaRoi.toFixed(2)}%`);
+                console.log('📊 Solo AI Traders Performance:');
+                Object.keys(soloRois).forEach(ai => {
+                    console.log(`  ${ai}: ${soloRois[ai].toFixed(2)}%`);
+                });
                 
                 // 更新权益曲线 - 智能数据点管理
                 const currentTime = new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
@@ -805,10 +925,9 @@
                 console.log(`  Alpha: $${alphaBalance.toFixed(2)}`);
                 console.log(`  Beta: $${betaBalance.toFixed(2)}`);
                 
-                // 获取独立AI交易者数据
-                const individualTraders = data.individual_traders || [];
+                // 获取独立AI交易者的余额数据（复用前面获取的individualTraders和soloRois）
                 const traderBalances = {};
-                const traderRois = {};
+                const traderRois = soloRois; // 复用前面获取的ROI数据
                 
                 console.log(`📊 独立AI交易者数量: ${individualTraders.length}`);
                 
@@ -818,8 +937,7 @@
                     const platformKey = `${traderName}-Aster`;
                     if (trader.platforms && trader.platforms[platformKey]) {
                         traderBalances[aiName] = trader.platforms[platformKey].balance || 0;
-                        traderRois[aiName] = trader.platforms[platformKey].roi || 0;
-                        console.log(`  ${aiName}: 余额=$${traderBalances[aiName].toFixed(2)}, ROI=${traderRois[aiName].toFixed(2)}%`);
+                        console.log(`  ${aiName}: 余额=$${traderBalances[aiName].toFixed(2)}, ROI=${traderRois[aiName]?.toFixed(2) || '0.00'}%`);
                     } else {
                         console.log(`  ${aiName}: ⚠️ 未找到 Aster 平台数据`);
                     }
@@ -1060,8 +1178,11 @@
                     equityChart.data.labels = [];
                     equityChart.data.datasets.forEach(ds => ds.data = []);
                     
+                    // 反转历史数据（Redis返回的是倒序，最新的在前，需要反转为正序）
+                    const sortedHistory = [...data.history].reverse();
+                    
                     // 填充历史数据
-                    data.history.forEach(record => {
+                    sortedHistory.forEach(record => {
                         const time = new Date(record.timestamp).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
                         equityChart.data.labels.push(time);
                         
