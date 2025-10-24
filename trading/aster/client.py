@@ -375,6 +375,56 @@ class AsterClient(BaseExchangeClient):
             leverage: 杠杆倍数（可选，如果提供则在下单前设置杠杆）
         """
         try:
+            # Aster 平台风控：杠杆限制和保证金要求
+            if not reduce_only:
+                # 1. 杠杆限制：不超过 5 倍
+                if leverage is not None and leverage > 5:
+                    error_msg = f"❌ [Aster] 杠杆不能超过5倍 (当前: {leverage}x)"
+                    logger.error(error_msg)
+                    return {"status": "err", "response": error_msg}
+                
+                # 2. 获取实际价格（用于保证金计算）
+                actual_price = price
+                if actual_price is None:
+                    # 如果没有指定价格，获取当前市价
+                    orderbook = await self.get_orderbook(coin)
+                    bids = orderbook.get("bids", [])
+                    asks = orderbook.get("asks", [])
+                    
+                    if is_buy:
+                        actual_price = float(asks[0][0]) if asks else None
+                    else:
+                        actual_price = float(bids[0][0]) if bids else None
+                    
+                    if actual_price is None:
+                        error_msg = f"❌ [Aster] 无法获取 {coin} 的市价"
+                        logger.error(error_msg)
+                        return {"status": "err", "response": error_msg}
+                
+                # 3. 计算保证金：保证金 = (size * price) / leverage
+                effective_leverage = leverage if leverage is not None else 1
+                position_value = size * actual_price
+                required_margin = position_value / effective_leverage
+                
+                # 4. 保证金要求：至少 100 USDT
+                min_margin = 100.0
+                if required_margin < min_margin:
+                    error_msg = (
+                        f"❌ [Aster] 保证金不足 {min_margin} USDT\n"
+                        f"   仓位价值: ${position_value:.2f}\n"
+                        f"   杠杆: {effective_leverage}x\n"
+                        f"   所需保证金: ${required_margin:.2f}\n"
+                        f"   最小保证金: ${min_margin:.2f}"
+                    )
+                    logger.error(error_msg)
+                    return {"status": "err", "response": error_msg}
+                
+                logger.info(
+                    f"[Aster] ✅ 风控检查通过 - "
+                    f"杠杆: {effective_leverage}x, "
+                    f"保证金: ${required_margin:.2f}"
+                )
+            
             # 如果指定了杠杆，先设置杠杆
             if leverage is not None and not reduce_only:
                 try:
