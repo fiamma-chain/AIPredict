@@ -68,8 +68,19 @@ class AIGroup:
                 client = AsterClient(private_key, settings.aster_testnet)
                 self.multi_trader.add_platform(client, f"{name}-Aster")
         
-        # 保存第一个客户端用于获取市场数据（所有平台看同一个市场）
-        self.primary_client = list(self.multi_trader.platform_traders.values())[0].client if self.multi_trader.platform_traders else None
+        # 创建用于获取市场数据的 Hyperliquid 客户端（即使不用于交易）
+        # 这样可以保持使用 Hyperliquid 的深度数据，但不在其上交易
+        if "hyperliquid" not in enabled_platforms:
+            logger.info(f"[{name}] 📊 创建 Hyperliquid 数据源客户端（仅用于获取市场数据）")
+            self.data_source_client = HyperliquidClient(private_key, settings.hyperliquid_testnet)
+        else:
+            self.data_source_client = None
+        
+        # 保存用于获取市场数据的客户端
+        if self.data_source_client:
+            self.primary_client = self.data_source_client
+        else:
+            self.primary_client = list(self.multi_trader.platform_traders.values())[0].client if self.multi_trader.platform_traders else None
         
         # 统计数据
         self.stats = {
@@ -492,8 +503,12 @@ class ConsensusArena:
         self.running = False
         logger.info("🛑 共识交易系统正在停止...")
         for group in self.groups:
+            # 关闭交易平台客户端
             for trader in group.multi_trader.platform_traders.values():
                 await trader.client.close_session()
+            # 关闭数据源客户端（如果存在）
+            if hasattr(group, 'data_source_client') and group.data_source_client:
+                await group.data_source_client.close_session()
         logger.info("✅ 共识交易系统已停止")
 
 

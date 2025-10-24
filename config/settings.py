@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     """应用配置"""
     
     # 交易平台配置
-    enabled_platforms: str = "hyperliquid,aster"  # 启用的平台，逗号分隔
+    enabled_platforms: str = "aster"  # 启用的平台，逗号分隔（只在Aster交易，但从Hyperliquid获取市场数据）
     
     # Hyperliquid 配置（默认主网）
     hyperliquid_testnet: bool = False
