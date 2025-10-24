@@ -331,78 +331,43 @@
             <h1>🤖 AI Consensus Trading Arena</h1>
         </header>
         
-        <!-- Battle Display -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
-            <!-- AI Team Battle -->
-            <div style="background: linear-gradient(135deg, #1e222d 0%, #252936 100%); border: 2px solid #2b3139; border-radius: 16px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
-                <h2 style="text-align: center; font-size: 1.8em; margin-bottom: 30px; color: #fff;">🤖 AI Team Battle</h2>
-                <div style="display: flex; justify-content: space-around; align-items: center;">
-                    <div style="text-align: center;">
-                        <div style="font-size: 2.5em; font-weight: bold; color: #22c55e; margin-bottom: 15px;">Alpha</div>
-                        <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px;">
-                            <img src="/web/images/deepseek.jpg" 
-                                 alt="DeepSeek" title="DeepSeek" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
-                            <img src="/web/images/claude.jpg" 
-                                 alt="Claude" title="Claude (Anthropic)" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
-                            <img src="/web/images/grok.jpg" 
-                                 alt="Grok" title="Grok (xAI)" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
+        <!-- AI Team Battle -->
+        <div style="background: linear-gradient(135deg, #1e222d 0%, #252936 100%); border: 2px solid #2b3139; border-radius: 16px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); margin-bottom: 30px;">
+            <h2 style="text-align: center; font-size: 1.8em; margin-bottom: 30px; color: #fff;">🤖 AI Team Battle - Aster Platform</h2>
+            <div style="display: flex; justify-content: space-around; align-items: center;">
+                <div style="text-align: center;">
+                    <div style="font-size: 2.5em; font-weight: bold; color: #22c55e; margin-bottom: 15px;">Alpha</div>
+                    <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px;">
+                        <img src="/web/images/deepseek.jpg" 
+                             alt="DeepSeek" title="DeepSeek" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                             style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
+                        <img src="/web/images/claude.jpg" 
+                             alt="Claude" title="Claude (Anthropic)" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                             style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
+                        <img src="/web/images/grok.jpg" 
+                             alt="Grok" title="Grok (xAI)" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                             style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
                     </div>
-                        <div style="font-size: 1.8em; font-weight: bold; color: #22c55e;" id="alpha-total-roi">0%</div>
+                    <div style="font-size: 1.8em; font-weight: bold; color: #22c55e;" id="alpha-total-roi">0%</div>
                 </div>
-                    <div style="font-size: 2.5em; opacity: 0.5; font-weight: bold;">VS</div>
-                    <div style="text-align: center;">
-                        <div style="font-size: 2.5em; font-weight: bold; color: #3b82f6; margin-bottom: 15px;">Beta</div>
-                        <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px;">
-                            <img src="/web/images/gpt4.jpg" 
-                                 alt="GPT-4" title="GPT-4 (OpenAI)" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
-                            <img src="/web/images/gemini.jpg" 
-                                 alt="Gemini" title="Gemini (Google)" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
-                            <img src="/web/images/qwen.jpg" 
-                                 alt="Qwen" title="Qwen (Alibaba)" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                                 style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
+                <div style="font-size: 2.5em; opacity: 0.5; font-weight: bold;">VS</div>
+                <div style="text-align: center;">
+                    <div style="font-size: 2.5em; font-weight: bold; color: #3b82f6; margin-bottom: 15px;">Beta</div>
+                    <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px;">
+                        <img src="/web/images/gpt4.jpg" 
+                             alt="GPT-4" title="GPT-4 (OpenAI)" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                             style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
+                        <img src="/web/images/gemini.jpg" 
+                             alt="Gemini" title="Gemini (Google)" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                             style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
+                        <img src="/web/images/qwen.jpg" 
+                             alt="Qwen" title="Qwen (Alibaba)" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                             style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000;">
                     </div>
-                        <div style="font-size: 1.8em; font-weight: bold; color: #3b82f6;" id="beta-total-roi">0%</div>
-                    </div>
-                    </div>
-                    </div>
-            
-            <!-- Platform Battle -->
-            <div style="background: linear-gradient(135deg, #1e222d 0%, #252936 100%); border: 2px solid #2b3139; border-radius: 16px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
-                <h2 style="text-align: center; font-size: 1.8em; margin-bottom: 30px; color: #fff;">🏆 Platform Battle</h2>
-                <div style="display: flex; justify-content: space-around; align-items: center;">
-                    <div style="text-align: center;">
-                        <div style="margin-bottom: 15px;">
-                            <img src="/web/images/hyperliquid.jpg" 
-                                 alt="Hyperliquid" title="Hyperliquid" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                                 style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #000;">
+                    <div style="font-size: 1.8em; font-weight: bold; color: #3b82f6;" id="beta-total-roi">0%</div>
                 </div>
-                        <div style="font-size: 1.4em; font-weight: bold; color: #06b6d4; margin-bottom: 10px;">Hyperliquid</div>
-                        <div style="font-size: 0.85em; opacity: 0.7; margin-bottom: 15px;">
-                            <div>Alpha + Beta</div>
             </div>
-                        <div style="font-size: 1.8em; font-weight: bold; color: #06b6d4;" id="hl-total-roi">0%</div>
-                    </div>
-                    <div style="font-size: 2.5em; opacity: 0.5; font-weight: bold;">VS</div>
-                    <div style="text-align: center;">
-                        <div style="margin-bottom: 15px;">
-                            <img src="/web/images/aster.jpg" 
-                                 alt="Aster" title="AsterDex" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                                 style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #000;">
-                </div>
-                        <div style="font-size: 1.4em; font-weight: bold; color: #f59e0b; margin-bottom: 10px;">Aster</div>
-                        <div style="font-size: 0.85em; opacity: 0.7; margin-bottom: 15px;">
-                            <div>Alpha + Beta</div>
-                    </div>
-                        <div style="font-size: 1.8em; font-weight: bold; color: #f59e0b;" id="as-total-roi">0%</div>
-                    </div>
-                    </div>
-                    </div>
-                </div>
+        </div>
         
         <!-- Performance Curve -->
         <div class="chart-container">
@@ -424,20 +389,20 @@
                     <button onclick="changeInterval('4h')">4h</button>
                     <div class="trade-legend">
                         <div class="trade-legend-item">
-                                <div class="legend-marker" style="background: #8b5cf6; color: white;">▲</div>
-                                <span>🔷⭐ Alpha Open</span>
+                            <div class="legend-marker" style="background: #8b5cf6; color: white;">▲</div>
+                            <span>Alpha Open</span>
                         </div>
                         <div class="trade-legend-item">
-                                <div class="legend-marker" style="background: #8b5cf6; color: white;">▼</div>
-                                <span>🔷⭐ Alpha Close</span>
+                            <div class="legend-marker" style="background: #8b5cf6; color: white;">▼</div>
+                            <span>Alpha Close</span>
                         </div>
                         <div class="trade-legend-item">
-                                <div class="legend-marker" style="background: #f97316; color: white;">▲</div>
-                                <span>🔷⭐ Beta Open</span>
+                            <div class="legend-marker" style="background: #f97316; color: white;">▲</div>
+                            <span>Beta Open</span>
                         </div>
                         <div class="trade-legend-item">
-                                <div class="legend-marker" style="background: #f97316; color: white;">▼</div>
-                                <span>🔷⭐ Beta Close</span>
+                            <div class="legend-marker" style="background: #f97316; color: white;">▼</div>
+                            <span>Beta Close</span>
                         </div>
                     </div>
                 </div>
@@ -470,37 +435,21 @@
         let currentPeriodStartIndex = 0;  // Current period start index
         
         // Update custom legend
-        function updateEquityLegend(alphaHLRoi, alphaAsterRoi, betaHLRoi, betaAsterRoi) {
+        function updateEquityLegend(alphaRoi, betaRoi) {
             const legendContainer = document.getElementById('equity-legend');
             
             const legendItems = [
                 {
-                    label: 'Alpha-Hyperliquid',
+                    label: 'Alpha Team',
                     color: 'rgb(34, 197, 94)',
-                    roi: alphaHLRoi,
-                    aiLogos: ['deepseek', 'claude', 'grok'],
-                    platformLogo: 'hyperliquid'
+                    roi: alphaRoi,
+                    aiLogos: ['deepseek', 'claude', 'grok']
                 },
                 {
-                    label: 'Alpha-Aster',
-                    color: 'rgb(250, 204, 21)',
-                    roi: alphaAsterRoi,
-                    aiLogos: ['deepseek', 'claude', 'grok'],
-                    platformLogo: 'aster'
-                },
-                {
-                    label: 'Beta-Hyperliquid',
+                    label: 'Beta Team',
                     color: 'rgb(59, 130, 246)',
-                    roi: betaHLRoi,
-                    aiLogos: ['gpt4', 'gemini', 'qwen'],
-                    platformLogo: 'hyperliquid'
-                },
-                {
-                    label: 'Beta-Aster',
-                    color: 'rgb(239, 68, 68)',
-                    roi: betaAsterRoi,
-                    aiLogos: ['gpt4', 'gemini', 'qwen'],
-                    platformLogo: 'aster'
+                    roi: betaRoi,
+                    aiLogos: ['gpt4', 'gemini', 'qwen']
                 }
             ];
             
@@ -515,12 +464,8 @@
                         `).join('')}
                     </div>
                     <div style="width: 20px; height: 4px; background: ${item.color}; border-radius: 2px;"></div>
-                    <img src="/web/images/${item.platformLogo}.jpg" 
-                         onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                         style="width: 24px; height: 24px; border-radius: 50%; border: 1px solid #000;"
-                         title="${item.platformLogo}">
                     <span style="color: #fff; font-size: 13px; font-weight: 600;">
-                        ${item.roi >= 0 ? '+' : ''}${item.roi.toFixed(2)}%
+                        ${item.label}: ${item.roi >= 0 ? '+' : ''}${item.roi.toFixed(2)}%
                     </span>
                 </div>
             `).join('');
@@ -704,36 +649,20 @@
                     labels: [],
                     datasets: [
                         {
-                            label: 'Alpha-HL',
+                            label: 'Alpha Team',
                             data: [],
                             borderColor: 'rgb(34, 197, 94)',  // 鲜绿色
                             backgroundColor: 'rgba(34, 197, 94, 0.1)',
                             tension: 0.4,
-                            borderWidth: 2.5
+                            borderWidth: 3
                         },
                         {
-                            label: 'Alpha-AS',
-                            data: [],
-                            borderColor: 'rgb(250, 204, 21)',  // 金黄色
-                            backgroundColor: 'rgba(250, 204, 21, 0.1)',
-                            tension: 0.4,
-                            borderWidth: 2.5
-                        },
-                        {
-                            label: 'Beta-HL',
+                            label: 'Beta Team',
                             data: [],
                             borderColor: 'rgb(59, 130, 246)',  // 蓝色
                             backgroundColor: 'rgba(59, 130, 246, 0.1)',
                             tension: 0.4,
-                            borderWidth: 2.5
-                        },
-                        {
-                            label: 'Beta-AS',
-                            data: [],
-                            borderColor: 'rgb(239, 68, 68)',  // 鲜红色
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            tension: 0.4,
-                            borderWidth: 2.5
+                            borderWidth: 3
                         }
                     ]
                 },
@@ -759,7 +688,8 @@
                                 label: function(context) {
                                     const label = context.dataset.label || '';
                                     const value = context.parsed.y;
-                                    return `${label}: $${value.toFixed(2)}`;
+                                    const roi = ((value - 240) / 240 * 100).toFixed(2);
+                                    return `${label}: $${value.toFixed(2)} (${roi >= 0 ? '+' : ''}${roi}%)`;
                                 }
                             }
                         }
@@ -803,95 +733,35 @@
                 const alphaGroup = data.groups[0];
                 const betaGroup = data.groups[1];
                 
-                // 从platforms中聚合Alpha组数据
-                let alphaBalance = 0, alphaPnl = 0, alphaRoi = 0, alphaTrades = 0;
-                let alphaAddresses = [];
-                if (alphaGroup.platforms) {
-                    Object.values(alphaGroup.platforms).forEach(p => {
-                        alphaBalance += p.balance || 0;
-                        alphaPnl += p.pnl || 0;
-                        alphaRoi += p.roi || 0;
-                        alphaTrades += p.total_trades || 0;
-                    });
-                    alphaRoi = alphaRoi / Object.keys(alphaGroup.platforms).length; // 平均ROI
-                    // 获取第一个平台的地址（通常两个平台用同一个地址）
-                    const firstPlatform = Object.values(alphaGroup.platforms)[0];
-                    if (firstPlatform && firstPlatform.name) {
-                        alphaAddresses.push(firstPlatform.name.split('-')[0]);
-                    }
-                }
-                
-                // 从platforms中聚合Beta组数据
-                let betaBalance = 0, betaPnl = 0, betaRoi = 0, betaTrades = 0;
-                let betaAddresses = [];
-                if (betaGroup.platforms) {
-                    Object.values(betaGroup.platforms).forEach(p => {
-                        betaBalance += p.balance || 0;
-                        betaPnl += p.pnl || 0;
-                        betaRoi += p.roi || 0;
-                        betaTrades += p.total_trades || 0;
-                    });
-                    betaRoi = betaRoi / Object.keys(betaGroup.platforms).length; // 平均ROI
-                    const firstPlatform = Object.values(betaGroup.platforms)[0];
-                    if (firstPlatform && firstPlatform.name) {
-                        betaAddresses.push(firstPlatform.name.split('-')[0]);
-                    }
-                }
-                
-                // 获取平台数据
-                const alphaHL = alphaGroup.platforms['Alpha组-Hyperliquid'] || {};
+                // 获取Aster平台数据（唯一平台）
                 const alphaAster = alphaGroup.platforms['Alpha组-Aster'] || {};
-                const betaHL = betaGroup.platforms['Beta组-Hyperliquid'] || {};
                 const betaAster = betaGroup.platforms['Beta组-Aster'] || {};
                 
-                // 更新AI组对抗 - 显示平均ROI
+                const alphaRoi = alphaAster.roi || 0;
+                const betaRoi = betaAster.roi || 0;
+                
+                // 更新AI组对抗 - 显示ROI
                 document.getElementById('alpha-total-roi').textContent = `${alphaRoi >= 0 ? '+' : ''}${alphaRoi.toFixed(2)}%`;
                 document.getElementById('beta-total-roi').textContent = `${betaRoi >= 0 ? '+' : ''}${betaRoi.toFixed(2)}%`;
                 
-                // 更新平台对抗 - 计算每个平台的总ROI（Alpha+Beta）
-                const hlTotalRoi = ((alphaHL.roi || 0) + (betaHL.roi || 0)) / 2;
-                const asTotalRoi = ((alphaAster.roi || 0) + (betaAster.roi || 0)) / 2;
-                document.getElementById('hl-total-roi').textContent = `${hlTotalRoi >= 0 ? '+' : ''}${hlTotalRoi.toFixed(2)}%`;
-                document.getElementById('as-total-roi').textContent = `${asTotalRoi >= 0 ? '+' : ''}${asTotalRoi.toFixed(2)}%`;
-                
                 // 输出数据对比信息
-                console.log('📊 Data comparison [AI Groups vs Chart Legend]:');
-                console.log(`  Alpha avg ROI: ${alphaRoi.toFixed(2)}%`);
-                console.log(`  Beta avg ROI: ${betaRoi.toFixed(2)}%`);
-                console.log('📊 Data comparison [Platforms vs Chart Legend]:');
-                console.log(`  Hyperliquid avg ROI: ${hlTotalRoi.toFixed(2)}%`);
-                console.log(`  Aster avg ROI: ${asTotalRoi.toFixed(2)}%`);
+                console.log('📊 AI Teams Performance (Aster Platform):');
+                console.log(`  Alpha ROI: ${alphaRoi.toFixed(2)}%`);
+                console.log(`  Beta ROI: ${betaRoi.toFixed(2)}%`);
                 
                 // 更新权益曲线 - 智能数据点管理
                 const currentTime = new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
                 
-                // 获取四个平台的余额
-                const alphaHLBalance = alphaGroup.platforms['Alpha组-Hyperliquid']?.balance || 0;
-                const alphaAsterBalance = alphaGroup.platforms['Alpha组-Aster']?.balance || 0;
-                const betaHLBalance = betaGroup.platforms['Beta组-Hyperliquid']?.balance || 0;
-                const betaAsterBalance = betaGroup.platforms['Beta组-Aster']?.balance || 0;
-                
-                // 更新图例标签以显示ROI
-                const alphaHLRoi = alphaGroup.platforms['Alpha组-Hyperliquid']?.roi || 0;
-                const alphaAsterRoi = alphaGroup.platforms['Alpha组-Aster']?.roi || 0;
-                const betaHLRoi = betaGroup.platforms['Beta组-Hyperliquid']?.roi || 0;
-                const betaAsterRoi = betaGroup.platforms['Beta组-Aster']?.roi || 0;
-                
-                // 输出曲线图例的ROI数据
-                console.log('📈 Equity Curve Legend ROI:');
-                console.log(`  Alpha-HL: ${alphaHLRoi.toFixed(2)}%`);
-                console.log(`  Alpha-AS: ${alphaAsterRoi.toFixed(2)}%`);
-                console.log(`  Beta-HL: ${betaHLRoi.toFixed(2)}%`);
-                console.log(`  Beta-AS: ${betaAsterRoi.toFixed(2)}%`);
+                // 获取Aster平台的余额
+                const alphaBalance = alphaGroup.platforms['Alpha组-Aster']?.balance || 0;
+                const betaBalance = betaGroup.platforms['Beta组-Aster']?.balance || 0;
                 
                 // 更新图例标签（用于tooltip）
-                equityChart.data.datasets[0].label = `Alpha-HL`;
-                equityChart.data.datasets[1].label = `Alpha-AS`;
-                equityChart.data.datasets[2].label = `Beta-HL`;
-                equityChart.data.datasets[3].label = `Beta-AS`;
+                equityChart.data.datasets[0].label = `Alpha Team`;
+                equityChart.data.datasets[1].label = `Beta Team`;
                 
                 // 更新自定义HTML图例
-                updateEquityLegend(alphaHLRoi, alphaAsterRoi, betaHLRoi, betaAsterRoi);
+                updateEquityLegend(alphaRoi, betaRoi);
                 
                 // 检测是否有新决策（通过决策数量变化判断）
                 const currentDecisionCount = (alphaGroup.consensus_decisions?.length || 0) + (betaGroup.consensus_decisions?.length || 0);
@@ -917,10 +787,8 @@
                     
                     // 添加新周期的第一个数据点（决策点）
                     equityChart.data.labels.push(currentTime);
-                    equityChart.data.datasets[0].data.push(alphaHLBalance);
-                    equityChart.data.datasets[1].data.push(alphaAsterBalance);
-                    equityChart.data.datasets[2].data.push(betaHLBalance);
-                    equityChart.data.datasets[3].data.push(betaAsterBalance);
+                    equityChart.data.datasets[0].data.push(alphaBalance);
+                    equityChart.data.datasets[1].data.push(betaBalance);
                     
                 } else {
                     // 同一周期内：更新或添加临时点
@@ -928,34 +796,26 @@
                         // 首次加载，添加初始点
                         console.log('📊 First time loading curve data');
                         equityChart.data.labels.push(currentTime);
-                        equityChart.data.datasets[0].data.push(alphaHLBalance);
-                        equityChart.data.datasets[1].data.push(alphaAsterBalance);
-                        equityChart.data.datasets[2].data.push(betaHLBalance);
-                        equityChart.data.datasets[3].data.push(betaAsterBalance);
+                        equityChart.data.datasets[0].data.push(alphaBalance);
+                        equityChart.data.datasets[1].data.push(betaBalance);
                         currentPeriodStartIndex = 0;
                     } else {
                         // 更新当前周期的最后一个点（临时点）
                         const lastIndex = equityChart.data.labels.length - 1;
                         const oldValues = [
                             equityChart.data.datasets[0].data[lastIndex],
-                            equityChart.data.datasets[1].data[lastIndex],
-                            equityChart.data.datasets[2].data[lastIndex],
-                            equityChart.data.datasets[3].data[lastIndex]
+                            equityChart.data.datasets[1].data[lastIndex]
                         ];
-                        const newValues = [alphaHLBalance, alphaAsterBalance, betaHLBalance, betaAsterBalance];
+                        const newValues = [alphaBalance, betaBalance];
                         
                         console.log(`🔄 Update curve tail [${currentTime}]:`, 
-                            `Alpha-HL: $${oldValues[0].toFixed(2)} → $${newValues[0].toFixed(2)}`,
-                            `Alpha-AS: $${oldValues[1].toFixed(2)} → $${newValues[1].toFixed(2)}`,
-                            `Beta-HL: $${oldValues[2].toFixed(2)} → $${newValues[2].toFixed(2)}`,
-                            `Beta-AS: $${oldValues[3].toFixed(2)} → $${newValues[3].toFixed(2)}`
+                            `Alpha: $${oldValues[0].toFixed(2)} → $${newValues[0].toFixed(2)}`,
+                            `Beta: $${oldValues[1].toFixed(2)} → $${newValues[1].toFixed(2)}`
                         );
                         
                         equityChart.data.labels[lastIndex] = currentTime;
-                        equityChart.data.datasets[0].data[lastIndex] = alphaHLBalance;
-                        equityChart.data.datasets[1].data[lastIndex] = alphaAsterBalance;
-                        equityChart.data.datasets[2].data[lastIndex] = betaHLBalance;
-                        equityChart.data.datasets[3].data[lastIndex] = betaAsterBalance;
+                        equityChart.data.datasets[0].data[lastIndex] = alphaBalance;
+                        equityChart.data.datasets[1].data[lastIndex] = betaBalance;
                     }
                 }
                 
@@ -1071,14 +931,10 @@
                             balances[acc.platform] = acc.balance;
                         });
                         
-                        // Alpha-Hyperliquid
-                        equityChart.data.datasets[0].data.push(balances['Alpha组-Hyperliquid'] || 0);
                         // Alpha-Aster
-                        equityChart.data.datasets[1].data.push(balances['Alpha组-Aster'] || 0);
-                        // Beta-Hyperliquid
-                        equityChart.data.datasets[2].data.push(balances['Beta组-Hyperliquid'] || 0);
+                        equityChart.data.datasets[0].data.push(balances['Alpha组-Aster'] || 0);
                         // Beta-Aster
-                        equityChart.data.datasets[3].data.push(balances['Beta组-Aster'] || 0);
+                        equityChart.data.datasets[1].data.push(balances['Beta组-Aster'] || 0);
                     });
                     
                     // 更新当前周期起始索引为最后一个数据点
