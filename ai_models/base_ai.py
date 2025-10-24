@@ -114,14 +114,14 @@ class AITradingModel(ABC):
         change_24h = market_data.get("change_24h", 0)
         
         # 基础市场信息
-        prompt = f"""你是一个加密货币合约交易专家。请分析以下市场数据并给出交易建议。
+        prompt = f"""You are a cryptocurrency futures trading expert. Please analyze the following market data and provide trading advice.
 
-币种: {coin}
-当前价格: ${current_price:,.2f}
-24小时涨跌: {change_24h:+.2f}%
-24小时成交量: ${volume_24h:,.0f}
-资金费率: {funding_rate * 100:.4f}%
-未平仓合约: ${open_interest:,.0f}
+Asset: {coin}
+Current Price: ${current_price:,.2f}
+24h Change: {change_24h:+.2f}%
+24h Volume: ${volume_24h:,.0f}
+Funding Rate: {funding_rate * 100:.4f}%
+Open Interest: ${open_interest:,.0f}
 """
         
         # 如果有K线历史数据，添加时间序列分析
@@ -129,26 +129,26 @@ class AITradingModel(ABC):
             prompt += f"""
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 日内价格时间序列（15分钟K线）
+📊 Intraday Price Time Series (15-minute Candles)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 {kline_history}
 
-基于以上时间序列，你可以：
-• 识别价格趋势和动量
-• 判断支撑位和阻力位的有效性
-• 发现价格形态（突破、回调等）
-• 评估当前价格在区间中的位置
+Based on the above time series, you can:
+• Identify price trends and momentum
+• Assess validity of support and resistance levels
+• Discover price patterns (breakouts, pullbacks, etc.)
+• Evaluate current price position within the range
 """
         
         # 订单簿数据
         prompt += f"""
 
-订单簿（前5档）:
-买盘（Bids）:
+Order Book (Top 5 Levels):
+Bids:
 {self._format_orderbook_levels(bids)}
 
-卖盘（Asks）:
+Asks:
 {self._format_orderbook_levels(asks)}
 """
         
@@ -159,51 +159,51 @@ class AITradingModel(ABC):
             pnl_pct = ((current_price - entry_price) / entry_price) * 100 if entry_price > 0 else 0
             
             prompt += f"""
-当前持仓:
-- 入场价格: ${entry_price:,.2f}
-- 持仓大小: {size:.4f} {coin}
-- 未实现盈亏: ${pnl:,.2f} ({pnl_pct:+.2f}%)
+Current Position:
+- Entry Price: ${entry_price:,.2f}
+- Position Size: {size:.4f} {coin}
+- Unrealized PnL: ${pnl:,.2f} ({pnl_pct:+.2f}%)
 """
         else:
             prompt += f"""
-当前持仓: 无
+Current Position: None
 
-可用资金: ${self.current_balance:,.2f}
-最大单笔仓位: ${self.max_position_size:,.2f}
+Available Balance: ${self.current_balance:,.2f}
+Max Position Size: ${self.max_position_size:,.2f}
 """
         
         prompt += """
-⚡ 激进波段交易策略 - 追求更大收益空间 ⚡
+⚡ Aggressive Swing Trading Strategy - Pursuing Greater Profit Potential ⚡
 
-你的目标是作为一个**激进的波段交易员**，通过中高胜率获取高收益。
+Your goal is to be an **aggressive swing trader**, achieving high returns through medium-to-high win rate.
 
-交易理念：
-• 止损5% / 止盈10%，风险回报比1:2
-• 只在信心度≥50%时开仓（严格质量控制）
-• 给趋势足够的发展空间，不被小波动洗出
-• 追求更高胜率，减少频繁止损
+Trading Philosophy:
+• Stop Loss 5% / Take Profit 10%, Risk-Reward Ratio 1:2
+• Only open positions when confidence ≥50% (strict quality control)
+• Give trends enough room to develop, don't get shaken out by minor fluctuations
+• Pursue higher win rate, reduce frequent stop losses
 
-请分析：
-1. 价格短期趋势（上涨/下跌/震荡）
-2. 订单簿买卖力量对比
-3. 资金费率（正值=多头强，负值=空头强）
-4. 成交量和动量
-5. 是否有5-10%的波动空间（匹配止损止盈）
+Please Analyze:
+1. Short-term price trend (rising/falling/ranging)
+2. Order book buy/sell power comparison
+3. Funding rate (positive = bulls strong, negative = bears strong)
+4. Volume and momentum
+5. Whether there's 5-10% volatility space (matching stop loss/take profit)
 
-决策指引：
-• 强烈看涨信号（明确趋势+强势买盘） → STRONG_BUY (信心≥70%)
-• 温和看涨信号（小幅上涨+买盘优势） → BUY (信心50-70%)
-• 强烈看跌信号（明确趋势+强势卖盘） → STRONG_SELL (信心≥70%)
-• 温和看跌信号（小幅下跌+卖盘优势） → SELL (信心50-70%)
-• 完全无法判断、市场死寂、极度震荡 → HOLD (信心<50%)
+Decision Guidelines:
+• Strong bullish signals (clear trend + strong buying pressure) → STRONG_BUY (confidence ≥70%)
+• Moderate bullish signals (slight uptrend + buying advantage) → BUY (confidence 50-70%)
+• Strong bearish signals (clear trend + strong selling pressure) → STRONG_SELL (confidence ≥70%)
+• Moderate bearish signals (slight downtrend + selling advantage) → SELL (confidence 50-70%)
+• Completely uncertain / dead market / extreme volatility → HOLD (confidence <50%)
 
-⚠️ 质量控制：只在信心≥50%时开仓！
-低于50%信心度时，选择HOLD等待更好机会。
+⚠️ Quality Control: Only open positions when confidence ≥50%!
+When confidence is below 50%, choose HOLD and wait for better opportunities.
 
-回复格式（严格按照此格式）:
+Response Format (strictly follow this format):
 DECISION: [STRONG_BUY/BUY/HOLD/SELL/STRONG_SELL]
-CONFIDENCE: [0-100的数字]
-REASONING: [你的分析理由，50-100字]
+CONFIDENCE: [number from 0-100]
+REASONING: [your analysis reasoning, 50-100 words]
 """
         
         return prompt
@@ -211,7 +211,7 @@ REASONING: [你的分析理由，50-100字]
     def _format_orderbook_levels(self, levels: List) -> str:
         """格式化订单簿档位"""
         if not levels:
-            return "  无数据"
+            return "  No data"
         
         result = []
         for level in levels[:5]:
@@ -223,9 +223,9 @@ REASONING: [你的分析理由，50-100字]
                 size = level[1]
             else:
                 continue
-            result.append(f"  价格: ${float(price):,.2f}, 数量: {float(size):.4f}")
+            result.append(f"  Price: ${float(price):,.2f}, Amount: {float(size):.4f}")
         
-        return "\n".join(result) if result else "  无数据"
+        return "\n".join(result) if result else "  No data"
     
     def parse_ai_response(self, response: str) -> tuple[TradingDecision, float, str]:
         """
@@ -239,7 +239,7 @@ REASONING: [你的分析理由，50-100字]
         """
         decision = TradingDecision.HOLD
         confidence = 50.0
-        reasoning = "无法解析 AI 响应"
+        reasoning = "Unable to parse AI response"
         
         try:
             lines = response.strip().split('\n')
