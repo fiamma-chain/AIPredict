@@ -251,6 +251,115 @@ class RedisManager:
         except Exception as e:
             logger.error(f"追加 {model_name} 响应失败: {e}")
     
+    def save_trade(self, group_name: str, platform_name: str, trade: Dict):
+        """
+        保存单笔交易记录
+        
+        Args:
+            group_name: 组名
+            platform_name: 平台名称
+            trade: 交易记录
+        """
+        if not self.is_connected():
+            logger.warning("Redis 未连接，跳过保存交易记录")
+            return
+        
+        try:
+            key = f"trades:{group_name}:{platform_name}"
+            
+            # 添加时间戳（如果没有）
+            if 'time' not in trade:
+                trade['time'] = datetime.now().isoformat()
+            
+            # 追加到列表
+            self.redis_client.rpush(key, json.dumps(trade))
+            
+            # 只保留最近1000笔交易
+            self.redis_client.ltrim(key, -1000, -1)
+            
+            # 设置过期时间（30天）
+            self.redis_client.expire(key, 30 * 24 * 60 * 60)
+            
+            logger.debug(f"💾 已保存交易记录: {group_name}/{platform_name}")
+            
+        except Exception as e:
+            logger.error(f"保存交易记录失败: {e}")
+    
+    def get_trades(self, group_name: str, platform_name: str, limit: int = -1) -> List[Dict]:
+        """
+        获取交易记录
+        
+        Args:
+            group_name: 组名
+            platform_name: 平台名称
+            limit: 返回最近的N条记录，-1表示返回所有记录
+            
+        Returns:
+            交易记录列表，按时间顺序（最早的在前）
+        """
+        if not self.is_connected():
+            logger.warning("Redis 未连接，返回空交易记录")
+            return []
+        
+        try:
+            key = f"trades:{group_name}:{platform_name}"
+            
+            # 获取记录
+            if limit == -1:
+                raw_data = self.redis_client.lrange(key, 0, -1)
+            else:
+                raw_data = self.redis_client.lrange(key, -limit, -1)
+            
+            trades = []
+            for item in raw_data:
+                try:
+                    trade = json.loads(item)
+                    trades.append(trade)
+                except json.JSONDecodeError as e:
+                    logger.error(f"解析交易记录失败: {e}")
+                    continue
+            
+            logger.info(f"📊 获取 {group_name}/{platform_name} 交易记录: {len(trades)} 条")
+            return trades
+            
+        except Exception as e:
+            logger.error(f"获取交易记录失败: {e}")
+            return []
+    
+    def clear_trades(self, group_name: str = None, platform_name: str = None):
+        """
+        清空交易记录
+        
+        Args:
+            group_name: 组名，None表示清空所有
+            platform_name: 平台名称，None表示清空该组所有平台
+        """
+        if not self.is_connected():
+            return
+        
+        try:
+            if group_name is None:
+                # 清空所有交易记录
+                pattern = "trades:*"
+                keys = self.redis_client.keys(pattern)
+                if keys:
+                    self.redis_client.delete(*keys)
+                logger.info("🗑️  已清空所有交易记录")
+            elif platform_name is None:
+                # 清空某组的所有交易记录
+                pattern = f"trades:{group_name}:*"
+                keys = self.redis_client.keys(pattern)
+                if keys:
+                    self.redis_client.delete(*keys)
+                logger.info(f"🗑️  已清空 {group_name} 的所有交易记录")
+            else:
+                # 清空特定平台的交易记录
+                key = f"trades:{group_name}:{platform_name}"
+                self.redis_client.delete(key)
+                logger.info(f"🗑️  已清空 {group_name}/{platform_name} 的交易记录")
+        except Exception as e:
+            logger.error(f"清空交易记录失败: {e}")
+    
     def get_stats(self) -> Dict:
         """获取 Redis 统计信息"""
         if not self.is_connected():
@@ -260,11 +369,17 @@ class RedisManager:
             info = self.redis_client.info()
             history_count = self.redis_client.llen("balance_history")
             
+            # 统计交易记录数量
+            trade_keys = self.redis_client.keys("trades:*")
+            total_trades = sum(self.redis_client.llen(key) for key in trade_keys)
+            
             return {
                 "connected": True,
                 "redis_version": info.get("redis_version", "unknown"),
                 "used_memory_human": info.get("used_memory_human", "unknown"),
                 "balance_history_count": history_count,
+                "trade_records_count": total_trades,
+                "trade_keys_count": len(trade_keys),
                 "uptime_days": info.get("uptime_in_days", 0)
             }
         except Exception as e:

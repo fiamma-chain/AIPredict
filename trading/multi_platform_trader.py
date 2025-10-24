@@ -8,6 +8,7 @@ from datetime import datetime
 from ai_models.base_ai import TradingDecision
 from trading.base_client import BaseExchangeClient
 from trading.auto_trader import AutoTrader
+from utils.redis_manager import redis_manager
 
 logger = logging.getLogger(__name__)
 
@@ -40,12 +41,13 @@ class PlatformTrader:
             "positions": {}
         }
     
-    async def initialize(self, initial_balance: float = None):
+    async def initialize(self, initial_balance: float = None, group_name: str = ""):
         """
         初始化平台交易器
         
         Args:
             initial_balance: 初始余额（如果为None，则从账户获取）
+            group_name: 组名（用于从Redis恢复交易记录）
         """
         if initial_balance is not None:
             self.start_balance = initial_balance
@@ -57,6 +59,16 @@ class PlatformTrader:
         self.stats["balance"] = self.start_balance
         self.stats["initial_balance"] = self.start_balance
         logger.info(f"[{self.name}] 初始余额: ${self.start_balance:,.2f}")
+        
+        # 从Redis恢复历史交易记录
+        if group_name and redis_manager.is_connected():
+            try:
+                historical_trades = redis_manager.get_trades(group_name, self.name)
+                if historical_trades:
+                    self.stats["trades"] = historical_trades
+                    logger.info(f"[{self.name}] 📚 从Redis恢复 {len(historical_trades)} 笔历史交易记录")
+            except Exception as e:
+                logger.error(f"[{self.name}] ❌ 恢复历史交易记录失败: {e}")
     
     async def execute_decision(
         self,
@@ -64,7 +76,8 @@ class PlatformTrader:
         decision: TradingDecision,
         confidence: float,
         reasoning: str,
-        current_price: float
+        current_price: float,
+        group_name: str = ""
     ) -> Optional[Dict]:
         """
         执行交易决策
@@ -75,6 +88,7 @@ class PlatformTrader:
             confidence: 信心度
             reasoning: 理由
             current_price: 当前价格
+            group_name: 组名（用于保存到Redis）
             
         Returns:
             交易结果
@@ -90,11 +104,19 @@ class PlatformTrader:
         
         # 更新统计
         if result:
-            self.stats["trades"].append({
+            trade_record = {
                 **result,
                 "platform": self.client.platform_name
-            })
+            }
+            self.stats["trades"].append(trade_record)
             self.stats["total_trades"] = len([t for t in self.stats["trades"] if t.get('action') == 'close'])
+            
+            # 保存到Redis（如果是完整交易，即包含px和action）
+            if group_name and redis_manager.is_connected() and 'px' in result:
+                try:
+                    redis_manager.save_trade(group_name, self.name, trade_record)
+                except Exception as e:
+                    logger.error(f"[{self.name}] ❌ 保存交易到Redis失败: {e}")
         
         return result
     
@@ -141,15 +163,16 @@ class MultiPlatformTrader:
         self.platform_traders[platform_name] = trader
         logger.info(f"✅ 添加交易平台: {platform_name}")
     
-    async def initialize_all(self, initial_balance: float = None):
+    async def initialize_all(self, initial_balance: float = None, group_name: str = ""):
         """
         初始化所有平台
         
         Args:
             initial_balance: 初始余额（如果为None，则从各平台账户获取）
+            group_name: 组名（用于从Redis恢复数据）
         """
         for name, trader in self.platform_traders.items():
-            await trader.initialize(initial_balance)
+            await trader.initialize(initial_balance, group_name)
     
     async def execute_decision_all(
         self,
@@ -157,7 +180,8 @@ class MultiPlatformTrader:
         decision: TradingDecision,
         confidence: float,
         reasoning: str,
-        current_price: float
+        current_price: float,
+        group_name: str = ""
     ) -> Dict[str, Optional[Dict]]:
         """
         在所有平台上执行相同的交易决策
@@ -168,6 +192,7 @@ class MultiPlatformTrader:
             confidence: 信心度
             reasoning: 理由
             current_price: 当前价格
+            group_name: 组名（用于保存到Redis）
             
         Returns:
             各平台的交易结果字典
@@ -189,7 +214,7 @@ class MultiPlatformTrader:
         import asyncio
         tasks = []
         for name, trader in self.platform_traders.items():
-            tasks.append(trader.execute_decision(coin, decision, confidence, reasoning, current_price))
+            tasks.append(trader.execute_decision(coin, decision, confidence, reasoning, current_price, group_name))
         
         platform_results = await asyncio.gather(*tasks)
         

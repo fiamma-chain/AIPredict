@@ -198,7 +198,7 @@ class IndividualAITrader:
         
         logger.info(f"[{self.name}] 🚀 在所有平台上执行决策: {decision}")
         results = await self.multi_trader.execute_decision_all(
-            coin, decision, confidence, reasoning, current_price
+            coin, decision, confidence, reasoning, current_price, self.name
         )
         
         for platform_name, result in results.items():
@@ -276,7 +276,8 @@ class AIGroup:
     
     async def initialize(self):
         """初始化组"""
-        await self.multi_trader.initialize_all(settings.ai_initial_balance)
+        # 传入组名，用于从Redis恢复交易记录
+        await self.multi_trader.initialize_all(settings.ai_initial_balance, self.name)
         
         # 同步各平台持仓
         for platform_name, trader in self.multi_trader.platform_traders.items():
@@ -437,7 +438,7 @@ class AIGroup:
         
         logger.info(f"[{self.name}] 🚀 在所有平台上执行决策: {decision}")
         results = await self.multi_trader.execute_decision_all(
-            coin, decision, confidence, reasoning, current_price
+            coin, decision, confidence, reasoning, current_price, self.name
         )
         
         for platform_name, result in results.items():
