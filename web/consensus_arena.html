@@ -435,34 +435,21 @@
         let currentPeriodStartIndex = 0;  // Current period start index
         
         // Update custom legend
-        function updateEquityLegend(alphaRoi, betaRoi) {
+        function updateEquityLegend(legendItems) {
             const legendContainer = document.getElementById('equity-legend');
-            
-            const legendItems = [
-                {
-                    label: 'Alpha Team',
-                    color: 'rgb(34, 197, 94)',
-                    roi: alphaRoi,
-                    aiLogos: ['deepseek', 'claude', 'grok']
-                },
-                {
-                    label: 'Beta Team',
-                    color: 'rgb(59, 130, 246)',
-                    roi: betaRoi,
-                    aiLogos: ['gpt4', 'gemini', 'qwen']
-                }
-            ];
             
             legendContainer.innerHTML = legendItems.map(item => `
                 <div style="display: flex; align-items: center; gap: 8px; padding: 8px 15px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 2px solid ${item.color};">
-                    <div style="display: flex; gap: 3px;">
-                        ${item.aiLogos.map(ai => `
-                            <img src="/web/images/${ai}.jpg" 
-                                 onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                                 style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid #000;"
-                                 title="${ai}">
-                        `).join('')}
-                    </div>
+                    ${item.aiLogos ? `
+                        <div style="display: flex; gap: 3px;">
+                            ${item.aiLogos.map(ai => `
+                                <img src="/web/images/${ai}.jpg" 
+                                     onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
+                                     style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid #000;"
+                                     title="${ai}">
+                            `).join('')}
+                        </div>
+                    ` : ''}
                     <div style="width: 20px; height: 4px; background: ${item.color}; border-radius: 2px;"></div>
                     <span style="color: #fff; font-size: 13px; font-weight: 600;">
                         ${item.label}: ${item.roi >= 0 ? '+' : ''}${item.roi.toFixed(2)}%
@@ -663,6 +650,61 @@
                             backgroundColor: 'rgba(59, 130, 246, 0.1)',
                             tension: 0.4,
                             borderWidth: 3
+                        },
+                        // 独立AI交易者曲线
+                        {
+                            label: 'DeepSeek-Solo',
+                            data: [],
+                            borderColor: 'rgb(147, 51, 234)',  // 紫色
+                            backgroundColor: 'rgba(147, 51, 234, 0.1)',
+                            tension: 0.4,
+                            borderWidth: 2,
+                            borderDash: [5, 5]  // 虚线
+                        },
+                        {
+                            label: 'Claude-Solo',
+                            data: [],
+                            borderColor: 'rgb(236, 72, 153)',  // 粉色
+                            backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                            tension: 0.4,
+                            borderWidth: 2,
+                            borderDash: [5, 5]
+                        },
+                        {
+                            label: 'Grok-Solo',
+                            data: [],
+                            borderColor: 'rgb(251, 146, 60)',  // 橙色
+                            backgroundColor: 'rgba(251, 146, 60, 0.1)',
+                            tension: 0.4,
+                            borderWidth: 2,
+                            borderDash: [5, 5]
+                        },
+                        {
+                            label: 'GPT-Solo',
+                            data: [],
+                            borderColor: 'rgb(14, 165, 233)',  // 天蓝色
+                            backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                            tension: 0.4,
+                            borderWidth: 2,
+                            borderDash: [5, 5]
+                        },
+                        {
+                            label: 'Gemini-Solo',
+                            data: [],
+                            borderColor: 'rgb(234, 179, 8)',  // 黄色
+                            backgroundColor: 'rgba(234, 179, 8, 0.1)',
+                            tension: 0.4,
+                            borderWidth: 2,
+                            borderDash: [5, 5]
+                        },
+                        {
+                            label: 'Qwen-Solo',
+                            data: [],
+                            borderColor: 'rgb(244, 63, 94)',  // 红色
+                            backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                            tension: 0.4,
+                            borderWidth: 2,
+                            borderDash: [5, 5]
                         }
                     ]
                 },
@@ -688,7 +730,9 @@
                                 label: function(context) {
                                     const label = context.dataset.label || '';
                                     const value = context.parsed.y;
-                                    const roi = ((value - 240) / 240 * 100).toFixed(2);
+                                    // 初始余额：组为480，独立AI为500
+                                    const initialBalance = label.includes('Team') ? 480 : 500;
+                                    const roi = ((value - initialBalance) / initialBalance * 100).toFixed(2);
                                     return `${label}: $${value.toFixed(2)} (${roi >= 0 ? '+' : ''}${roi}%)`;
                                 }
                             }
@@ -756,12 +800,70 @@
                 const alphaBalance = alphaGroup.platforms['Alpha组-Aster']?.balance || 0;
                 const betaBalance = betaGroup.platforms['Beta组-Aster']?.balance || 0;
                 
+                // 获取独立AI交易者数据
+                const individualTraders = data.individual_traders || [];
+                const traderBalances = {};
+                const traderRois = {};
+                
+                individualTraders.forEach(trader => {
+                    const traderName = trader.trader_name;
+                    const aiName = trader.ai_name;
+                    const platformKey = `${traderName}-Aster`;
+                    if (trader.platforms && trader.platforms[platformKey]) {
+                        traderBalances[aiName] = trader.platforms[platformKey].balance || 0;
+                        traderRois[aiName] = trader.platforms[platformKey].roi || 0;
+                    }
+                });
+                
                 // 更新图例标签（用于tooltip）
                 equityChart.data.datasets[0].label = `Alpha Team`;
                 equityChart.data.datasets[1].label = `Beta Team`;
+                equityChart.data.datasets[2].label = `DeepSeek-Solo`;
+                equityChart.data.datasets[3].label = `Claude-Solo`;
+                equityChart.data.datasets[4].label = `Grok-Solo`;
+                equityChart.data.datasets[5].label = `GPT-Solo`;
+                equityChart.data.datasets[6].label = `Gemini-Solo`;
+                equityChart.data.datasets[7].label = `Qwen-Solo`;
+                
+                // 构建图例数据
+                const legendItems = [
+                    {
+                        label: 'Alpha Team',
+                        color: 'rgb(34, 197, 94)',
+                        roi: alphaRoi,
+                        aiLogos: ['deepseek', 'claude', 'grok']
+                    },
+                    {
+                        label: 'Beta Team',
+                        color: 'rgb(59, 130, 246)',
+                        roi: betaRoi,
+                        aiLogos: ['gpt4', 'gemini', 'qwen']
+                    }
+                ];
+                
+                // 添加独立AI交易者到图例
+                const soloAIs = [
+                    { name: 'DeepSeek-Solo', color: 'rgb(147, 51, 234)' },
+                    { name: 'Claude-Solo', color: 'rgb(236, 72, 153)' },
+                    { name: 'Grok-Solo', color: 'rgb(251, 146, 60)' },
+                    { name: 'GPT-Solo', color: 'rgb(14, 165, 233)' },
+                    { name: 'Gemini-Solo', color: 'rgb(234, 179, 8)' },
+                    { name: 'Qwen-Solo', color: 'rgb(244, 63, 94)' }
+                ];
+                
+                soloAIs.forEach(ai => {
+                    const aiKey = ai.name.replace('-Solo', '');
+                    if (traderRois[aiKey] !== undefined) {
+                        legendItems.push({
+                            label: ai.name,
+                            color: ai.color,
+                            roi: traderRois[aiKey]
+                        });
+                    }
+                });
                 
                 // 更新自定义HTML图例
-                updateEquityLegend(alphaRoi, betaRoi);
+                updateEquityLegend(legendItems);
                 
                 // 检测是否有新决策（通过决策数量变化判断）
                 const currentDecisionCount = (alphaGroup.consensus_decisions?.length || 0) + (betaGroup.consensus_decisions?.length || 0);
@@ -789,6 +891,12 @@
                     equityChart.data.labels.push(currentTime);
                     equityChart.data.datasets[0].data.push(alphaBalance);
                     equityChart.data.datasets[1].data.push(betaBalance);
+                    equityChart.data.datasets[2].data.push(traderBalances['DeepSeek'] || 0);
+                    equityChart.data.datasets[3].data.push(traderBalances['Claude'] || 0);
+                    equityChart.data.datasets[4].data.push(traderBalances['Grok'] || 0);
+                    equityChart.data.datasets[5].data.push(traderBalances['GPT'] || 0);
+                    equityChart.data.datasets[6].data.push(traderBalances['Gemini'] || 0);
+                    equityChart.data.datasets[7].data.push(traderBalances['Qwen'] || 0);
                     
                 } else {
                     // 同一周期内：更新或添加临时点
@@ -798,24 +906,31 @@
                         equityChart.data.labels.push(currentTime);
                         equityChart.data.datasets[0].data.push(alphaBalance);
                         equityChart.data.datasets[1].data.push(betaBalance);
+                        equityChart.data.datasets[2].data.push(traderBalances['DeepSeek'] || 0);
+                        equityChart.data.datasets[3].data.push(traderBalances['Claude'] || 0);
+                        equityChart.data.datasets[4].data.push(traderBalances['Grok'] || 0);
+                        equityChart.data.datasets[5].data.push(traderBalances['GPT'] || 0);
+                        equityChart.data.datasets[6].data.push(traderBalances['Gemini'] || 0);
+                        equityChart.data.datasets[7].data.push(traderBalances['Qwen'] || 0);
                         currentPeriodStartIndex = 0;
                     } else {
                         // 更新当前周期的最后一个点（临时点）
                         const lastIndex = equityChart.data.labels.length - 1;
-                        const oldValues = [
-                            equityChart.data.datasets[0].data[lastIndex],
-                            equityChart.data.datasets[1].data[lastIndex]
-                        ];
-                        const newValues = [alphaBalance, betaBalance];
                         
                         console.log(`🔄 Update curve tail [${currentTime}]:`, 
-                            `Alpha: $${oldValues[0].toFixed(2)} → $${newValues[0].toFixed(2)}`,
-                            `Beta: $${oldValues[1].toFixed(2)} → $${newValues[1].toFixed(2)}`
+                            `Alpha: $${equityChart.data.datasets[0].data[lastIndex].toFixed(2)} → $${alphaBalance.toFixed(2)}`,
+                            `Beta: $${equityChart.data.datasets[1].data[lastIndex].toFixed(2)} → $${betaBalance.toFixed(2)}`
                         );
                         
                         equityChart.data.labels[lastIndex] = currentTime;
                         equityChart.data.datasets[0].data[lastIndex] = alphaBalance;
                         equityChart.data.datasets[1].data[lastIndex] = betaBalance;
+                        equityChart.data.datasets[2].data[lastIndex] = traderBalances['DeepSeek'] || 0;
+                        equityChart.data.datasets[3].data[lastIndex] = traderBalances['Claude'] || 0;
+                        equityChart.data.datasets[4].data[lastIndex] = traderBalances['Grok'] || 0;
+                        equityChart.data.datasets[5].data[lastIndex] = traderBalances['GPT'] || 0;
+                        equityChart.data.datasets[6].data[lastIndex] = traderBalances['Gemini'] || 0;
+                        equityChart.data.datasets[7].data[lastIndex] = traderBalances['Qwen'] || 0;
                     }
                 }
                 
@@ -927,14 +1042,30 @@
                         
                         // 将accounts数组转换为字典
                         const balances = {};
+                        const traderBalances = {};
+                        
                         record.accounts.forEach(acc => {
-                            balances[acc.platform] = acc.balance;
+                            if (acc.type === 'group') {
+                                // 组账户
+                                balances[acc.platform] = acc.balance;
+                            } else if (acc.type === 'individual') {
+                                // 独立AI交易者账户
+                                const aiName = acc.ai_name;
+                                traderBalances[aiName] = acc.balance;
+                            }
                         });
                         
                         // Alpha-Aster
                         equityChart.data.datasets[0].data.push(balances['Alpha组-Aster'] || 0);
                         // Beta-Aster
                         equityChart.data.datasets[1].data.push(balances['Beta组-Aster'] || 0);
+                        // 独立AI交易者
+                        equityChart.data.datasets[2].data.push(traderBalances['DeepSeek'] || 0);
+                        equityChart.data.datasets[3].data.push(traderBalances['Claude'] || 0);
+                        equityChart.data.datasets[4].data.push(traderBalances['Grok'] || 0);
+                        equityChart.data.datasets[5].data.push(traderBalances['GPT'] || 0);
+                        equityChart.data.datasets[6].data.push(traderBalances['Gemini'] || 0);
+                        equityChart.data.datasets[7].data.push(traderBalances['Qwen'] || 0);
                     });
                     
                     // 更新当前周期起始索引为最后一个数据点
