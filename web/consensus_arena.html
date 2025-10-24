@@ -496,7 +496,7 @@
         </div>
         
         <!-- Consensus Decisions -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
             <div class="decisions-container">
                 <h2 style="margin-bottom: 20px;">🅰️ Alpha Team - Consensus</h2>
                 <div id="alpha-decisions"></div>
@@ -505,6 +505,72 @@
             <div class="decisions-container">
                 <h2 style="margin-bottom: 20px;">🅱️ Beta Team - Consensus</h2>
                 <div id="beta-decisions"></div>
+            </div>
+        </div>
+        
+        <!-- Solo AI Decisions -->
+        <div style="margin-top: 30px;">
+            <h2 style="text-align: center; margin-bottom: 25px; font-size: 1.6em;">🤖 Solo AI Traders - Individual Decisions</h2>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                <!-- DeepSeek Solo -->
+                <div class="decisions-container" style="max-height: 500px;">
+                    <h3 style="margin-bottom: 15px; color: rgb(147, 51, 234); display: flex; align-items: center; gap: 10px;">
+                        <img src="/web/images/deepseek.jpg" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');" 
+                             style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgb(147, 51, 234);">
+                        DeepSeek
+                    </h3>
+                    <div id="deepseek-decisions"></div>
+                </div>
+                
+                <!-- Claude Solo -->
+                <div class="decisions-container" style="max-height: 500px;">
+                    <h3 style="margin-bottom: 15px; color: rgb(236, 72, 153); display: flex; align-items: center; gap: 10px;">
+                        <img src="/web/images/claude.jpg" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');" 
+                             style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgb(236, 72, 153);">
+                        Claude
+                    </h3>
+                    <div id="claude-decisions"></div>
+                </div>
+                
+                <!-- Grok Solo -->
+                <div class="decisions-container" style="max-height: 500px;">
+                    <h3 style="margin-bottom: 15px; color: rgb(251, 146, 60); display: flex; align-items: center; gap: 10px;">
+                        <img src="/web/images/grok.jpg" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');" 
+                             style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgb(251, 146, 60);">
+                        Grok
+                    </h3>
+                    <div id="grok-decisions"></div>
+                </div>
+                
+                <!-- GPT Solo -->
+                <div class="decisions-container" style="max-height: 500px;">
+                    <h3 style="margin-bottom: 15px; color: rgb(14, 165, 233); display: flex; align-items: center; gap: 10px;">
+                        <img src="/web/images/gpt4.png" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');" 
+                             style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgb(14, 165, 233);">
+                        GPT-4
+                    </h3>
+                    <div id="gpt-decisions"></div>
+                </div>
+                
+                <!-- Gemini Solo -->
+                <div class="decisions-container" style="max-height: 500px;">
+                    <h3 style="margin-bottom: 15px; color: rgb(234, 179, 8); display: flex; align-items: center; gap: 10px;">
+                        <img src="/web/images/gemini.png" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');" 
+                             style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgb(234, 179, 8);">
+                        Gemini
+                    </h3>
+                    <div id="gemini-decisions"></div>
+                </div>
+                
+                <!-- Qwen Solo -->
+                <div class="decisions-container" style="max-height: 500px;">
+                    <h3 style="margin-bottom: 15px; color: rgb(244, 63, 94); display: flex; align-items: center; gap: 10px;">
+                        <img src="/web/images/qwen.jpg" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');" 
+                             style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgb(244, 63, 94);">
+                        Qwen
+                    </h3>
+                    <div id="qwen-decisions"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -1100,6 +1166,28 @@
                 // 更新Beta组决策
                 updateDecisions('beta-decisions', betaGroup.consensus_decisions);
                 
+                // 更新独立AI决策
+                const soloAIConfigs = [
+                    { aiName: 'DeepSeek', containerId: 'deepseek-decisions', color: '#9333ea' },
+                    { aiName: 'Claude', containerId: 'claude-decisions', color: '#ec4899' },
+                    { aiName: 'Grok', containerId: 'grok-decisions', color: '#fb923c' },
+                    { aiName: 'GPT', containerId: 'gpt-decisions', color: '#0ea5e9' },
+                    { aiName: 'Gemini', containerId: 'gemini-decisions', color: '#eab308' },
+                    { aiName: 'Qwen', containerId: 'qwen-decisions', color: '#f43f5e' }
+                ];
+                
+                soloAIConfigs.forEach(config => {
+                    const trader = individualTraders.find(t => t.ai_name === config.aiName);
+                    if (trader && trader.decisions) {
+                        updateSoloDecisions(config.containerId, trader.decisions, config.color);
+                    } else {
+                        const container = document.getElementById(config.containerId);
+                        if (container) {
+                            container.innerHTML = '<p style="opacity: 0.7; font-size: 0.9em;">No decisions yet...</p>';
+                        }
+                    }
+                });
+                
                 console.log('✅ Data update completed\n');
                 
             } catch (error) {
@@ -1158,6 +1246,54 @@
                             <strong>Consensus Summary:</strong><br>
                             ${highlightDecisions(decision.summary.replace(/\n/g, '<br>'))}
                         </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Update solo AI decisions (simpler format without consensus voting)
+        function updateSoloDecisions(containerId, decisions, aiColor) {
+            const container = document.getElementById(containerId);
+            if (!decisions || decisions.length === 0) {
+                container.innerHTML = '<p style="opacity: 0.7; font-size: 0.9em;">No decisions yet...</p>';
+                return;
+            }
+            
+            // Convert hex color to rgb
+            const r = parseInt(aiColor.slice(1,3), 16);
+            const g = parseInt(aiColor.slice(3,5), 16);
+            const b = parseInt(aiColor.slice(5,7), 16);
+            
+            container.innerHTML = decisions.map(decision => {
+                const date = new Date(decision.time);
+                const timeStr = date.toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                return `
+                    <div class="decision-item" style="border-left-color: ${aiColor}; padding: 15px; margin-bottom: 12px;">
+                        <div class="decision-header" style="margin-bottom: 10px;">
+                            <span class="decision-action" style="font-size: 1.1em; background: rgba(${r}, ${g}, ${b}, 0.2);">
+                                ${highlightDecisions(decision.decision)}
+                            </span>
+                            <span class="decision-time" style="font-size: 0.85em;">${timeStr}</span>
+                        </div>
+                        <div style="font-size: 0.9em; margin-bottom: 8px;">
+                            <strong>Price:</strong> $${decision.price.toLocaleString()}
+                        </div>
+                        ${decision.confidence ? `
+                            <div style="font-size: 0.85em; opacity: 0.8; margin-bottom: 8px;">
+                                <strong>Confidence:</strong> ${decision.confidence.toFixed(0)}%
+                            </div>
+                        ` : ''}
+                        ${decision.reasoning ? `
+                            <div style="font-size: 0.85em; opacity: 0.9; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 6px; line-height: 1.5;">
+                                ${highlightDecisions(decision.reasoning.replace(/\n/g, '<br>'))}
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             }).join('');
