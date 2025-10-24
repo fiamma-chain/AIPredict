@@ -1085,12 +1085,13 @@
                     equityChart.data.labels.push(currentTime);
                     equityChart.data.datasets[0].data.push(alphaBalance);
                     equityChart.data.datasets[1].data.push(betaBalance);
-                    equityChart.data.datasets[2].data.push(traderBalances['DeepSeek'] || 0);
-                    equityChart.data.datasets[3].data.push(traderBalances['Claude'] || 0);
-                    equityChart.data.datasets[4].data.push(traderBalances['Grok'] || 0);
-                    equityChart.data.datasets[5].data.push(traderBalances['GPT'] || 0);
-                    equityChart.data.datasets[6].data.push(traderBalances['Gemini'] || 0);
-                    equityChart.data.datasets[7].data.push(traderBalances['Qwen'] || 0);
+                    // 独立AI如果没有余额数据，使用初始余额200 USDT
+                    equityChart.data.datasets[2].data.push(traderBalances['DeepSeek'] || 200);
+                    equityChart.data.datasets[3].data.push(traderBalances['Claude'] || 200);
+                    equityChart.data.datasets[4].data.push(traderBalances['Grok'] || 200);
+                    equityChart.data.datasets[5].data.push(traderBalances['GPT'] || 200);
+                    equityChart.data.datasets[6].data.push(traderBalances['Gemini'] || 200);
+                    equityChart.data.datasets[7].data.push(traderBalances['Qwen'] || 200);
                     
                 } else {
                     // 同一周期内：更新或添加临时点
@@ -1100,12 +1101,13 @@
                         equityChart.data.labels.push(currentTime);
                         equityChart.data.datasets[0].data.push(alphaBalance);
                         equityChart.data.datasets[1].data.push(betaBalance);
-                        equityChart.data.datasets[2].data.push(traderBalances['DeepSeek'] || 0);
-                        equityChart.data.datasets[3].data.push(traderBalances['Claude'] || 0);
-                        equityChart.data.datasets[4].data.push(traderBalances['Grok'] || 0);
-                        equityChart.data.datasets[5].data.push(traderBalances['GPT'] || 0);
-                        equityChart.data.datasets[6].data.push(traderBalances['Gemini'] || 0);
-                        equityChart.data.datasets[7].data.push(traderBalances['Qwen'] || 0);
+                        // 独立AI如果没有余额数据，使用初始余额200 USDT
+                        equityChart.data.datasets[2].data.push(traderBalances['DeepSeek'] || 200);
+                        equityChart.data.datasets[3].data.push(traderBalances['Claude'] || 200);
+                        equityChart.data.datasets[4].data.push(traderBalances['Grok'] || 200);
+                        equityChart.data.datasets[5].data.push(traderBalances['GPT'] || 200);
+                        equityChart.data.datasets[6].data.push(traderBalances['Gemini'] || 200);
+                        equityChart.data.datasets[7].data.push(traderBalances['Qwen'] || 200);
                         currentPeriodStartIndex = 0;
                     } else {
                         // 更新当前周期的最后一个点（临时点）
@@ -1119,12 +1121,13 @@
                         equityChart.data.labels[lastIndex] = currentTime;
                         equityChart.data.datasets[0].data[lastIndex] = alphaBalance;
                         equityChart.data.datasets[1].data[lastIndex] = betaBalance;
-                        equityChart.data.datasets[2].data[lastIndex] = traderBalances['DeepSeek'] || 0;
-                        equityChart.data.datasets[3].data[lastIndex] = traderBalances['Claude'] || 0;
-                        equityChart.data.datasets[4].data[lastIndex] = traderBalances['Grok'] || 0;
-                        equityChart.data.datasets[5].data[lastIndex] = traderBalances['GPT'] || 0;
-                        equityChart.data.datasets[6].data[lastIndex] = traderBalances['Gemini'] || 0;
-                        equityChart.data.datasets[7].data[lastIndex] = traderBalances['Qwen'] || 0;
+                        // 独立AI如果没有余额数据，使用初始余额200 USDT
+                        equityChart.data.datasets[2].data[lastIndex] = traderBalances['DeepSeek'] || 200;
+                        equityChart.data.datasets[3].data[lastIndex] = traderBalances['Claude'] || 200;
+                        equityChart.data.datasets[4].data[lastIndex] = traderBalances['Grok'] || 200;
+                        equityChart.data.datasets[5].data[lastIndex] = traderBalances['GPT'] || 200;
+                        equityChart.data.datasets[6].data[lastIndex] = traderBalances['Gemini'] || 200;
+                        equityChart.data.datasets[7].data[lastIndex] = traderBalances['Qwen'] || 200;
                     }
                 }
                 
@@ -1337,17 +1340,17 @@
                             }
                         });
                         
-                        // Alpha-Aster
-                        equityChart.data.datasets[0].data.push(balances['Alpha组-Aster'] || 0);
-                        // Beta-Aster
-                        equityChart.data.datasets[1].data.push(balances['Beta组-Aster'] || 0);
-                        // 独立AI交易者
-                        equityChart.data.datasets[2].data.push(traderBalances['DeepSeek'] || 0);
-                        equityChart.data.datasets[3].data.push(traderBalances['Claude'] || 0);
-                        equityChart.data.datasets[4].data.push(traderBalances['Grok'] || 0);
-                        equityChart.data.datasets[5].data.push(traderBalances['GPT'] || 0);
-                        equityChart.data.datasets[6].data.push(traderBalances['Gemini'] || 0);
-                        equityChart.data.datasets[7].data.push(traderBalances['Qwen'] || 0);
+                        // Alpha-Aster (组初始240 USDT)
+                        equityChart.data.datasets[0].data.push(balances['Alpha组-Aster'] || 240);
+                        // Beta-Aster (组初始240 USDT)
+                        equityChart.data.datasets[1].data.push(balances['Beta组-Aster'] || 240);
+                        // 独立AI交易者 (初始200 USDT)
+                        equityChart.data.datasets[2].data.push(traderBalances['DeepSeek'] || 200);
+                        equityChart.data.datasets[3].data.push(traderBalances['Claude'] || 200);
+                        equityChart.data.datasets[4].data.push(traderBalances['Grok'] || 200);
+                        equityChart.data.datasets[5].data.push(traderBalances['GPT'] || 200);
+                        equityChart.data.datasets[6].data.push(traderBalances['Gemini'] || 200);
+                        equityChart.data.datasets[7].data.push(traderBalances['Qwen'] || 200);
                     });
                     
                     // 更新当前周期起始索引为最后一个数据点
