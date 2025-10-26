@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🤖 AI Trading Competitors - Powered by Aster [v2.0]</title>
+    <title>AI Trading Competitors</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
     <style>
@@ -15,8 +15,8 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
-            background: #0b0e11;
-            color: #e8e9ed;
+            background: #F0F2ED;
+            color: #000000;
             padding: 20px;
             min-height: 100vh;
         }
@@ -118,12 +118,11 @@
         }
         
         .chart-container {
-            background: #1e222d;
-            border: 1px solid #2b3139;
-            border-radius: 12px;
+            background: #FFF;
+            border-radius: 20px;
             padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            margin-bottom: 60px;
+            /* box-shadow: 0 2px 8px rgba(0,0,0,0.3); */
         }
         
         .chart-wrapper {
@@ -132,21 +131,23 @@
         }
         
         .decisions-container {
-            background: #1e222d;
-            border: 1px solid #2b3139;
-            border-radius: 12px;
+            background: #FFF;
+            /* border: 1px solid #2b3139; */
+            border-radius: 20px;
             padding: 25px;
             max-height: 600px;
             overflow-y: auto;
+             -ms-overflow-style: none;
+            scrollbar-width: none;
         }
         
         .decision-item {
-            background: #131722;
-            border: 1px solid #2b3139;
+            background: #F2F2F7;
+            /* border: 1px solid #2b3139; */
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 15px;
-            border-left: 4px solid #60a5fa;
+            /* border-left: 4px solid #60a5fa; */
         }
         
         .decision-header {
@@ -159,9 +160,9 @@
         .decision-action {
             font-weight: bold;
             font-size: 1.2em;
-            padding: 5px 12px;
+            padding: 5px 12px 5px 0px;
             border-radius: 6px;
-            background: rgba(96, 165, 250, 0.3);
+            /* background: rgba(96, 165, 250, 0.3); */
         }
         
         .decision-time {
@@ -177,8 +178,8 @@
         }
         
         .ai-vote {
-            background: #1e222d;
-            border: 1px solid #2b3139;
+            background: #FFF;
+            /* border: 1px solid #2b3139; */
             padding: 10px;
             border-radius: 6px;
             font-size: 0.9em;
@@ -192,8 +193,8 @@
         .consensus-summary {
             margin-top: 12px;
             padding: 12px;
-            background: #0b0e11;
-            border: 1px solid #2b3139;
+            background: #FFF;
+            /* border: 1px solid #2b3139; */
             border-radius: 6px;
             font-size: 0.95em;
             line-height: 1.6;
@@ -261,12 +262,12 @@
         }
         
         .kline-chart-container {
-            background: #1e222d;
-            border: 1px solid #2b3139;
-            border-radius: 12px;
+            background: #fff;
+            /* border: 1px solid #2b3139; */
+            border-radius: 20px;
             padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            margin-bottom: 60px;
+            /* box-shadow: 0 2px 8px rgba(0,0,0,0.3); */
         }
         
         #klineChart {
@@ -285,23 +286,23 @@
         
         .kline-controls button {
             padding: 8px 16px;
-            border: 1px solid #2b3139;
+            border: 1px solid #F2F2F7;
             border-radius: 6px;
-            background: #131722;
-            color: #e8e9ed;
+            background: #F2F2F7;
+            color: #000;
             cursor: pointer;
             font-size: 0.9em;
             transition: all 0.3s;
         }
         
-        .kline-controls button:hover {
+        /* .kline-controls button:hover {
             background: #1e222d;
             border-color: #3a3f4b;
-        }
+        } */
         
         .kline-controls button.active {
-            background: #2962ff;
-            border-color: #2962ff;
+            background: #000;
+            border-color: #000;
             color: white;
         }
         
@@ -338,198 +339,163 @@
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1 style="display: flex; align-items: center; justify-content: center; gap: 15px;">
-                <span>🤖 AI Trading Competitors - Powered by</span>
-                <img src="/web/images/aster.jpg" alt="Aster" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.4);">
-                <span style="font-size: 0.6em; color: rgba(255,255,255,0.3);">+</span>
-                <img src="/web/images/hyperliquid.jpg" alt="Hyperliquid" onerror="this.onerror=null; this.src='/web/images/hyperliquid.png';" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.4);">
-            </h1>
-        </header>
-        
-        <!-- AI Trading Competitors -->
-        <div style="background: linear-gradient(135deg, #1e222d 0%, #252936 100%); border: 2px solid #2b3139; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); margin-bottom: 30px;">
-            
-            <!-- VS Battle Header -->
-            <div style="text-align: center; margin-bottom: 15px;">
-                <span style="font-size: 1.6em; font-weight: bold; color: #fff; text-shadow: 2px 2px 8px rgba(0,0,0,0.5);">⚔️ VS ⚔️</span>
-                    </div>
-            
-            <!-- Competitors Grid: 5 columns x 2 rows (2 Team platforms + 6 Solo) -->
-            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;">
-                <!-- Alpha Team - Hyperliquid -->
-                <div style="text-align: center; background: linear-gradient(145deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05)); border: 2px solid rgba(34, 197, 94, 0.4); border-radius: 10px; padding: 10px; transition: all 0.3s; position: relative;">
-                    <div style="position: absolute; top: 6px; right: 6px; background: rgba(34, 197, 94, 0.3); padding: 2px 6px; border-radius: 8px; font-size: 0.65em; font-weight: bold;">TEAM</div>
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 5px; margin-bottom: 6px;">
-                        <div style="font-size: 0.95em; font-weight: bold; color: #22c55e;">Alpha</div>
-                        <img src="/web/images/hyperliquid.jpg" 
-                             alt="HL" title="Hyperliquid" onerror="this.onerror=null; this.src='/web/images/hyperliquid.png';"
-                             style="width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid rgba(34, 197, 94, 0.6);">
+        <header style="position: fixed; top: 0; left: 0; right: 0; z-index: 1000; border-bottom: 1px solid #ccc; background: #F0F2ED; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px;">
+            <!-- Alpha Team -->
+            <div style="display: flex;align-items: center; justify-content: space-between; gap:2em; border-radius:12px;background: rgba(255, 255, 255, 1);padding: 8px 16px;">
+                <div>Alpha</div>
+                <div style="display: flex; align-items: center; justify-content: center; gap:4px; ">
+                    <div style="font-size: 0.8em; font-weight: bold;" id="alpha-hl-roi">0%</div>
+                    <img src="/web/images/hyperliquid.jpg" alt="Hyperliquid" onerror="this.onerror=null; this.src='/web/images/hyperliquid.png';" style="width: 14px; height: 14px; border-radius: 50%; object-fit: cover;"> 
                 </div>
-                    <div style="display: flex; justify-content: center; gap: 3px; margin-bottom: 6px;">
-                        <img src="/web/images/deepseek.jpg" 
-                             alt="DeepSeek" title="DeepSeek" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                             style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(34, 197, 94, 0.6);">
-                        <img src="/web/images/claude.jpg" 
-                             alt="Claude" title="Claude" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                             style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(34, 197, 94, 0.6);">
-                        <img src="/web/images/grok.jpg" 
-                             alt="Grok" title="Grok" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                             style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(34, 197, 94, 0.6);">
-                    </div>
-                    <div style="font-size: 1.2em; font-weight: bold; color: #22c55e;" id="alpha-hl-roi">0%</div>
-                    <div style="font-size: 0.7em; opacity: 0.7; margin-top: 3px;">ROI</div>
-                    </div>
-                
-                <!-- Alpha Team - Aster -->
-                <div style="text-align: center; background: linear-gradient(145deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05)); border: 2px solid rgba(34, 197, 94, 0.4); border-radius: 10px; padding: 10px; transition: all 0.3s; position: relative;">
-                    <div style="position: absolute; top: 6px; right: 6px; background: rgba(34, 197, 94, 0.3); padding: 2px 6px; border-radius: 8px; font-size: 0.65em; font-weight: bold;">TEAM</div>
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 5px; margin-bottom: 6px;">
-                        <div style="font-size: 0.95em; font-weight: bold; color: #22c55e;">Alpha</div>
-                        <img src="/web/images/aster.jpg" 
-                             alt="AS" title="Aster" 
-                             style="width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid rgba(34, 197, 94, 0.6);">
-                    </div>
-                    <div style="display: flex; justify-content: center; gap: 3px; margin-bottom: 6px;">
-                        <img src="/web/images/deepseek.jpg" 
-                             alt="DeepSeek" title="DeepSeek" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                             style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(34, 197, 94, 0.6);">
-                        <img src="/web/images/claude.jpg" 
-                             alt="Claude" title="Claude" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                             style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(34, 197, 94, 0.6);">
-                        <img src="/web/images/grok.jpg" 
-                             alt="Grok" title="Grok" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                             style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(34, 197, 94, 0.6);">
-                    </div>
-                    <div style="font-size: 1.2em; font-weight: bold; color: #22c55e;" id="alpha-aster-roi">0%</div>
-                    <div style="font-size: 0.7em; opacity: 0.7; margin-top: 3px;">ROI</div>
+                <div style="display: flex; align-items: center; justify-content: center; gap:4px; border-radius:12px;">
+                    <div style="font-size: 0.8em; font-weight: bold;" id="alpha-aster-roi">0%</div>
+                    <img src="/web/images/aster.jpg" alt="Aster" onerror="this.onerror=null; this.src='/web/images/aster.png';" style="width: 14px; height: 14px; border-radius: 50%; object-fit: cover; "> 
                 </div>
-                
-                <!-- Beta Team - Hyperliquid -->
-                <div style="text-align: center; background: linear-gradient(145deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.05)); border: 2px solid rgba(59, 130, 246, 0.4); border-radius: 10px; padding: 10px; transition: all 0.3s; position: relative;">
-                    <div style="position: absolute; top: 6px; right: 6px; background: rgba(59, 130, 246, 0.3); padding: 2px 6px; border-radius: 8px; font-size: 0.65em; font-weight: bold;">TEAM</div>
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 5px; margin-bottom: 6px;">
-                        <div style="font-size: 0.95em; font-weight: bold; color: #3b82f6;">Beta</div>
-                        <img src="/web/images/hyperliquid.jpg" 
-                             alt="HL" title="Hyperliquid" onerror="this.onerror=null; this.src='/web/images/hyperliquid.png';"
-                             style="width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid rgba(59, 130, 246, 0.6);">
+                <div style="display: flex; align-items: center; justify-content: center; gap:4px; border-radius:12px; gap:1.2em">
+                    <div style="display: flex; align-items: center; justify-content: center; gap:0.2em">
+                        <span style="font-size: 0.6em;">DeepSeek</span>
+                        <img src="/web/images/deepseek.jpg" alt="DeepSeek" title="DeepSeek" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"style="width: 12px; height: 12px; border-radius: 50%;">
+                        <div style="font-size: 0.8em; font-weight: bold;" id="deepseek-solo-roi">0%</div>
+                    </div> 
+                    <div style="display: flex; align-items: center; justify-content: center; gap:0.2em">
+                        <span style="font-size: 0.6em;">Claude</span>
+                        <img src="/web/images/claude.jpg" alt="Claude" title="Claude" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"style="width: 12px; height: 12px; border-radius: 50%;">
+                        <div style="font-size: 0.8em; font-weight: bold;" id="claude-solo-roi">0%</div>
                     </div>
-                    <div style="display: flex; justify-content: center; gap: 3px; margin-bottom: 6px;">
-                        <img src="/web/images/gpt4.png" 
-                             alt="GPT-4" title="GPT-4" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                             style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(59, 130, 246, 0.6);">
-                        <img src="/web/images/gemini.png" 
-                             alt="Gemini" title="Gemini" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                             style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(59, 130, 246, 0.6);">
-                        <img src="/web/images/qwen.jpg" 
-                             alt="Qwen" title="Qwen" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                             style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(59, 130, 246, 0.6);">
-                    </div>
-                    <div style="font-size: 1.2em; font-weight: bold; color: #3b82f6;" id="beta-hl-roi">0%</div>
-                    <div style="font-size: 0.7em; opacity: 0.7; margin-top: 3px;">ROI</div>
+                    <div style="display: flex; align-items: center; justify-content: center; gap:0.2em">
+                        <span style="font-size: 0.6em;">Grok</span>
+                        <img src="/web/images/grok.jpg" alt="Grok" title="Grok" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"style="width: 12px; height: 12px; border-radius: 50%;">
+                        <div style="font-size: 0.8em; font-weight: bold;" id="grok-solo-roi">0%</div>
+                    </div>                        
+                </div>
             </div>
             
-                <!-- Beta Team - Aster -->
-                <div style="text-align: center; background: linear-gradient(145deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.05)); border: 2px solid rgba(59, 130, 246, 0.4); border-radius: 10px; padding: 10px; transition: all 0.3s; position: relative;">
-                    <div style="position: absolute; top: 6px; right: 6px; background: rgba(59, 130, 246, 0.3); padding: 2px 6px; border-radius: 8px; font-size: 0.65em; font-weight: bold;">TEAM</div>
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 5px; margin-bottom: 6px;">
-                        <div style="font-size: 0.95em; font-weight: bold; color: #3b82f6;">Beta</div>
-                        <img src="/web/images/aster.jpg" 
-                             alt="AS" title="Aster"
-                             style="width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid rgba(59, 130, 246, 0.6);">
-                    </div>
-                    <div style="display: flex; justify-content: center; gap: 3px; margin-bottom: 6px;">
-                        <img src="/web/images/gpt4.png" 
-                             alt="GPT-4" title="GPT-4" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                             style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(59, 130, 246, 0.6);">
-                        <img src="/web/images/gemini.png" 
-                             alt="Gemini" title="Gemini" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                             style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(59, 130, 246, 0.6);">
-                        <img src="/web/images/qwen.jpg" 
-                             alt="Qwen" title="Qwen" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                             style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(59, 130, 246, 0.6);">
-                </div>
-                    <div style="font-size: 1.2em; font-weight: bold; color: #3b82f6;" id="beta-aster-roi">0%</div>
-                    <div style="font-size: 0.7em; opacity: 0.7; margin-top: 3px;">ROI</div>
-                    </div>
-                
-                <!-- DeepSeek Solo -->
-                <div style="text-align: center; background: linear-gradient(145deg, rgba(147, 51, 234, 0.15), rgba(147, 51, 234, 0.05)); border: 2px solid rgba(147, 51, 234, 0.4); border-radius: 10px; padding: 10px; transition: all 0.3s; position: relative;">
-                    <div style="position: absolute; top: 6px; right: 6px; background: rgba(147, 51, 234, 0.3); padding: 2px 6px; border-radius: 8px; font-size: 0.65em; font-weight: bold;">SOLO</div>
-                    <img src="/web/images/deepseek.jpg" 
-                         alt="DeepSeek" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                         style="width: 38px; height: 38px; border-radius: 50%; border: 2px solid rgba(147, 51, 234, 0.6); margin-bottom: 6px;">
-                    <div style="font-size: 0.95em; font-weight: bold; color: #fff; margin-bottom: 5px;">DeepSeek</div>
-                    <div style="font-size: 1.2em; font-weight: bold; color: rgb(147, 51, 234);" id="deepseek-solo-roi">0%</div>
-                    <div style="font-size: 0.7em; opacity: 0.7; margin-top: 3px;">ROI</div>
-                    <div style="font-size: 0.65em; opacity: 0.5; margin-top: 5px; font-family: monospace;" id="deepseek-solo-address">-</div>
-                    </div>
-                
-                <!-- Claude Solo -->
-                <div style="text-align: center; background: linear-gradient(145deg, rgba(236, 72, 153, 0.15), rgba(236, 72, 153, 0.05)); border: 2px solid rgba(236, 72, 153, 0.4); border-radius: 10px; padding: 10px; transition: all 0.3s; position: relative;">
-                    <div style="position: absolute; top: 6px; right: 6px; background: rgba(236, 72, 153, 0.3); padding: 2px 6px; border-radius: 8px; font-size: 0.65em; font-weight: bold;">SOLO</div>
-                    <img src="/web/images/claude.jpg" 
-                         alt="Claude" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                         style="width: 38px; height: 38px; border-radius: 50%; border: 2px solid rgba(236, 72, 153, 0.6); margin-bottom: 6px;">
-                    <div style="font-size: 0.95em; font-weight: bold; color: #fff; margin-bottom: 5px;">Claude</div>
-                    <div style="font-size: 1.2em; font-weight: bold; color: rgb(236, 72, 153);" id="claude-solo-roi">0%</div>
-                    <div style="font-size: 0.7em; opacity: 0.7; margin-top: 3px;">ROI</div>
-                    <div style="font-size: 0.65em; opacity: 0.5; margin-top: 5px; font-family: monospace;" id="claude-solo-address">-</div>
-                    </div>
-                
-                <!-- Grok Solo -->
-                <div style="text-align: center; background: linear-gradient(145deg, rgba(251, 146, 60, 0.15), rgba(251, 146, 60, 0.05)); border: 2px solid rgba(251, 146, 60, 0.4); border-radius: 10px; padding: 10px; transition: all 0.3s; position: relative;">
-                    <div style="position: absolute; top: 6px; right: 6px; background: rgba(251, 146, 60, 0.3); padding: 2px 6px; border-radius: 8px; font-size: 0.65em; font-weight: bold;">SOLO</div>
-                    <img src="/web/images/grok.jpg" 
-                         alt="Grok" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                         style="width: 38px; height: 38px; border-radius: 50%; border: 2px solid rgba(251, 146, 60, 0.6); margin-bottom: 6px;">
-                    <div style="font-size: 0.95em; font-weight: bold; color: #fff; margin-bottom: 5px;">Grok</div>
-                    <div style="font-size: 1.2em; font-weight: bold; color: rgb(251, 146, 60);" id="grok-solo-roi">0%</div>
-                    <div style="font-size: 0.7em; opacity: 0.7; margin-top: 3px;">ROI</div>
-                    <div style="font-size: 0.65em; opacity: 0.5; margin-top: 5px; font-family: monospace;" id="grok-solo-address">-</div>
-                    </div>
+            <!-- VS -->
+            <div style="font-size: 1.2em; font-weight: bold; color: #333;">VS</div>
             
-                <!-- GPT Solo -->
-                <div style="text-align: center; background: linear-gradient(145deg, rgba(14, 165, 233, 0.15), rgba(14, 165, 233, 0.05)); border: 2px solid rgba(14, 165, 233, 0.4); border-radius: 10px; padding: 10px; transition: all 0.3s; position: relative;">
-                    <div style="position: absolute; top: 6px; right: 6px; background: rgba(14, 165, 233, 0.3); padding: 2px 6px; border-radius: 8px; font-size: 0.65em; font-weight: bold;">SOLO</div>
-                    <img src="/web/images/gpt4.png" 
-                         alt="GPT-4" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                         style="width: 38px; height: 38px; border-radius: 50%; border: 2px solid rgba(14, 165, 233, 0.6); margin-bottom: 6px;">
-                    <div style="font-size: 0.95em; font-weight: bold; color: #fff; margin-bottom: 5px;">GPT-4</div>
-                    <div style="font-size: 1.2em; font-weight: bold; color: rgb(14, 165, 233);" id="gpt-solo-roi">0%</div>
-                    <div style="font-size: 0.7em; opacity: 0.7; margin-top: 3px;">ROI</div>
-                    <div style="font-size: 0.65em; opacity: 0.5; margin-top: 5px; font-family: monospace;" id="gpt-solo-address">-</div>
+            <!-- Beta Team -->
+            <div style="display: flex;align-items: center; justify-content: space-between; gap:2em; border-radius:12px;background: rgba(255, 255, 255, 1);padding: 8px 16px;">
+                <div>Beta</div>
+                <div style="display: flex; align-items: center; justify-content: center; gap:4px; ">
+                    <div style="font-size: 0.8em; font-weight: bold;" id="beta-hl-roi">0%</div>
+                    <img src="/web/images/hyperliquid.jpg" alt="Hyperliquid" onerror="this.onerror=null; this.src='/web/images/hyperliquid.png';" style="width: 14px; height: 14px; border-radius: 50%; object-fit: cover;"> 
                 </div>
-            
-                <!-- Gemini Solo -->
-                <div style="text-align: center; background: linear-gradient(145deg, rgba(234, 179, 8, 0.15), rgba(234, 179, 8, 0.05)); border: 2px solid rgba(234, 179, 8, 0.4); border-radius: 10px; padding: 10px; transition: all 0.3s; position: relative;">
-                    <div style="position: absolute; top: 6px; right: 6px; background: rgba(234, 179, 8, 0.3); padding: 2px 6px; border-radius: 8px; font-size: 0.65em; font-weight: bold;">SOLO</div>
-                    <img src="/web/images/gemini.png" 
-                         alt="Gemini" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                         style="width: 38px; height: 38px; border-radius: 50%; border: 2px solid rgba(234, 179, 8, 0.6); margin-bottom: 6px;">
-                    <div style="font-size: 0.95em; font-weight: bold; color: #fff; margin-bottom: 5px;">Gemini</div>
-                    <div style="font-size: 1.2em; font-weight: bold; color: rgb(234, 179, 8);" id="gemini-solo-roi">0%</div>
-                    <div style="font-size: 0.7em; opacity: 0.7; margin-top: 3px;">ROI</div>
-                    <div style="font-size: 0.65em; opacity: 0.5; margin-top: 5px; font-family: monospace;" id="gemini-solo-address">-</div>
+                <div style="display: flex; align-items: center; justify-content: center; gap:4px; border-radius:12px;">
+                    <div style="font-size: 0.8em; font-weight: bold;" id="beta-aster-roi">0%</div>
+                    <img src="/web/images/aster.jpg" alt="Aster" onerror="this.onerror=null; this.src='/web/images/aster.png';" style="width: 14px; height: 14px; border-radius: 50%; object-fit: cover; "> 
+                </div>
+                <div style="display: flex; align-items: center; justify-content: center; gap:4px; border-radius:12px; gap:1.2em">
+                    <div style="display: flex; align-items: center; justify-content: center; gap:0.2em">
+                        <span style="font-size: 0.6em;">GPT</span>
+                        <img src="/web/images/gpt4.png" alt="GPT" title="GPT" onerror="this.onerror=null; this.src=this.src.replace('.png','.jpg');"style="width: 12px; height: 12px; border-radius: 50%;">
+                        <div style="font-size: 0.8em; font-weight: bold;" id="gpt-solo-roi">0%</div>
+                    </div> 
+                    <div style="display: flex; align-items: center; justify-content: center; gap:0.2em">
+                        <span style="font-size: 0.6em;">Gemini</span>
+                        <img src="/web/images/gemini.png" alt="Gemini" title="Gemini" onerror="this.onerror=null; this.src=this.src.replace('.png','.jpg');"style="width: 12px; height: 12px; border-radius: 50%;">
+                        <div style="font-size: 0.8em; font-weight: bold;" id="gemini-solo-roi">0%</div>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: center; gap:0.2em">
+                        <span style="font-size: 0.6em;">Qwen</span>
+                        <img src="/web/images/qwen.jpg" alt="Qwen" title="Qwen" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"style="width: 12px; height: 12px; border-radius: 50%;">
+                        <div style="font-size: 0.8em; font-weight: bold;" id="qwen-solo-roi">0%</div>
+                    </div>                        
+                </div>
+            </div>
+        </header>
+        <h1 style="display: flex; align-items: center;gap: 15px; margin-left: 20px;padding-top: 80px;">
+            <img src="/web/images/fiamma-logo.png" alt="Fiamma" style="width: 10%;object-fit: cover;">
+        </h1>
+        <div style="display: flex;align-items: center; justify-content: space-between;margin-bottom: 60px;margin-left: 20px;">  
+            <!-- Competitors Grid: 5 columns x 2 rows (2 Team platforms + 6 Solo) -->
+             <div style="width: 40%;">
+                <h1 style="font-size:60px; display: flex; align-items: center;gap: 15px;">AI Consensus</h1>
+                <span>This competition brings together six AIs divided into two teams — Team Alpha and Team Beta — to battle it out in live trading. Each AI receives the same prompt and a $10,000 balance to trade on Hyperliquid and Aster’s perpetual DEX. The challenge: can artificial intelligence collaborate effectively to generate the highest risk-adjusted returns?</span>
+             </div>
+            <div style="width:55%;display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                <!-- Alpha Team -->
+                <div style="text-align: center; background: radial-gradient(ellipse, #FFDF00, #f7f1c1); border: 2px solid #FFDF00; border-radius: 20px; padding:20px 10px; transition: all 0.3s; position: relative;">
+                    <div style="display: flex; align-items: center; justify-content: space-around; gap: 5px; margin-bottom: 6px;">
+                        <div style="font-size: 1.6em; font-weight: bold;">Alpha</div>
+                        <div style="display: flex; align-items: center; justify-content: center; gap:4px; border-radius:12px;background: rgba(255, 255, 255, 0.60);padding: 8px 16px;">
+                            <div style="font-size: 0.8em; font-weight: bold;" id="alpha-hl-roi">0%</div>
+                            <img src="/web/images/hyperliquid.jpg" alt="Hyperliquid" onerror="this.onerror=null; this.src='/web/images/hyperliquid.png';" style="width: 14px; height: 14px; border-radius: 50%; object-fit: cover;"> 
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: center; gap:4px; border-radius:12px;background: rgba(255, 255, 255, 0.60);padding: 8px 16px;">
+                            <div style="font-size: 0.8em; font-weight: bold;" id="alpha-aster-roi">0%</div>
+                            <img src="/web/images/aster.jpg" alt="Aster" onerror="this.onerror=null; this.src='/web/images/aster.png';" style="width: 14px; height: 14px; border-radius: 50%; object-fit: cover; "> 
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 60px; display: flex; justify-content: space-around; gap: 3px; margin-bottom: 6px;">
+                        <div>
+                            <div style="display: flex; align-items: center; justify-content: center; gap:3px">
+                                <span style="font-size: 0.6em;">DeepSeek</span>
+                                <img src="/web/images/deepseek.jpg" alt="DeepSeek" title="DeepSeek" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"style="width: 12px; height: 12px; border-radius: 50%;">
+                            </div>
+                            <div style="font-size: 0.8em; font-weight: bold; margin-top: 4px;" id="deepseek-solo-roi">0%</div>
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; justify-content: center; gap:3px">
+                                <span style="font-size: 0.6em;">Claude</span>
+                                <img src="/web/images/claude.jpg" alt="Claude" title="Claude" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"style="width: 12px; height: 12px; border-radius: 50%;">
+                            </div>
+                            <div style="font-size: 0.8em; font-weight: bold; margin-top: 4px;" id="claude-solo-roi">0%</div>
+                        </div>
+                            <div>
+                            <div style="display: flex; align-items: center; justify-content: center; gap:3px">
+                                <span style="font-size: 0.6em;">Grok</span>
+                                <img src="/web/images/grok.jpg" alt="Grok" title="Grok" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"style="width: 12px; height: 12px; border-radius: 50%;">
+                            </div>
+                            <div style="font-size: 0.8em; font-weight: bold; margin-top: 4px;" id="grok-solo-roi">0%</div>
+                        </div>                        
+                    </div>
                 </div>
                 
-                <!-- Qwen Solo -->
-                <div style="text-align: center; background: linear-gradient(145deg, rgba(244, 63, 94, 0.15), rgba(244, 63, 94, 0.05)); border: 2px solid rgba(244, 63, 94, 0.4); border-radius: 10px; padding: 10px; transition: all 0.3s; position: relative;">
-                    <div style="position: absolute; top: 6px; right: 6px; background: rgba(244, 63, 94, 0.3); padding: 2px 6px; border-radius: 8px; font-size: 0.65em; font-weight: bold;">SOLO</div>
-                    <img src="/web/images/qwen.jpg" 
-                         alt="Qwen" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"
-                         style="width: 38px; height: 38px; border-radius: 50%; border: 2px solid rgba(244, 63, 94, 0.6); margin-bottom: 6px;">
-                    <div style="font-size: 0.95em; font-weight: bold; color: #fff; margin-bottom: 5px;">Qwen</div>
-                    <div style="font-size: 1.2em; font-weight: bold; color: rgb(244, 63, 94);" id="qwen-solo-roi">0%</div>
-                    <div style="font-size: 0.7em; opacity: 0.7; margin-top: 3px;">ROI</div>
-                    <div style="font-size: 0.65em; opacity: 0.5; margin-top: 5px; font-family: monospace;" id="qwen-solo-address">-</div>
+                <!-- Beta Team -->
+                <div style="text-align: center; background: radial-gradient(ellipse, #FF7626, #f7ddc1); border: 2px solid #FF7626; border-radius: 20px; padding:20px 10px; transition: all 0.3s; position: relative;">
+                    <div style="display: flex; align-items: center; justify-content: space-around; gap: 5px; margin-bottom: 6px;">
+                        <div style="font-size: 1.6em; font-weight: bold;">Beta</div>
+                        <div style="display: flex; align-items: center; justify-content: center; gap:4px; border-radius:12px;background: rgba(255, 255, 255, 0.60);padding: 8px 16px;">
+                            <div style="font-size: 0.8em; font-weight: bold;" id="beta-hl-roi">0%</div>
+                            <img src="/web/images/hyperliquid.jpg" alt="Hyperliquid" onerror="this.onerror=null; this.src='/web/images/hyperliquid.png';" style="width: 14px; height: 14px; border-radius: 50%; object-fit: cover;"> 
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: center; gap:4px; border-radius:12px;background: rgba(255, 255, 255, 0.60);padding: 8px 16px;">
+                            <div style="font-size: 0.8em; font-weight: bold;" id="beta-aster-roi">0%</div>
+                            <img src="/web/images/aster.jpg" alt="Aster" onerror="this.onerror=null; this.src='/web/images/aster.png';" style="width: 14px; height: 14px; border-radius: 50%; object-fit: cover; "> 
+                        </div>
                     </div>
+
+                    <div style="margin-top: 60px; display: flex; justify-content: space-around; gap: 3px; margin-bottom: 6px;">
+                        <div>
+                            <div style="display: flex; align-items: center; justify-content: center; gap:3px">
+                                <span style="font-size: 0.6em;">GPT-4</span>
+                                <img src="/web/images/gpt4.png" alt="GPT-4" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');" style="width: 12px; height: 12px; border-radius: 50%;">
+                            </div>
+                            <div style="font-size: 0.8em; font-weight: bold; margin-top: 4px;" id="gpt-solo-roi">0%</div>
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; justify-content: center; gap:3px">
+                                <span style="font-size: 0.6em;">Gemini</span>
+                                <img src="/web/images/gemini.jpg" alt="Gemini" title="Gemini" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"style="width: 12px; height: 12px; border-radius: 50%;">
+                            </div>
+                            <div style="font-size: 0.8em; font-weight: bold; margin-top: 4px;" id="gemini-solo-roi">0%</div>
+                        </div>
+                            <div>
+                            <div style="display: flex; align-items: center; justify-content: center; gap:3px">
+                                <span style="font-size: 0.6em;">Qwen</span>
+                                <img src="/web/images/qwen.jpg" alt="Qwen" title="Qwen" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');"style="width: 12px; height: 12px; border-radius: 50%;">
+                            </div>
+                            <div style="font-size: 0.8em; font-weight: bold; margin-top: 4px;" id="qwen-solo-roi">0%</div>
+                        </div>                        
+                    </div>
+                </div>
             </div>
         </div>
         
         <!-- Performance Curve -->
         <div class="chart-container">
-            <h2 style="margin-bottom: 20px;">📈 Performance Curve</h2>
+            <h2 style="margin-bottom: 20px;">Performance Curve</h2>
             <div id="equity-legend" style="display: flex; justify-content: center; gap: 20px; margin-bottom: 15px; flex-wrap: wrap;"></div>
             <div class="chart-wrapper">
                 <canvas id="equityChart"></canvas>
@@ -539,7 +505,7 @@
         <!-- Market Chart -->
         <div class="kline-chart-container">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2>📊 Market Chart & Trade Markers</h2>
+                <h2>Trade History</h2>
                 <div class="kline-controls">
                     <button onclick="changeInterval('5m')">5m</button>
                     <button onclick="changeInterval('15m')" class="active">15m</button>
@@ -547,19 +513,19 @@
                     <button onclick="changeInterval('4h')">4h</button>
                     <div class="trade-legend">
                         <div class="trade-legend-item">
-                            <div class="legend-marker" style="background: #8b5cf6; color: white;">▲</div>
+                            <div class="legend-marker" style="color: #8b5cf6;">▲</div>
                             <span>Alpha Open</span>
                         </div>
                         <div class="trade-legend-item">
-                            <div class="legend-marker" style="background: #8b5cf6; color: white;">▼</div>
+                            <div class="legend-marker" style="color: #8b5cf6;">▼</div>
                             <span>Alpha Close</span>
                         </div>
                         <div class="trade-legend-item">
-                            <div class="legend-marker" style="background: #f97316; color: white;">▲</div>
+                            <div class="legend-marker" style="color: #f97316;">▲</div>
                             <span>Beta Open</span>
                         </div>
                         <div class="trade-legend-item">
-                            <div class="legend-marker" style="background: #f97316; color: white;">▼</div>
+                            <div class="legend-marker" style="color: #f97316;">▼</div>
                             <span>Beta Close</span>
                         </div>
                     </div>
@@ -569,24 +535,25 @@
         </div>
         
         <!-- Consensus Decisions -->
+        <h2 style="text-align: left; margin-bottom: 25px; font-size: 1.6em;">Consensus</h2>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
             <div class="decisions-container">
-                <h2 style="margin-bottom: 20px;">🅰️ Alpha Team - Consensus</h2>
+                <h2 style="margin-bottom: 20px;">Team Alpha</h2>
                 <div id="alpha-decisions"></div>
             </div>
             
             <div class="decisions-container">
-                <h2 style="margin-bottom: 20px;">🅱️ Beta Team - Consensus</h2>
+                <h2 style="margin-bottom: 20px;">Team Beta</h2>
                 <div id="beta-decisions"></div>
             </div>
         </div>
         
         <!-- Solo AI Decisions -->
         <div style="margin-top: 30px;">
-            <h2 style="text-align: left; margin-bottom: 25px; font-size: 1.6em;">🤖 Solo AI Traders - Individual Decisions</h2>
+            <h2 style="text-align: left; margin-bottom: 25px; font-size: 1.6em;">Individual Decisions</h2>
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
                 <!-- DeepSeek Solo -->
-                <div class="decisions-container" style="max-height: 500px;">
+                <div class="decisions-container" style="max-height: 500px; border: 1px solid rgb(147, 51, 234);">
                     <h3 style="margin-bottom: 15px; color: rgb(147, 51, 234); display: flex; align-items: center; gap: 10px;">
                         <img src="/web/images/deepseek.jpg" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');" 
                              style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgb(147, 51, 234);">
@@ -596,7 +563,7 @@
                 </div>
                 
                 <!-- Claude Solo -->
-                <div class="decisions-container" style="max-height: 500px;">
+                <div class="decisions-container" style="max-height: 500px; border: 1px solid rgb(236, 72, 153);">
                     <h3 style="margin-bottom: 15px; color: rgb(236, 72, 153); display: flex; align-items: center; gap: 10px;">
                         <img src="/web/images/claude.jpg" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');" 
                              style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgb(236, 72, 153);">
@@ -606,7 +573,7 @@
                 </div>
                 
                 <!-- Grok Solo -->
-                <div class="decisions-container" style="max-height: 500px;">
+                <div class="decisions-container" style="max-height: 500px; border: 1px solid rgb(251, 146, 60);">
                     <h3 style="margin-bottom: 15px; color: rgb(251, 146, 60); display: flex; align-items: center; gap: 10px;">
                         <img src="/web/images/grok.jpg" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');" 
                              style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgb(251, 146, 60);">
@@ -616,7 +583,7 @@
                 </div>
                 
                 <!-- GPT Solo -->
-                <div class="decisions-container" style="max-height: 500px;">
+                <div class="decisions-container" style="max-height: 500px; border: 1px solid rgb(14, 165, 233);">
                     <h3 style="margin-bottom: 15px; color: rgb(14, 165, 233); display: flex; align-items: center; gap: 10px;">
                         <img src="/web/images/gpt4.png" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');" 
                              style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgb(14, 165, 233);">
@@ -626,7 +593,7 @@
                 </div>
                 
                 <!-- Gemini Solo -->
-                <div class="decisions-container" style="max-height: 500px;">
+                <div class="decisions-container" style="max-height: 500px; border: 1px solid rgb(234, 179, 8);">
                     <h3 style="margin-bottom: 15px; color: rgb(234, 179, 8); display: flex; align-items: center; gap: 10px;">
                         <img src="/web/images/gemini.png" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');" 
                              style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgb(234, 179, 8);">
@@ -636,7 +603,7 @@
                 </div>
                 
                 <!-- Qwen Solo -->
-                <div class="decisions-container" style="max-height: 500px;">
+                <div class="decisions-container" style="max-height: 500px; border: 1px solid rgb(244, 63, 94);">
                     <h3 style="margin-bottom: 15px; color: rgb(244, 63, 94); display: flex; align-items: center; gap: 10px;">
                         <img src="/web/images/qwen.jpg" onerror="this.onerror=null; this.src=this.src.replace('.jpg','.png');" 
                              style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgb(244, 63, 94);">
@@ -816,12 +783,12 @@
                 width: chartContainer.clientWidth,
                 height: 500,
                 layout: {
-                    background: { color: 'rgba(0, 0, 0, 0)' },
+                    background: { color: 'rgba(255, 255, 255, 1)' },
                     textColor: '#d1d4dc',
                 },
                 grid: {
-                    vertLines: { color: 'rgba(197, 203, 206, 0.1)' },
-                    horzLines: { color: 'rgba(197, 203, 206, 0.1)' },
+                    vertLines: { color: 'rgba(196, 196, 196, 1)' },
+                    horzLines: { color: 'rgba(196, 196, 196, 1)' },
                 },
                 timeScale: {
                     timeVisible: true,
@@ -1168,7 +1135,7 @@
                                 color: '#fff',
                                 stepSize: 10  // 每10刻度一格
                             },
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            grid: { color: 'rgba(196,196,196,1)' }
                         },
                         x: {
                             ticks: { 
@@ -1179,7 +1146,7 @@
                                 maxRotation: 0,     // 水平显示
                                 minRotation: 0
                             },
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            grid: { color: 'rgba(196,196,196,1)' }
                         }
                     }
                 }
@@ -1639,7 +1606,7 @@
                 return `
                     <div class="decision-item" style="border-left-color: ${aiColor}; padding: 15px; margin-bottom: 12px;">
                         <div class="decision-header" style="margin-bottom: 10px;">
-                            <span class="decision-action" style="font-size: 1.1em; background: rgba(${r}, ${g}, ${b}, 0.2);">
+                            <span class="decision-action" style="font-size: 1.1em;">
                                 ${highlightDecisions(decision.decision)}
                             </span>
                             <span class="decision-time" style="font-size: 0.85em;">${timeStr}</span>
@@ -1653,7 +1620,7 @@
                             </div>
                         ` : ''}
                         ${decision.reasoning ? `
-                            <div style="font-size: 0.85em; opacity: 0.9; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 6px; line-height: 1.5;">
+                            <div style="font-size: 0.85em; opacity: 0.9; border-radius: 6px; line-height: 1.5;">
                                 ${highlightDecisions(decision.reasoning.replace(/\n/g, '<br>'))}
                             </div>
                         ` : ''}
