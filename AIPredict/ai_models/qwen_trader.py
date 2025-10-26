@@ -1,6 +1,7 @@
 """
 Qwen AI 交易模型
 使用阿里云通义千问 API
+支持中国版和国际版
 """
 import httpx
 from typing import Dict, List, Optional
@@ -10,21 +11,40 @@ from .base_ai import AITradingModel, TradingDecision
 class QwenTrader(AITradingModel):
     """Qwen AI 交易员"""
     
-    def __init__(self, api_key: str, model: str = "qwen-turbo", **kwargs):
+    def __init__(self, api_key: str, model: str = "qwen-max", use_international: bool = True, **kwargs):
         """
         初始化 Qwen 交易员
         
         Args:
             api_key: 阿里云 API 密钥
-            model: Qwen 模型版本
+            model: Qwen 模型版本 (默认: qwen-max = Qwen3-MAX)
+            use_international: 是否使用国际版 (True=国际版, False=中国版)
         """
+        # 格式化模型名称显示
+        if "max" in model.lower():
+            display_name = "Qwen (Max)"
+        elif "turbo" in model.lower():
+            display_name = "Qwen (Turbo)"
+        elif "plus" in model.lower():
+            display_name = "Qwen (Plus)"
+        else:
+            display_name = f"Qwen ({model.split('-')[-1].capitalize()})"
+        
         super().__init__(
-            model_name=f"Qwen ({model.split('-')[1].capitalize()})",
+            model_name=display_name,
             api_key=api_key,
             **kwargs
         )
         self.model = model
-        self.api_url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+        self.use_international = use_international
+        
+        # 根据版本选择 API endpoint
+        if use_international:
+            # 阿里云国际版 API
+            self.api_url = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions"
+        else:
+            # 阿里云中国版 API
+            self.api_url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
     
     async def analyze_market(
         self,

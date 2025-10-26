@@ -243,39 +243,56 @@ REASONING: [your analysis reasoning, 50-100 words]
         reasoning = "Unable to parse AI response"
         
         try:
-            lines = response.strip().split('\n')
+            response_text = response.strip()
             
-            for line in lines:
-                line = line.strip()
+            # 尝试提取 DECISION
+            if 'DECISION:' in response_text:
+                decision_line = response_text.split('DECISION:')[1].split('\n')[0].strip()
+                decision_str = decision_line.upper()
                 
-                if line.startswith('DECISION:'):
-                    decision_str = line.split(':', 1)[1].strip().upper()
-                    try:
-                        decision = TradingDecision(decision_str.lower())
-                    except ValueError:
-                        # 尝试匹配部分文本
-                        if 'STRONG_BUY' in decision_str or 'STRONG BUY' in decision_str:
-                            decision = TradingDecision.STRONG_BUY
-                        elif 'STRONG_SELL' in decision_str or 'STRONG SELL' in decision_str:
-                            decision = TradingDecision.STRONG_SELL
-                        elif 'BUY' in decision_str:
-                            decision = TradingDecision.BUY
-                        elif 'SELL' in decision_str:
-                            decision = TradingDecision.SELL
-                        else:
-                            decision = TradingDecision.HOLD
+                try:
+                    # 移除可能的末尾空格和标点
+                    decision_str = decision_str.strip().rstrip('.,;')
+                    decision = TradingDecision(decision_str.lower())
+                except ValueError:
+                    # 尝试匹配部分文本
+                    if 'STRONG_BUY' in decision_str or 'STRONG BUY' in decision_str:
+                        decision = TradingDecision.STRONG_BUY
+                    elif 'STRONG_SELL' in decision_str or 'STRONG SELL' in decision_str:
+                        decision = TradingDecision.STRONG_SELL
+                    elif 'BUY' in decision_str:
+                        decision = TradingDecision.BUY
+                    elif 'SELL' in decision_str:
+                        decision = TradingDecision.SELL
+                    else:
+                        decision = TradingDecision.HOLD
+            
+            # 尝试提取 CONFIDENCE
+            if 'CONFIDENCE:' in response_text:
+                conf_line = response_text.split('CONFIDENCE:')[1].split('\n')[0].strip()
+                # 提取数字
+                import re
+                numbers = re.findall(r'\d+\.?\d*', conf_line)
+                if numbers:
+                    confidence = float(numbers[0])
+                    confidence = max(0.0, min(100.0, confidence))
+            
+            # 尝试提取 REASONING（支持多行）
+            if 'REASONING:' in response_text:
+                reasoning_part = response_text.split('REASONING:')[1]
+                # 取到下一个大写字段或结束
+                reasoning_lines = []
+                for line in reasoning_part.split('\n'):
+                    # 如果遇到markdown标题或新的大写字段，停止
+                    if line.strip().startswith('#') or (line.isupper() and ':' in line):
+                        break
+                    reasoning_lines.append(line.strip())
                 
-                elif line.startswith('CONFIDENCE:'):
-                    conf_str = line.split(':', 1)[1].strip()
-                    # 提取数字
-                    import re
-                    numbers = re.findall(r'\d+\.?\d*', conf_str)
-                    if numbers:
-                        confidence = float(numbers[0])
-                        confidence = max(0.0, min(100.0, confidence))
+                reasoning = ' '.join(reasoning_lines).strip()
                 
-                elif line.startswith('REASONING:'):
-                    reasoning = line.split(':', 1)[1].strip()
+                # 如果太长，截取前200个字符
+                if len(reasoning) > 200:
+                    reasoning = reasoning[:200] + '...'
         
         except Exception as e:
             print(f"解析 AI 响应时出错: {e}")

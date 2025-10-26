@@ -631,7 +631,7 @@ class ConsensusArena:
         beta_ais = [
             GPTTrader(api_key=settings.openai_api_key, model=settings.gpt_model),
             GeminiTrader(api_key=settings.gemini_api_key),
-            QwenTrader(api_key=settings.qwen_api_key)
+            QwenTrader(api_key=settings.qwen_api_key, use_international=settings.qwen_use_international)
         ]
         beta_group = AIGroup(
             settings.group_2_name,
@@ -717,7 +717,7 @@ class ConsensusArena:
         elif ai_name_lower == "gemini":
             return GeminiTrader(api_key=settings.gemini_api_key)
         elif ai_name_lower == "qwen":
-            return QwenTrader(api_key=settings.qwen_api_key)
+            return QwenTrader(api_key=settings.qwen_api_key, use_international=settings.qwen_use_international)
         else:
             return None
     

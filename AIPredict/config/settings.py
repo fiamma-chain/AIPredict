@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     gpt_model: str = "gpt-4o"
     gemini_api_key: str = ""
     qwen_api_key: str = ""
+    qwen_use_international: bool = True  # 是否使用阿里云国际版 (True=国际版, False=中国版)
     grok_api_key: str = ""
     deepseek_api_key: str = ""
     
