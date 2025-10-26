@@ -100,10 +100,10 @@ class QwenTrader(AITradingModel):
                 return decision, confidence, reasoning
             else:
                 error_detail = response.text
-                print(f"Qwen API 错误: {response.status_code} - {error_detail}")
-                return TradingDecision.HOLD, 0.0, f"API 调用失败"
+                print(f"Qwen API error: {response.status_code} - {error_detail}")
+                return TradingDecision.HOLD, 0.0, f"API call failed"
         
         except Exception as e:
-            print(f"Qwen 分析失败: {e}")
-            return TradingDecision.HOLD, 0.0, f"分析异常: {str(e)}"
+            print(f"Qwen analysis failed: {e}")
+            return TradingDecision.HOLD, 0.0, f"Analysis error: {str(e)}"
 

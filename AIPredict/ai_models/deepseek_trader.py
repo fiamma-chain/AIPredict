@@ -62,7 +62,7 @@ class DeepSeekTrader(AITradingModel):
                         "messages": [
                             {
                                 "role": "system",
-                                "content": "你是一个专业的加密货币合约交易分析师。"
+                                "content": "You are a professional cryptocurrency futures trading analyst."
                             },
                             {
                                 "role": "user",
@@ -83,10 +83,10 @@ class DeepSeekTrader(AITradingModel):
                 
                 return decision, confidence, reasoning
             else:
-                print(f"DeepSeek API 错误: {response.status_code}")
-                return TradingDecision.HOLD, 0.0, f"API 调用失败"
+                print(f"DeepSeek API error: {response.status_code}")
+                return TradingDecision.HOLD, 0.0, f"API call failed"
         
         except Exception as e:
-            print(f"DeepSeek 分析失败: {e}")
-            return TradingDecision.HOLD, 0.0, f"分析异常: {str(e)}"
+            print(f"DeepSeek analysis failed: {e}")
+            return TradingDecision.HOLD, 0.0, f"Analysis error: {str(e)}"
 

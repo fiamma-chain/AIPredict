@@ -65,7 +65,7 @@ class GrokTrader(AITradingModel):
                             "messages": [
                                 {
                                     "role": "system",
-                                    "content": "你是一个专业的加密货币合约交易分析师。"
+                                    "content": "You are a professional cryptocurrency futures trading analyst."
                                 },
                                 {
                                     "role": "user",
@@ -85,35 +85,35 @@ class GrokTrader(AITradingModel):
                     self.record_ai_response(coin, decision, confidence, reasoning, ai_response)
                     
                     if attempt > 0:
-                        print(f"✅ Grok API 重试成功（第{attempt+1}次尝试）")
+                        print(f"✅ Grok API retry succeeded (attempt {attempt+1})")
                     
                     return decision, confidence, reasoning
                 else:
                     error_detail = response.text
-                    print(f"❌ Grok API 错误（尝试{attempt+1}/{max_retries}）: {response.status_code} - {error_detail[:200]}")
+                    print(f"❌ Grok API error (attempt {attempt+1}/{max_retries}): {response.status_code} - {error_detail[:200]}")
                     
                     if attempt < max_retries - 1:
                         import asyncio
-                        await asyncio.sleep(2 ** attempt)  # 指数退避：2秒、4秒
+                        await asyncio.sleep(2 ** attempt)  # Exponential backoff: 2s, 4s
                         continue
                     
-                    return TradingDecision.HOLD, 0.0, f"API 调用失败: {response.status_code}"
+                    return TradingDecision.HOLD, 0.0, f"API call failed: {response.status_code}"
             
             except httpx.TimeoutException as e:
-                print(f"⏱️ Grok API 超时（尝试{attempt+1}/{max_retries}）: {str(e)}")
+                print(f"⏱️ Grok API timeout (attempt {attempt+1}/{max_retries}): {str(e)}")
                 if attempt < max_retries - 1:
                     import asyncio
                     await asyncio.sleep(2 ** attempt)
                     continue
-                return TradingDecision.HOLD, 0.0, f"API 超时"
+                return TradingDecision.HOLD, 0.0, f"API timeout"
             
             except Exception as e:
-                print(f"❌ Grok 分析异常（尝试{attempt+1}/{max_retries}）: {type(e).__name__}: {str(e)[:200]}")
+                print(f"❌ Grok analysis error (attempt {attempt+1}/{max_retries}): {type(e).__name__}: {str(e)[:200]}")
                 if attempt < max_retries - 1:
                     import asyncio
                     await asyncio.sleep(2 ** attempt)
                     continue
-                return TradingDecision.HOLD, 0.0, f"分析异常: {str(e)[:100]}"
+                return TradingDecision.HOLD, 0.0, f"Analysis error: {str(e)[:100]}"
         
-        return TradingDecision.HOLD, 0.0, f"重试失败"
+        return TradingDecision.HOLD, 0.0, f"Retry failed"
 

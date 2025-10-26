@@ -96,23 +96,23 @@ class GeminiTrader(AITradingModel):
             if response.status_code == 200:
                 result = response.json()
                 
-                # 安全解析响应
+                # Safe response parsing
                 try:
                     candidate = result["candidates"][0]
                     content = candidate.get("content", {})
                     
-                    # 尝试多种响应格式
+                    # Try multiple response formats
                     if "parts" in content and len(content["parts"]) > 0:
                         ai_response = content["parts"][0]["text"]
                     elif "text" in content:
                         ai_response = content["text"]
                     else:
-                        logger.error(f"❌ Gemini 响应格式不匹配: {content}")
-                        return TradingDecision.HOLD, 0.0, f"无法提取AI响应文本"
+                        logger.error(f"❌ Gemini response format mismatch: {content}")
+                        return TradingDecision.HOLD, 0.0, f"Unable to extract AI response text"
                     
                 except (KeyError, IndexError, TypeError) as e:
-                    logger.error(f"❌ Gemini 响应解析失败: {e}, 原始响应: {result}")
-                    return TradingDecision.HOLD, 0.0, f"响应格式错误"
+                    logger.error(f"❌ Gemini response parsing failed: {e}, raw response: {result}")
+                    return TradingDecision.HOLD, 0.0, f"Response format error"
                 
                 decision, confidence, reasoning = self.parse_ai_response(ai_response)
                 self.record_ai_response(coin, decision, confidence, reasoning, ai_response)
@@ -120,13 +120,13 @@ class GeminiTrader(AITradingModel):
                 return decision, confidence, reasoning
             else:
                 error_detail = response.text
-                logger.error(f"❌ Gemini API 错误: {response.status_code} - {error_detail}")
-                return TradingDecision.HOLD, 0.0, f"API 调用失败"
+                logger.error(f"❌ Gemini API error: {response.status_code} - {error_detail}")
+                return TradingDecision.HOLD, 0.0, f"API call failed"
         
         except httpx.TimeoutException as e:
-            logger.error(f"⏱️ Gemini API 超时: {e}")
-            return TradingDecision.HOLD, 0.0, f"API 调用超时"
+            logger.error(f"⏱️ Gemini API timeout: {e}")
+            return TradingDecision.HOLD, 0.0, f"API timeout"
         except Exception as e:
-            logger.error(f"❌ Gemini 分析失败: {e}", exc_info=True)
-            return TradingDecision.HOLD, 0.0, f"分析异常: {str(e)}"
+            logger.error(f"❌ Gemini analysis failed: {e}", exc_info=True)
+            return TradingDecision.HOLD, 0.0, f"Analysis error: {str(e)}"
 

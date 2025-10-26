@@ -79,18 +79,18 @@ class ClaudeTrader(AITradingModel):
                 result = response.json()
                 ai_response = result["content"][0]["text"]
                 
-                # 解析响应
+                # Parse response
                 decision, confidence, reasoning = self.parse_ai_response(ai_response)
                 
-                # 记录响应
+                # Record response
                 self.record_ai_response(coin, decision, confidence, reasoning, ai_response)
                 
                 return decision, confidence, reasoning
             else:
-                print(f"Claude API 错误: {response.status_code} - {response.text}")
-                return TradingDecision.HOLD, 0.0, f"API 调用失败: {response.status_code}"
+                print(f"Claude API error: {response.status_code} - {response.text}")
+                return TradingDecision.HOLD, 0.0, f"API call failed: {response.status_code}"
         
         except Exception as e:
-            print(f"Claude 分析失败: {e}")
-            return TradingDecision.HOLD, 0.0, f"分析异常: {str(e)}"
+            print(f"Claude analysis failed: {e}")
+            return TradingDecision.HOLD, 0.0, f"Analysis error: {str(e)}"
 

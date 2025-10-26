@@ -290,12 +290,12 @@ REASONING: [your analysis reasoning, 50-100 words]
                 
                 reasoning = ' '.join(reasoning_lines).strip()
                 
-                # 如果太长，截取前200个字符
+                # If too long, truncate to 200 characters
                 if len(reasoning) > 200:
                     reasoning = reasoning[:200] + '...'
         
         except Exception as e:
-            print(f"解析 AI 响应时出错: {e}")
+            print(f"Error parsing AI response: {e}")
         
         return decision, confidence, reasoning
     
@@ -344,13 +344,13 @@ REASONING: [your analysis reasoning, 50-100 words]
                 responses = redis_manager.get_ai_responses(self.model_name, limit=100)
                 if responses:
                     self.ai_responses = responses
-                    logger.info(f"✅ 从 Redis 加载 {self.model_name} 的历史响应: {len(responses)} 条")
+                    logger.info(f"✅ Loaded {len(responses)} historical responses for {self.model_name} from Redis")
                 else:
-                    logger.info(f"📭 {self.model_name} 没有历史响应")
+                    logger.info(f"📭 No historical responses for {self.model_name}")
             else:
-                logger.warning(f"⚠️  Redis 未连接，{self.model_name} 无法加载历史响应")
+                logger.warning(f"⚠️  Redis not connected, unable to load historical responses for {self.model_name}")
         except Exception as e:
-            logger.error(f"从 Redis 加载 {self.model_name} 响应失败: {e}")
+            logger.error(f"Failed to load {self.model_name} responses from Redis: {e}")
     
     def record_ai_response(
         self,
@@ -376,13 +376,13 @@ REASONING: [your analysis reasoning, 50-100 words]
         if len(self.ai_responses) > 100:
             self.ai_responses = self.ai_responses[-100:]
         
-        # 保存到 Redis
+        # Save to Redis
         try:
             from utils.redis_manager import redis_manager
             if redis_manager.is_connected():
                 redis_manager.append_ai_response(self.model_name, response)
         except Exception as e:
-            logger.error(f"保存 {self.model_name} 响应到 Redis 失败: {e}")
+            logger.error(f"Failed to save {self.model_name} response to Redis: {e}")
     
     def get_stats(self) -> Dict:
         """获取统计信息"""

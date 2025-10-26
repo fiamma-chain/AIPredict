@@ -62,7 +62,7 @@ class GPTTrader(AITradingModel):
                         "messages": [
                             {
                                 "role": "system",
-                                "content": "你是一个专业的加密货币合约交易分析师。"
+                                "content": "You are a professional cryptocurrency futures trading analyst."
                             },
                             {
                                 "role": "user",
@@ -82,10 +82,10 @@ class GPTTrader(AITradingModel):
                 
                 return decision, confidence, reasoning
             else:
-                print(f"GPT API 错误: {response.status_code}")
-                return TradingDecision.HOLD, 0.0, f"API 调用失败"
+                print(f"GPT API error: {response.status_code}")
+                return TradingDecision.HOLD, 0.0, f"API call failed"
         
         except Exception as e:
-            print(f"GPT 分析失败: {e}")
-            return TradingDecision.HOLD, 0.0, f"分析异常: {str(e)}"
+            print(f"GPT analysis failed: {e}")
+            return TradingDecision.HOLD, 0.0, f"Analysis error: {str(e)}"
 
