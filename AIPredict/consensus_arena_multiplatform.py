@@ -63,13 +63,21 @@ class IndividualAITrader:
         self.multi_trader.add_platform(client, f"{name}-Aster")
         
         # 创建用于获取市场数据的 Hyperliquid 客户端（不用于交易）
-        logger.info(f"[{name}] 📊 创建 Hyperliquid 数据源客户端（仅用于获取市场数据）")
-        self.data_source_client = HyperliquidClient(private_key, settings.hyperliquid_testnet)
+        # 如果失败，使用 Aster 作为数据源
+        self.data_source_client = None
+        try:
+            logger.info(f"[{name}] 📊 尝试创建 Hyperliquid 数据源客户端（仅用于获取市场数据）")
+            self.data_source_client = HyperliquidClient(private_key, settings.hyperliquid_testnet)
+            logger.info(f"[{name}] ✅ Hyperliquid 数据源客户端创建成功")
+        except Exception as e:
+            logger.warning(f"[{name}] ⚠️  Hyperliquid 数据源连接失败: {str(e)[:100]}")
+            logger.info(f"[{name}] 📌 将使用 Aster 作为市场数据源")
         
         # 保存用于获取市场数据的客户端
         if self.data_source_client:
             self.primary_client = self.data_source_client
         else:
+            # 如果 Hyperliquid 不可用，使用 Aster 客户端作为数据源
             self.primary_client = list(self.multi_trader.platform_traders.values())[0].client if self.multi_trader.platform_traders else None
         
         # 统计数据
@@ -237,19 +245,31 @@ class AIGroup:
         
         for platform in enabled_platforms:
             if platform == "hyperliquid":
-                client = HyperliquidClient(private_key, settings.hyperliquid_testnet)
-                self.multi_trader.add_platform(client, f"{name}-Hyperliquid")
+                try:
+                    client = HyperliquidClient(private_key, settings.hyperliquid_testnet)
+                    self.multi_trader.add_platform(client, f"{name}-Hyperliquid")
+                except Exception as e:
+                    logger.error(f"[{name}] ❌ Hyperliquid 平台初始化失败: {str(e)[:100]}")
+                    logger.warning(f"[{name}] ⚠️  跳过 Hyperliquid 平台，继续初始化其他平台")
             elif platform == "aster":
-                client = AsterClient(private_key, settings.aster_testnet)
-                self.multi_trader.add_platform(client, f"{name}-Aster")
+                try:
+                    client = AsterClient(private_key, settings.aster_testnet)
+                    self.multi_trader.add_platform(client, f"{name}-Aster")
+                except Exception as e:
+                    logger.error(f"[{name}] ❌ Aster 平台初始化失败: {str(e)[:100]}")
+                    logger.warning(f"[{name}] ⚠️  跳过 Aster 平台，继续初始化其他平台")
         
         # 创建用于获取市场数据的 Hyperliquid 客户端（即使不用于交易）
         # 这样可以保持使用 Hyperliquid 的深度数据，但不在其上交易
+        self.data_source_client = None
         if "hyperliquid" not in enabled_platforms:
-            logger.info(f"[{name}] 📊 创建 Hyperliquid 数据源客户端（仅用于获取市场数据）")
-            self.data_source_client = HyperliquidClient(private_key, settings.hyperliquid_testnet)
-        else:
-            self.data_source_client = None
+            try:
+                logger.info(f"[{name}] 📊 尝试创建 Hyperliquid 数据源客户端（仅用于获取市场数据）")
+                self.data_source_client = HyperliquidClient(private_key, settings.hyperliquid_testnet)
+                logger.info(f"[{name}] ✅ Hyperliquid 数据源客户端创建成功")
+            except Exception as e:
+                logger.warning(f"[{name}] ⚠️  Hyperliquid 数据源连接失败: {str(e)[:100]}")
+                logger.info(f"[{name}] 📌 将使用已启用平台作为市场数据源")
         
         # 保存用于获取市场数据的客户端
         if self.data_source_client:
@@ -720,6 +740,139 @@ class ConsensusArena:
             return QwenTrader(api_key=settings.qwen_api_key, use_international=settings.qwen_use_international)
         else:
             return None
+    
+    async def _sync_and_clean_positions(self, trader, coin: str):
+        """
+        同步并清理持仓（处理手动操作和残余仓位）
+        
+        Args:
+            trader: 平台交易者
+            coin: 币种
+        """
+        try:
+            # 获取交易所实际持仓
+            account = await trader.client.get_account_info()
+            positions = account.get('assetPositions', [])
+            
+            actual_position = None
+            for pos in positions:
+                try:
+                    if 'position' not in pos:
+                        continue
+                    
+                    if pos['position']['coin'] == coin:
+                        size = float(pos['position']['szi'])
+                        if size != 0:
+                            actual_position = {
+                                'coin': coin,
+                                'size': abs(size),
+                                'side': 'long' if size > 0 else 'short',
+                                'entry_px': float(pos['position']['entryPx'])
+                            }
+                        break
+                except Exception as e:
+                    logger.warning(f"[{trader.name}] 解析持仓失败: {e}")
+                    continue
+            
+            # 获取系统记录的持仓
+            system_position = trader.auto_trader.positions.get(coin)
+            
+            # 🔥 情况1: 交易所无持仓，但系统有记录（手动平仓）
+            if not actual_position and system_position:
+                logger.warning(f"[{trader.name}] ⚠️  检测到手动平仓: {coin}")
+                logger.warning(f"[{trader.name}]    系统记录: {system_position['side'].upper()} {system_position['size']:.8f}")
+                logger.warning(f"[{trader.name}]    交易所实际: 无持仓")
+                logger.info(f"[{trader.name}] 🧹 清理系统内的持仓记录")
+                del trader.auto_trader.positions[coin]
+            
+            # 🔥 情况2: 交易所有持仓，但系统无记录（手动开仓）
+            elif actual_position and not system_position:
+                logger.warning(f"[{trader.name}] ⚠️  检测到手动开仓: {coin}")
+                logger.warning(f"[{trader.name}]    系统记录: 无持仓")
+                logger.warning(f"[{trader.name}]    交易所实际: {actual_position['side'].upper()} {actual_position['size']:.8f}")
+                logger.info(f"[{trader.name}] 📥 同步到系统记录")
+                trader.auto_trader.positions[coin] = {
+                    'side': actual_position['side'],
+                    'entry_price': actual_position['entry_px'],
+                    'size': actual_position['size'],
+                    'entry_time': datetime.now(),
+                    'confidence': 0,
+                    'reasoning': '检测到手动开仓，已同步',
+                    'order_id': 'manual'
+                }
+            
+            # 🔥 情况3: 都有持仓，但数量不一致（部分平仓或残余）
+            elif actual_position and system_position:
+                size_diff = abs(actual_position['size'] - system_position['size'])
+                if size_diff > 0.00001:  # 允许微小误差
+                    logger.warning(f"[{trader.name}] ⚠️  持仓数量不一致: {coin}")
+                    logger.warning(f"[{trader.name}]    系统记录: {system_position['size']:.8f}")
+                    logger.warning(f"[{trader.name}]    交易所实际: {actual_position['size']:.8f}")
+                    logger.warning(f"[{trader.name}]    差异: {size_diff:.8f}")
+                    
+                    # 🧹 检查是否是残余仓位（小于最小交易单位的2倍）
+                    min_size = 0.002  # BTC最小单位0.001的2倍
+                    if actual_position['size'] < min_size:
+                        logger.warning(f"[{trader.name}] 🧹 检测到残余仓位 ({actual_position['size']:.8f} < {min_size})")
+                        logger.info(f"[{trader.name}] 尝试清理残余仓位...")
+                        
+                        # 尝试平掉残余仓位
+                        try:
+                            platform_name = getattr(trader.client, 'platform_name', 'Unknown')
+                            is_buy = (actual_position['side'] == 'short')
+                            
+                            # 获取当前价格
+                            market_data = await trader.client.get_market_data(coin)
+                            current_price = market_data['price']
+                            
+                            if platform_name == 'Aster':
+                                # Aster使用市价单
+                                order_result = await trader.client.place_order(
+                                    coin=coin,
+                                    is_buy=is_buy,
+                                    size=actual_position['size'],
+                                    price=None,
+                                    order_type="Market",
+                                    reduce_only=True
+                                )
+                            else:
+                                # 其他平台使用限价单
+                                order_price = current_price * 1.001 if is_buy else current_price * 0.999
+                                order_result = await trader.client.place_order(
+                                    coin=coin,
+                                    is_buy=is_buy,
+                                    size=actual_position['size'],
+                                    price=order_price,
+                                    order_type="Limit",
+                                    reduce_only=True
+                                )
+                            
+                            if order_result.get('status') == 'ok':
+                                logger.info(f"[{trader.name}] ✅ 残余仓位清理成功")
+                                # 清理系统记录
+                                if coin in trader.auto_trader.positions:
+                                    del trader.auto_trader.positions[coin]
+                            else:
+                                logger.warning(f"[{trader.name}] ⚠️  残余仓位清理失败: {order_result.get('response')}")
+                                # 同步实际数量
+                                system_position['size'] = actual_position['size']
+                        
+                        except Exception as e:
+                            logger.error(f"[{trader.name}] ❌ 清理残余仓位失败: {e}")
+                            # 同步实际数量
+                            system_position['size'] = actual_position['size']
+                    else:
+                        # 不是残余仓位，直接同步数量
+                        logger.info(f"[{trader.name}] 🔄 同步持仓数量: {system_position['size']:.8f} → {actual_position['size']:.8f}")
+                        system_position['size'] = actual_position['size']
+            
+            # 情况4: 都无持仓（正常）
+            # 无需操作
+        
+        except Exception as e:
+            logger.error(f"[{trader.name}] ❌ 同步和清理持仓失败: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
     
     async def decision_loop(self):
         """共识决策循环"""

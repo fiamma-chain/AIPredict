@@ -16,13 +16,14 @@ logger = logging.getLogger(__name__)
 class HyperliquidClient(BaseExchangeClient):
     """Hyperliquid 交易客户端（官方SDK版本）"""
     
-    def __init__(self, private_key: str, testnet: bool = True):
+    def __init__(self, private_key: str, testnet: bool = True, max_retries: int = 3):
         """
         初始化 Hyperliquid 客户端
         
         Args:
             private_key: 以太坊私钥（可以带或不带0x前缀）
             testnet: 是否使用测试网
+            max_retries: 最大重试次数
         """
         super().__init__(private_key, testnet)
         self.testnet = testnet
@@ -37,24 +38,57 @@ class HyperliquidClient(BaseExchangeClient):
         else:
             base_url = constants.MAINNET_API_URL
         
-        # 初始化 Info（查询）和 Exchange（交易）
-        self.info = Info(base_url, skip_ws=True)
-        self.exchange = Exchange(
-            wallet=None,  # 使用私钥
-            base_url=base_url,
-            account_address=None  # SDK会从私钥推导
-        )
+        # 添加重试机制初始化客户端
+        import time
+        last_error = None
         
-        # 从私钥设置账户
-        from eth_account import Account
-        account = Account.from_key(private_key)
-        self.address = account.address
-        self.exchange.wallet = account
-        self.exchange.account_address = self.address
-        
-        logger.info(f"✅ Hyperliquid 客户端初始化成功")
-        logger.info(f"   地址: {self.address}")
-        logger.info(f"   网络: {'测试网' if testnet else '主网'}")
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"🔄 尝试连接 Hyperliquid API (尝试 {attempt + 1}/{max_retries})...")
+                
+                # 初始化 Info（查询）和 Exchange（交易）
+                # 使用更长的超时时间
+                self.info = Info(base_url, skip_ws=True, timeout=30)
+                self.exchange = Exchange(
+                    wallet=None,  # 使用私钥
+                    base_url=base_url,
+                    account_address=None  # SDK会从私钥推导
+                )
+                
+                # 从私钥设置账户
+                from eth_account import Account
+                account = Account.from_key(private_key)
+                self.address = account.address
+                self.exchange.wallet = account
+                self.exchange.account_address = self.address
+                
+                logger.info(f"✅ Hyperliquid 客户端初始化成功")
+                logger.info(f"   地址: {self.address}")
+                logger.info(f"   网络: {'测试网' if testnet else '主网'}")
+                return  # 成功，退出重试循环
+                
+            except Exception as e:
+                last_error = e
+                logger.warning(f"⚠️  连接失败 (尝试 {attempt + 1}/{max_retries}): {str(e)[:100]}")
+                
+                if attempt < max_retries - 1:
+                    # 指数退避：等待 2^attempt 秒
+                    wait_time = 2 ** attempt
+                    logger.info(f"⏳ 等待 {wait_time} 秒后重试...")
+                    time.sleep(wait_time)
+                else:
+                    # 所有重试都失败了
+                    error_msg = (
+                        f"❌ Hyperliquid API 连接失败（已重试 {max_retries} 次）\n"
+                        f"   错误: {str(last_error)}\n"
+                        f"   这可能是由于：\n"
+                        f"   1. 网络连接问题\n"
+                        f"   2. SSL/TLS 握手失败\n"
+                        f"   3. Hyperliquid API 暂时不可用\n"
+                        f"   建议：使用备用数据源或稍后重试"
+                    )
+                    logger.error(error_msg)
+                    raise last_error
     
     @property
     def platform_name(self) -> str:
