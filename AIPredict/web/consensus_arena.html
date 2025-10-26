@@ -1121,7 +1121,7 @@
                                     const label = context.dataset.label || '';
                                     const value = context.parsed.y;
                                     // Initial balance: Teams 240 USDT, Solo AIs 200 USDT
-                                    const initialBalance = label.includes('Team') ? 240 : 200;
+                                    const initialBalance = label.includes('Team') ? 1000 : 1000;
                                     const roi = ((value - initialBalance) / initialBalance * 100).toFixed(2);
                                     return `${label}: $${value.toFixed(2)} (${roi >= 0 ? '+' : ''}${roi}%)`;
                                 }

@@ -376,6 +376,22 @@ REASONING: [your analysis reasoning, 50-100 words]
         if len(self.ai_responses) > 100:
             self.ai_responses = self.ai_responses[-100:]
         
+        # 记录完整响应到日志文件
+        logger.info(f"""
+{'='*80}
+🤖 AI Model: {self.model_name}
+{'='*80}
+📊 Coin: {coin}
+⏰ Timestamp: {response['timestamp']}
+🎯 Decision: {decision.value.upper()}
+📈 Confidence: {confidence:.2f}%
+💭 Reasoning: {reasoning}
+{'─'*80}
+📝 Raw Response:
+{raw_response}
+{'='*80}
+""")
+        
         # Save to Redis
         try:
             from utils.redis_manager import redis_manager
