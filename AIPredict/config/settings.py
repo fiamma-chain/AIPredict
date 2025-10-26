@@ -49,8 +49,8 @@ class Settings(BaseSettings):
     ai_max_margin: float = 500.0  # 最大保证金（U）
     ai_min_leverage: float = 5.0  # 最小杠杆倍数（AI根据信心度动态调整）
     ai_max_leverage: float = 20.0  # 最大杠杆倍数（AI根据信心度动态调整5-20x）
-    ai_stop_loss_pct: float = 0.15  # 止损比例 15%
-    ai_take_profit_pct: float = 0.30  # 止盈比例 30%
+    ai_stop_loss_pct: float = 0.02  # 止损比例 2%（短线策略）
+    ai_take_profit_pct: float = 0.03  # 止盈比例 3%（短线策略）
     
     # 分组共识配置（默认主网）
     group_1_name: str = "Alpha组"
