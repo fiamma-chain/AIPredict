@@ -3,6 +3,7 @@
 负责执行AI决策并管理持仓
 """
 import logging
+import asyncio
 from typing import Dict, Optional, List
 from datetime import datetime
 from ai_models.base_ai import TradingDecision
@@ -28,7 +29,8 @@ class AutoTrader:
         self.min_confidence = settings.min_confidence  # 从配置读取
         self.min_margin = settings.ai_min_margin  # 最小保证金（从配置读取）
         self.max_margin = settings.ai_max_margin  # 最大保证金（从配置读取）
-        self.max_leverage = settings.ai_max_leverage  # 最大杠杆（从配置读取，默认5x）
+        self.min_leverage = settings.ai_min_leverage  # 最小杠杆（从配置读取）
+        self.max_leverage = settings.ai_max_leverage  # 最大杠杆（从配置读取）
         self.stop_loss_pct = settings.ai_stop_loss_pct  # 止损比例（从配置读取）
         self.take_profit_pct = settings.ai_take_profit_pct  # 止盈比例（从配置读取）
         
@@ -45,7 +47,7 @@ class AutoTrader:
         logger.info("🤖 自动交易器初始化完成")
         logger.info(f"   最小信心阈值: {self.min_confidence}%")
         logger.info(f"   保证金范围: ${self.min_margin:.0f} - ${self.max_margin:.0f}")
-        logger.info(f"   最大杠杆: {self.max_leverage:.0f}x (AI动态调整1-{self.max_leverage:.0f}x)")
+        logger.info(f"   杠杆范围: {self.min_leverage:.0f}x - {self.max_leverage:.0f}x (AI根据信心度动态调整)")
         logger.info(f"   止损/止盈: {self.stop_loss_pct*100:.1f}% / {self.take_profit_pct*100:.1f}%")
     
     def reset_daily_stats(self):
@@ -190,10 +192,10 @@ class AutoTrader:
             交易结果
         """
         try:
-            # 🎯 动态杠杆策略：根据AI信心度调整杠杆（2-5x）
-            # 信心度50% -> 2x, 信心度100% -> 5x (线性映射)
-            leverage = 2.0 + ((confidence - 50.0) / 50.0) * (self.max_leverage - 2.0)
-            leverage = max(2.0, min(leverage, self.max_leverage))  # 确保在2x-5x范围内
+            # 🎯 动态杠杆策略：根据AI信心度调整杠杆（min_leverage - max_leverage）
+            # 信心度50% -> min_leverage, 信心度100% -> max_leverage (线性映射)
+            leverage = self.min_leverage + ((confidence - 50.0) / 50.0) * (self.max_leverage - self.min_leverage)
+            leverage = max(self.min_leverage, min(leverage, self.max_leverage))  # 确保在配置范围内
             
             # 📊 计算保证金（根据信心度线性插值：50%->min_margin, 100%->max_margin）
             # 信心度越高，使用的保证金越多
@@ -257,7 +259,7 @@ class AutoTrader:
                 # Aster: 1-125x, Hyperliquid: 1-50x
                 # 使用更宽松的上限以兼容不同平台
                 max_platform_leverage = 125
-                leverage_int = max(2, min(int(round(leverage)), max_platform_leverage))  # 最小2x
+                leverage_int = max(int(self.min_leverage), min(int(round(leverage)), max_platform_leverage))
                 order_params["leverage"] = leverage_int
                 platform_name = getattr(self.client, 'platform_name', 'Platform')
                 logger.info(f"   🎯 传递{platform_name}杠杆参数: {leverage_int}x (原始: {leverage:.2f}x)")
@@ -410,14 +412,27 @@ class AutoTrader:
             is_buy = (position['side'] == 'short')  # 平空仓需要买入
             order_price = current_price * 1.001 if is_buy else current_price * 0.999
             
-            order_result = await self.client.place_order(
-                coin=coin,
-                is_buy=is_buy,
-                size=close_size,  # 使用交易所实际数量
-                price=order_price,
-                order_type="Limit",
-                reduce_only=True  # 只减仓
-            )
+            # 🔥 关键：对于Aster平台，使用市价单确保完全成交
+            platform_name = getattr(self.client, 'platform_name', 'Unknown')
+            if platform_name == 'Aster':
+                logger.info(f"[Aster] 使用市价单平仓以确保完全成交")
+                order_result = await self.client.place_order(
+                    coin=coin,
+                    is_buy=is_buy,
+                    size=close_size,  # 使用交易所实际数量
+                    price=None,  # 市价单
+                    order_type="Market",
+                    reduce_only=True  # 只减仓
+                )
+            else:
+                order_result = await self.client.place_order(
+                    coin=coin,
+                    is_buy=is_buy,
+                    size=close_size,  # 使用交易所实际数量
+                    price=order_price,
+                    order_type="Limit",
+                    reduce_only=True  # 只减仓
+                )
             
             # 检查订单是否成功
             if order_result.get('status') == 'err':
@@ -462,6 +477,28 @@ class AutoTrader:
             del self.positions[coin]
             
             logger.info(f"✅ 平仓成功: {position['side'].upper()} {close_size:.8f} {coin}, 盈亏: ${pnl:+.2f}")
+            
+            # 🔥 验证平仓结果（特别是Aster平台）
+            if platform_name == 'Aster':
+                logger.info(f"[Aster] 等待2秒后验证平仓结果...")
+                await asyncio.sleep(2)  # 等待订单完全处理
+                
+                # 重新获取持仓验证
+                verify_account = await self.client.get_account_info()
+                remaining_size = None
+                for asset_pos in verify_account.get('assetPositions', []):
+                    if asset_pos['position']['coin'] == coin:
+                        szi = float(asset_pos['position']['szi'])
+                        remaining_size = abs(szi)
+                        if remaining_size > 0:
+                            logger.warning(f"⚠️  [Aster] 平仓后仍有残余仓位: {remaining_size:.8f} {coin}")
+                            logger.warning(f"⚠️  [Aster] 可能原因: 订单部分成交或精度问题")
+                        else:
+                            logger.info(f"✅ [Aster] 平仓验证成功: 无残余仓位")
+                        break
+                
+                if remaining_size is None:
+                    logger.info(f"✅ [Aster] 平仓验证成功: 无该币种持仓")
             
             return trade_record
             

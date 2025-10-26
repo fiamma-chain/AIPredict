@@ -44,9 +44,10 @@ class Settings(BaseSettings):
     # AI 交易配置
     ai_initial_balance: float = 240.0  # 组账户初始余额（Alpha组和Beta组）
     individual_ai_initial_balance: float = 200.0  # 独立AI交易者初始余额
-    ai_min_margin: float = 120.0  # 最小保证金（U）
-    ai_max_margin: float = 240.0  # 最大保证金（U）
-    ai_max_leverage: float = 5.0  # 最大杠杆倍数（AI可根据信心度动态调整1-5x）
+    ai_min_margin: float = 200.0  # 最小保证金（U）
+    ai_max_margin: float = 500.0  # 最大保证金（U）
+    ai_min_leverage: float = 5.0  # 最小杠杆倍数（AI根据信心度动态调整）
+    ai_max_leverage: float = 20.0  # 最大杠杆倍数（AI根据信心度动态调整5-20x）
     ai_stop_loss_pct: float = 0.15  # 止损比例 15%
     ai_take_profit_pct: float = 0.30  # 止盈比例 30%
     
