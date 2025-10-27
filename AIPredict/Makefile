@@ -264,7 +264,13 @@ stop: ## Stop all services
 	@if [ -f logs/server.pid ]; then \
 		PID=$$(cat logs/server.pid); \
 		if kill -0 $$PID 2>/dev/null; then \
+			echo "$(YELLOW)Sending SIGTERM to PID $$PID...$(NC)"; \
 			kill $$PID; \
+			sleep 2; \
+			if kill -0 $$PID 2>/dev/null; then \
+				echo "$(YELLOW)⚠️  Process still running, forcing with SIGKILL...$(NC)"; \
+				kill -9 $$PID 2>/dev/null; \
+			fi; \
 			echo "$(GREEN)✓ Service stopped (PID: $$PID)$(NC)"; \
 		else \
 			echo "$(YELLOW)⚠️  PID file exists but process not found$(NC)"; \
@@ -273,13 +279,25 @@ stop: ## Stop all services
 	else \
 		PID=$$(ps aux | grep -v grep | grep -v make | grep "[p]ython.*consensus_arena_multiplatform.py" | awk '{print $$2}' | head -1); \
 		if [ -n "$$PID" ]; then \
-			kill $$PID 2>/dev/null && \
-				echo "$(GREEN)✓ Service stopped (PID: $$PID)$(NC)" || \
-				echo "$(RED)❌ Stop failed$(NC)"; \
+			echo "$(YELLOW)Sending SIGTERM to PID $$PID...$(NC)"; \
+			kill $$PID 2>/dev/null; \
+			sleep 2; \
+			if kill -0 $$PID 2>/dev/null; then \
+				echo "$(YELLOW)⚠️  Process still running, forcing with SIGKILL...$(NC)"; \
+				kill -9 $$PID 2>/dev/null; \
+			fi; \
+			echo "$(GREEN)✓ Service stopped (PID: $$PID)$(NC)"; \
 		else \
 			echo "$(YELLOW)⚠️  Service not running$(NC)"; \
 		fi; \
 	fi
+
+kill: ## Force kill all services (if stop doesn't work)
+	@echo "$(RED)💀 Force killing all processes...$(NC)"
+	@pkill -9 -f "consensus_arena_multiplatform.py" 2>/dev/null && \
+		echo "$(GREEN)✓ All processes killed$(NC)" || \
+		echo "$(YELLOW)⚠️  No processes found$(NC)"
+	@rm -f logs/server.pid
 
 restart: ## Restart service
 	@$(MAKE) stop || true

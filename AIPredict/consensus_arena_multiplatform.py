@@ -1023,7 +1023,7 @@ class ConsensusArena:
                         # Record decision
                         decision_record = {
                             "time": datetime.now().isoformat(),
-                            "decision": str(consensus_decision),
+                            "decision": consensus_decision.value if hasattr(consensus_decision, 'value') else str(consensus_decision),
                             "confidence": confidence,
                             "summary": summary,
                             "ai_votes": ai_votes,
@@ -1040,9 +1040,11 @@ class ConsensusArena:
                         formatted_ai_votes = []
                         for vote in ai_votes:
                             if vote:
+                                vote_decision = vote.get('decision', '')
+                                decision_str = vote_decision.value if hasattr(vote_decision, 'value') else str(vote_decision)
                                 formatted_ai_votes.append({
                                     "ai_name": vote.get('ai_name', 'Unknown'),
-                                    "decision": str(vote.get('decision', '')),
+                                    "decision": decision_str,
                                     "confidence": round(vote.get('confidence', 0), 1),
                                     "reasoning": vote.get('reasoning', '')[:200]  # Limit length
                                 })
@@ -1050,7 +1052,7 @@ class ConsensusArena:
                         global_decision = {
                             "time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                             "group": group.name,
-                            "direction": str(consensus_decision),
+                            "direction": consensus_decision.value if hasattr(consensus_decision, 'value') else str(consensus_decision),
                             "confidence": round(confidence, 1),
                             "votes": votes_count,
                             "total_ais": len([v for v in ai_votes if v]),  # Filter out None
@@ -1116,7 +1118,7 @@ class ConsensusArena:
                         # Record decision
                         decision_record = {
                             "time": datetime.now().isoformat(),
-                            "decision": str(decision),
+                            "decision": decision.value if hasattr(decision, 'value') else str(decision),
                             "confidence": confidence,
                             "reasoning": reasoning,
                             "price": current_price
@@ -1130,7 +1132,7 @@ class ConsensusArena:
                             "trader": trader.name,
                             "ai_name": trader.ai_name,
                             "type": "individual",
-                            "direction": str(decision),
+                            "direction": decision.value if hasattr(decision, 'value') else str(decision),
                             "confidence": round(confidence, 1),
                             "price": current_price,
                             "reasoning": reasoning[:200]  # Limit length
@@ -1314,13 +1316,26 @@ async def shutdown_event():
         await arena.stop()
 
 
-def _sanitize_for_json(obj):
+def _sanitize_for_json(obj, _visited=None):
     """
     Sanitize data structure to ensure it can be serialized to JSON
     Remove any type annotations or non-serializable objects
+    
+    Args:
+        obj: Object to sanitize
+        _visited: Set of visited object IDs to prevent infinite recursion
     """
     import json
     from enum import Enum
+    
+    # Initialize visited set on first call
+    if _visited is None:
+        _visited = set()
+    
+    # Check for circular references
+    obj_id = id(obj)
+    if obj_id in _visited:
+        return "<circular reference>"
     
     if obj is None:
         return None
@@ -1330,16 +1345,42 @@ def _sanitize_for_json(obj):
         # Handle Enum types (like TradingDecision)
         return str(obj.value) if hasattr(obj, 'value') else str(obj)
     elif isinstance(obj, dict):
-        return {k: _sanitize_for_json(v) for k, v in obj.items()}
+        _visited.add(obj_id)
+        try:
+            # Ensure keys are always hashable (convert to string if needed)
+            result = {}
+            for k, v in obj.items():
+                # Convert key to string if it's not a simple hashable type
+                if isinstance(k, (str, int, float, bool, type(None))):
+                    safe_key = k
+                else:
+                    safe_key = str(k)
+                result[safe_key] = _sanitize_for_json(v, _visited)
+            _visited.remove(obj_id)
+            return result
+        except Exception as e:
+            _visited.discard(obj_id)
+            return f"<error: {str(e)}>"
     elif isinstance(obj, (list, tuple)):
-        return [_sanitize_for_json(item) for item in obj]
+        _visited.add(obj_id)
+        try:
+            result = [_sanitize_for_json(item, _visited) for item in obj]
+            _visited.remove(obj_id)
+            return result
+        except Exception as e:
+            _visited.discard(obj_id)
+            return f"<error: {str(e)}>"
     elif isinstance(obj, datetime):
         return obj.isoformat()
     elif hasattr(obj, '__dict__'):
         # Try to convert to dict, but filter out methods and private attributes
+        _visited.add(obj_id)
         try:
-            return _sanitize_for_json(obj.__dict__)
-        except:
+            result = _sanitize_for_json(obj.__dict__, _visited)
+            _visited.remove(obj_id)
+            return result
+        except Exception as e:
+            _visited.discard(obj_id)
             return str(obj)
     else:
         # For any other type, try to convert to string
