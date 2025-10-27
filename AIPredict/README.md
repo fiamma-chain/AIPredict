@@ -1,107 +1,125 @@
 # AI Trading Arena
 
-一个类似 nof1.ai 的 AI 交易竞技场平台，让多个 AI 模型在真实市场中竞争。
+An AI trading arena platform similar to nof1.ai, where multiple AI models compete in real markets.
 
-## 系统架构
+## System Architecture
 
-### 核心模块
+### Core Modules
 
-1. **交易执行层** (`trading/`)
-   - Hyperliquid 合约交易接口
-   - 订单管理和风控
-   - 实时行情数据
+1. **Trading Execution Layer** (`trading/`)
+   - Hyperliquid contract trading interface
+   - Order management and risk control
+   - Real-time market data
 
-2. **AI 策略层** (`strategies/`)
-   - 策略基类和接口
-   - 多种 AI 交易策略实现
-   - 策略回测框架
+2. **AI Strategy Layer** (`strategies/`)
+   - Strategy base classes and interfaces
+   - Multiple AI trading strategy implementations
+   - Strategy backtesting framework
 
-3. **竞技场系统** (`arena/`)
-   - 模型注册和管理
-   - 性能追踪和评分
-   - 排行榜系统
+3. **Arena System** (`arena/`)
+   - Model registration and management
+   - Performance tracking and scoring
+   - Leaderboard system
 
-4. **数据层** (`data/`)
-   - 交易历史记录
-   - 性能指标计算
-   - 数据持久化
+4. **Data Layer** (`data/`)
+   - Trading history records
+   - Performance metrics calculation
+   - Data persistence
 
-5. **Web 界面** (`web/`)
-   - 实时交易展示
-   - 排行榜可视化
-   - 模型详情页面
+5. **Web Interface** (`web/`)
+   - Real-time trading display
+   - Leaderboard visualization
+   - Model detail pages
 
-## 技术栈
+## Tech Stack
 
-- **后端**: Python 3.11+
-- **交易平台**: Hyperliquid
-- **Web框架**: FastAPI
-- **前端**: React + TypeScript
-- **数据库**: PostgreSQL + Redis
-- **实时通信**: WebSocket
-- **监控**: Prometheus + Grafana
+- **Backend**: Python 3.11+
+- **Trading Platform**: Hyperliquid & Aster
+- **Web Framework**: FastAPI
+- **Frontend**: HTML + JavaScript
+- **Database**: Redis
+- **Real-time Communication**: WebSocket
+- **Monitoring**: Custom logging
 
-## 功能特性
+## Features
 
-- ✅ 多 AI 模型并行交易
-- ✅ 实时性能追踪
-- ✅ 透明的交易历史
-- ✅ 风险管理系统
-- ✅ 排行榜和竞争机制
+- ✅ Multiple AI models trading in parallel
+- ✅ Real-time performance tracking
+- ✅ Transparent trading history
+- ✅ Risk management system
+- ✅ Leaderboard and competition mechanism
 - ✅ RESTful API
+- ✅ Multi-platform support (Hyperliquid & Aster)
+- ✅ Consensus voting mechanism
+- ✅ Individual AI traders
 
-## 快速开始
+## Quick Start
 
 ```bash
-# 安装依赖
+# Install dependencies
 pip install -r requirements.txt
 
-# 配置环境变量
+# Configure environment variables
 cp .env.example .env
 
-# 启动后端服务
-python main.py
+# Start backend service
+python consensus_arena_multiplatform.py
 
-# 启动 Web 界面
-cd web && npm install && npm start
+# Access web interface
+# Open http://localhost:8000 in your browser
 ```
 
-## 项目结构
+## Project Structure
 
 ```
-AITrading/
-├── trading/              # 交易执行层
-│   ├── hyperliquid/     # Hyperliquid 接口
-│   ├── order_manager.py # 订单管理
-│   └── risk_manager.py  # 风险管理
-├── strategies/          # AI 策略
-│   ├── base.py         # 策略基类
-│   ├── trend_following.py
-│   ├── mean_reversion.py
-│   └── ml_model.py
-├── arena/              # 竞技场系统
-│   ├── model_registry.py
-│   ├── performance.py
-│   └── leaderboard.py
-├── data/               # 数据层
-│   ├── database.py
-│   ├── models.py
-│   └── metrics.py
-├── api/                # Web API
-│   └── routes.py
-├── web/                # 前端界面
-├── config/             # 配置文件
-├── tests/              # 测试
-└── main.py            # 入口文件
+AIPredict/
+├── trading/              # Trading execution layer
+│   ├── hyperliquid/     # Hyperliquid interface
+│   ├── aster/           # Aster interface
+│   ├── auto_trader.py   # Auto trading logic
+│   ├── multi_platform_trader.py  # Multi-platform management
+│   └── kline_manager.py # K-line data manager
+├── ai_models/           # AI models
+│   ├── base_ai.py      # Base AI class
+│   ├── deepseek_trader.py
+│   ├── claude_trader.py
+│   ├── grok_trader.py
+│   ├── gpt_trader.py
+│   ├── gemini_trader.py
+│   └── qwen_trader.py
+├── config/              # Configuration
+│   └── settings.py
+├── utils/               # Utilities
+│   ├── redis_manager.py
+│   └── symbol_filter.py
+├── web/                 # Web interface
+│   └── consensus_arena.html
+├── logs/                # Log files
+└── consensus_arena_multiplatform.py  # Main entry point
 ```
 
-## 安全提示
+## Key Improvements
 
-⚠️ 本系统涉及真实资金交易，使用前请：
-1. 充分测试所有策略
-2. 设置合理的风险限制
-3. 小资金开始测试
-4. 监控所有交易活动
+### AI Decision Optimization
+
+The system now implements an optimized decision flow:
+
+1. **Step 1: Individual AI Decision** - All 6 independent AI models make their decisions first
+2. **Step 2: Group Consensus** - Alpha and Beta groups reuse the individual AI decisions for consensus voting (no redundant API calls)
+3. **Step 3: Trade Execution** - Individual AI traders execute their pre-made decisions
+
+**Benefits:**
+- ✅ Reduced API calls by 66% (from 18 to 6 calls per cycle)
+- ✅ Lower costs and faster execution
+- ✅ Consistent decisions across individual and group trading
+
+## Security Notice
+
+⚠️ This system involves real money trading. Before using:
+1. Thoroughly test all strategies
+2. Set reasonable risk limits
+3. Start with small amounts
+4. Monitor all trading activities
 
 ## License
 
