@@ -1325,6 +1325,8 @@
                             backgroundColor: 'rgba(16, 185, 129, 0.1)',
                             tension: 0.4,
                             borderWidth: 3,
+                            pointRadius: 0,  // 默认不显示圆点
+                            pointHoverRadius: 0,  // 鼠标悬停时也不显示
                             platform: 'hyperliquid'
                         },
                         {
@@ -1334,6 +1336,8 @@
                             backgroundColor: 'rgba(52, 211, 153, 0.1)',
                             tension: 0.4,
                             borderWidth: 3,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
                             platform: 'aster'
                         },
                         {
@@ -1343,6 +1347,8 @@
                             backgroundColor: 'rgba(37, 99, 235, 0.1)',
                             tension: 0.4,
                             borderWidth: 3,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
                             platform: 'hyperliquid'
                         },
                         {
@@ -1352,6 +1358,8 @@
                             backgroundColor: 'rgba(56, 189, 248, 0.1)',
                             tension: 0.4,
                             borderWidth: 3,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
                             platform: 'aster'
                         },
                         // 独立AI交易者曲线
@@ -1362,7 +1370,9 @@
                             backgroundColor: 'rgba(168, 85, 247, 0.1)',
                             tension: 0.4,
                             borderWidth: 2,
-                            borderDash: [5, 5]  // 虚线
+                            borderDash: [5, 5],  // 虚线
+                            pointRadius: 0,
+                            pointHoverRadius: 0
                         },
                         {
                             label: 'Claude-Solo',
@@ -1371,7 +1381,9 @@
                             backgroundColor: 'rgba(236, 72, 153, 0.1)',
                             tension: 0.4,
                             borderWidth: 2,
-                            borderDash: [5, 5]
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            pointHoverRadius: 0
                         },
                         {
                             label: 'Grok-Solo',
@@ -1380,7 +1392,9 @@
                             backgroundColor: 'rgba(249, 115, 22, 0.1)',
                             tension: 0.4,
                             borderWidth: 2,
-                            borderDash: [5, 5]
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            pointHoverRadius: 0
                         },
                         {
                             label: 'GPT-Solo',
@@ -1389,7 +1403,9 @@
                             backgroundColor: 'rgba(6, 182, 212, 0.1)',
                             tension: 0.4,
                             borderWidth: 2,
-                            borderDash: [5, 5]
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            pointHoverRadius: 0
                         },
                         {
                             label: 'Gemini-Solo',
@@ -1398,7 +1414,9 @@
                             backgroundColor: 'rgba(245, 158, 11, 0.1)',
                             tension: 0.4,
                             borderWidth: 2,
-                            borderDash: [5, 5]
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            pointHoverRadius: 0
                         },
                         {
                             label: 'Qwen-Solo',
@@ -1407,7 +1425,9 @@
                             backgroundColor: 'rgba(239, 68, 68, 0.1)',
                             tension: 0.4,
                             borderWidth: 2,
-                            borderDash: [5, 5]
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            pointHoverRadius: 0
                         }
                     ]
                 },
@@ -1797,6 +1817,20 @@
                     console.log(`   Beta余额: $${equityChart.data.datasets[1].data[equityChart.data.datasets[1].data.length - 1]?.toFixed(2) || '0.00'}`);
                 }
                 
+                // 动态设置最后一个点显示圆圈
+                equityChart.data.datasets.forEach(dataset => {
+                    const dataLength = dataset.data.length;
+                    if (dataLength > 0) {
+                        // 创建一个数组，所有点默认为0（不显示），最后一个点为5（显示）
+                        dataset.pointRadius = new Array(dataLength).fill(0);
+                        dataset.pointRadius[dataLength - 1] = 5;  // 最后一个点显示圆圈
+                        
+                        // 同样设置悬停时的圆圈大小
+                        dataset.pointHoverRadius = new Array(dataLength).fill(0);
+                        dataset.pointHoverRadius[dataLength - 1] = 7;  // 最后一个点悬停时稍大
+                    }
+                });
+                
                 // 使用默认动画模式更新，让变化更明显
                 equityChart.update('active');
                 
@@ -1993,6 +2027,20 @@
                     
                     // 更新当前周期起始索引为最后一个数据点
                     currentPeriodStartIndex = equityChart.data.labels.length - 1;
+                    
+                    // 动态设置最后一个点显示圆圈
+                    equityChart.data.datasets.forEach(dataset => {
+                        const dataLength = dataset.data.length;
+                        if (dataLength > 0) {
+                            // 创建一个数组，所有点默认为0（不显示），最后一个点为5（显示）
+                            dataset.pointRadius = new Array(dataLength).fill(0);
+                            dataset.pointRadius[dataLength - 1] = 5;  // 最后一个点显示圆圈
+                            
+                            // 同样设置悬停时的圆圈大小
+                            dataset.pointHoverRadius = new Array(dataLength).fill(0);
+                            dataset.pointHoverRadius[dataLength - 1] = 7;  // 最后一个点悬停时稍大
+                        }
+                    });
                     
                     // 更新图表
                     equityChart.update('none'); // 'none'模式快速更新，不播放动画
