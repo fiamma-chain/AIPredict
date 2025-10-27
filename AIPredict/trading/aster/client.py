@@ -431,6 +431,48 @@ class AsterClient(BaseExchangeClient):
             # 如果指定了杠杆，先设置杠杆（必须成功，否则不下单）
             if leverage is not None and not reduce_only:
                 try:
+                    # 🔍 先检查账户可用余额
+                    account_info = await self.get_account_info()
+                    available_balance = account_info.get('availableBalance', 0)
+                    total_balance = account_info.get('marginSummary', {}).get('accountValue', 0)
+                    
+                    logger.info(f"[Aster] 💰 账户余额检查:")
+                    logger.info(f"   总余额: ${total_balance:.2f}")
+                    logger.info(f"   可用余额: ${available_balance:.2f}")
+                    logger.info(f"   需要保证金: ${required_margin:.2f}")
+                    
+                    # 检查可用余额是否充足（预留5%缓冲）
+                    required_with_buffer = required_margin * 1.05
+                    if available_balance < required_with_buffer:
+                        # 可用余额不足，尝试降低杠杆或减少仓位
+                        logger.warning(f"⚠️ [Aster] 可用余额不足 (${available_balance:.2f} < ${required_with_buffer:.2f})")
+                        
+                        # 方案1: 根据可用余额计算最大可用杠杆
+                        if available_balance > min_margin:
+                            max_usable_leverage = int(position_value / available_balance)
+                            if max_usable_leverage >= 1:
+                                logger.info(f"🔧 [Aster] 自动调整杠杆: {leverage}x -> {max_usable_leverage}x")
+                                leverage = max_usable_leverage
+                                required_margin = position_value / leverage
+                                logger.info(f"   调整后保证金: ${required_margin:.2f}")
+                            else:
+                                error_msg = (
+                                    f"❌ [Aster] 余额不足以开仓\n"
+                                    f"   可用余额: ${available_balance:.2f}\n"
+                                    f"   需要保证金: ${required_with_buffer:.2f}\n"
+                                    f"   建议: 减少仓位大小或增加账户余额"
+                                )
+                                logger.error(error_msg)
+                                return {"status": "err", "response": error_msg}
+                        else:
+                            error_msg = (
+                                f"❌ [Aster] 可用余额低于最小保证金要求\n"
+                                f"   可用余额: ${available_balance:.2f}\n"
+                                f"   最小保证金: ${min_margin:.2f}"
+                            )
+                            logger.error(error_msg)
+                            return {"status": "err", "response": error_msg}
+                    
                     logger.info(f"[Aster] 🎯 准备设置杠杆: {coin} -> {leverage}x")
                     leverage_result = await self.update_leverage_async(coin, leverage)
                     logger.info(f"[Aster] ✅ 杠杆设置成功: {leverage}x, 返回: {leverage_result}")

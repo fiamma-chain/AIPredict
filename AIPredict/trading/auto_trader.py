@@ -77,6 +77,96 @@ class AutoTrader:
         
         return True
     
+    async def _sync_position_from_exchange(self, coin: str):
+        """
+        从交易所实时同步指定币种的持仓
+        确保系统记录与交易所一致，避免持仓不同步导致的交易错误
+        
+        Args:
+            coin: 币种
+        """
+        try:
+            # 获取交易所账户信息
+            account = await self.client.get_account_info()
+            positions = account.get('assetPositions', [])
+            
+            # 查找该币种的实际持仓
+            actual_position = None
+            for pos in positions:
+                try:
+                    if 'position' not in pos:
+                        continue
+                    
+                    pos_coin = pos['position']['coin']
+                    if pos_coin == coin:
+                        size = float(pos['position']['szi'])
+                        if size != 0:  # 有持仓
+                            actual_position = {
+                                'coin': coin,
+                                'size': abs(size),
+                                'side': 'long' if size > 0 else 'short',
+                                'entry_px': float(pos['position']['entryPx'])
+                            }
+                        break
+                except Exception as e:
+                    logger.warning(f"解析持仓失败: {e}")
+                    continue
+            
+            # 获取系统记录的持仓
+            system_position = self.positions.get(coin)
+            
+            # 🔥 情况1: 交易所有持仓，但系统无记录（手动开仓或记录丢失）
+            if actual_position and not system_position:
+                logger.warning(f"⚠️  检测到交易所持仓但系统无记录: {coin}")
+                logger.warning(f"    交易所: {actual_position['side'].upper()} {actual_position['size']:.8f} @ ${actual_position['entry_px']:,.2f}")
+                logger.info(f"🔄 同步到系统记录")
+                
+                self.positions[coin] = {
+                    'side': actual_position['side'],
+                    'entry_price': actual_position['entry_px'],
+                    'size': actual_position['size'],
+                    'entry_time': datetime.now(),
+                    'confidence': 0,
+                    'reasoning': '从交易所同步的持仓',
+                    'order_id': 'synced'
+                }
+            
+            # 🔥 情况2: 交易所无持仓，但系统有记录（手动平仓或平仓失败）
+            elif not actual_position and system_position:
+                logger.warning(f"⚠️  系统记录持仓但交易所无持仓: {coin}")
+                logger.warning(f"    系统记录: {system_position['side'].upper()} {system_position['size']:.8f}")
+                logger.info(f"🧹 清理系统记录")
+                del self.positions[coin]
+            
+            # 🔥 情况3: 都有持仓，但数量或方向不一致
+            elif actual_position and system_position:
+                size_diff = abs(actual_position['size'] - system_position['size'])
+                side_mismatch = actual_position['side'] != system_position['side']
+                
+                if size_diff > 0.00001 or side_mismatch:
+                    logger.warning(f"⚠️  持仓不一致: {coin}")
+                    logger.warning(f"    系统: {system_position['side'].upper()} {system_position['size']:.8f}")
+                    logger.warning(f"    交易所: {actual_position['side'].upper()} {actual_position['size']:.8f}")
+                    logger.info(f"🔄 以交易所实际持仓为准，更新系统记录")
+                    
+                    self.positions[coin] = {
+                        'side': actual_position['side'],
+                        'entry_price': actual_position['entry_px'],
+                        'size': actual_position['size'],
+                        'entry_time': system_position.get('entry_time', datetime.now()),
+                        'confidence': system_position.get('confidence', 0),
+                        'reasoning': system_position.get('reasoning', '从交易所同步'),
+                        'order_id': system_position.get('order_id', 'synced')
+                    }
+            
+            # 情况4: 都无持仓（正常）
+            # 无需操作
+            
+        except Exception as e:
+            logger.error(f"❌ 同步持仓失败: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+    
     async def execute_decision(
         self,
         coin: str,
@@ -104,8 +194,18 @@ class AutoTrader:
         if not self.check_risk_limits():
             return None
         
+        # 🔥 关键修复：实时从交易所同步持仓，确保系统记录与交易所一致
+        await self._sync_position_from_exchange(coin)
+        
         # 检查是否有持仓
         has_position = coin in self.positions
+        
+        # 打印当前持仓状态（用于调试）
+        if has_position:
+            pos = self.positions[coin]
+            logger.info(f"📊 当前持仓: {coin} {pos['side'].upper()} {pos['size']:.8f} @ ${pos['entry_price']:,.2f}")
+        else:
+            logger.info(f"📊 当前持仓: {coin} - 无持仓")
         
         # 检查止损止盈
         if has_position:
@@ -141,7 +241,11 @@ class AutoTrader:
                 return await self._open_position(coin, 'long', confidence, reasoning, current_price, balance)
             elif self.positions[coin]['side'] == 'short':
                 # 先平空仓
-                await self._close_position(coin, current_price, "反向信号")
+                close_result = await self._close_position(coin, current_price, "反向信号")
+                if close_result is None:
+                    logger.error(f"❌ 平空仓失败，取消开多仓操作")
+                    return None
+                
                 # 平仓后重新获取余额
                 account_info = await self.client.get_account_info()
                 new_balance = float(account_info.get('marginSummary', {}).get('accountValue', balance))
@@ -154,7 +258,11 @@ class AutoTrader:
                 return await self._open_position(coin, 'short', confidence, reasoning, current_price, balance)
             elif self.positions[coin]['side'] == 'long':
                 # 先平多仓
-                await self._close_position(coin, current_price, "反向信号")
+                close_result = await self._close_position(coin, current_price, "反向信号")
+                if close_result is None:
+                    logger.error(f"❌ 平多仓失败，取消开空仓操作")
+                    return None
+                
                 # 平仓后重新获取余额
                 account_info = await self.client.get_account_info()
                 new_balance = float(account_info.get('marginSummary', {}).get('accountValue', balance))
