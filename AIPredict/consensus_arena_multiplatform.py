@@ -481,44 +481,65 @@ class AIGroup:
         market_data: Dict, 
         orderbook: Dict, 
         recent_trades: List,
-        position_info: Optional[Dict] = None
+        position_info: Optional[Dict] = None,
+        pre_computed_decisions: Optional[Dict[str, Dict]] = None
     ) -> Tuple[Optional[TradingDecision], float, str, List[Dict]]:
-        """获取组内共识决策"""
+        """
+        获取组内共识决策
+        
+        Args:
+            pre_computed_decisions: 可选的预计算决策，格式为 {ai_name: decision_dict}
+                                   如果提供，则直接使用这些决策而不是重新调用API
+        """
         kline_history_data = self.kline_manager.format_for_prompt(max_rows=16)
         
-        async def get_ai_decision(ai_trader):
-            try:
+        # 🎯 如果提供了预计算的决策，直接使用
+        if pre_computed_decisions:
+            logger.info(f"[{self.name}] 📋 使用预计算的AI决策结果...")
+            ai_decisions = []
+            for ai_trader in self.ai_traders:
                 ai_name = ai_trader.__class__.__name__.replace('Trader', '')
-                logger.info(f"[{self.name}] 🤖 正在获取 {ai_name} 的决策...")
+                if ai_name in pre_computed_decisions:
+                    decision_data = pre_computed_decisions[ai_name]
+                    logger.info(f"[{self.name}]    {ai_name}: {decision_data['decision']} (信心: {decision_data['confidence']:.1f}%) [复用]")
+                    ai_decisions.append(decision_data)
+                else:
+                    logger.warning(f"[{self.name}]    ⚠️ 未找到 {ai_name} 的预计算决策")
+        else:
+            # 原有逻辑：调用API获取决策
+            async def get_ai_decision(ai_trader):
+                try:
+                    ai_name = ai_trader.__class__.__name__.replace('Trader', '')
+                    logger.info(f"[{self.name}] 🤖 正在获取 {ai_name} 的决策...")
+                    
+                    original_create_prompt = ai_trader.create_market_prompt
+                    def wrapped_prompt(c, m, o, p=None, kline_history=None):
+                        return original_create_prompt(c, m, o, p, kline_history=kline_history_data)
+                    ai_trader.create_market_prompt = wrapped_prompt
+                    
+                    decision, confidence, reasoning = await ai_trader.analyze_market(
+                        coin, market_data, orderbook, recent_trades, position_info
+                    )
+                    
+                    ai_trader.create_market_prompt = original_create_prompt
+                    
+                    logger.info(f"[{self.name}]    {ai_name}: {decision} (信心: {confidence:.1f}%)")
+                    
+                    return {
+                        'ai_name': ai_name,
+                        'decision': decision,
+                        'confidence': confidence,
+                        'reasoning': reasoning
+                    }
                 
-                original_create_prompt = ai_trader.create_market_prompt
-                def wrapped_prompt(c, m, o, p=None, kline_history=None):
-                    return original_create_prompt(c, m, o, p, kline_history=kline_history_data)
-                ai_trader.create_market_prompt = wrapped_prompt
-                
-                decision, confidence, reasoning = await ai_trader.analyze_market(
-                    coin, market_data, orderbook, recent_trades, position_info
-                )
-                
-                ai_trader.create_market_prompt = original_create_prompt
-                
-                logger.info(f"[{self.name}]    {ai_name}: {decision} (信心: {confidence:.1f}%)")
-                
-                return {
-                    'ai_name': ai_name,
-                    'decision': decision,
-                    'confidence': confidence,
-                    'reasoning': reasoning
-                }
+                except Exception as e:
+                    logger.error(f"[{self.name}] ❌ {ai_trader.__class__.__name__} 决策失败: {e}")
+                    return None
             
-            except Exception as e:
-                logger.error(f"[{self.name}] ❌ {ai_trader.__class__.__name__} 决策失败: {e}")
-                return None
-        
-        logger.info(f"[{self.name}] 🚀 开始并行调用 {len(self.ai_traders)} 个AI模型...")
-        results = await asyncio.gather(*[get_ai_decision(ai) for ai in self.ai_traders])
-        
-        ai_decisions = [r for r in results if r is not None]
+            logger.info(f"[{self.name}] 🚀 开始并行调用 {len(self.ai_traders)} 个AI模型...")
+            results = await asyncio.gather(*[get_ai_decision(ai) for ai in self.ai_traders])
+            
+            ai_decisions = [r for r in results if r is not None]
         
         if not ai_decisions:
             return None, 0, "所有AI决策失败", []
@@ -906,7 +927,73 @@ class ConsensusArena:
                     await asyncio.sleep(30)
                     continue
                 
-                # 并行处理各组
+                # ========================================
+                # 🎯 步骤1：先让6个独立AI模型做决策
+                # ========================================
+                individual_ai_decisions = {}  # {ai_name: decision_dict}
+                
+                if self.individual_traders:
+                    logger.info(f"\n{'='*80}")
+                    logger.info(f"🎯 步骤1：独立AI模型决策 ({len(self.individual_traders)}个)")
+                    logger.info(f"{'='*80}")
+                    
+                    async def get_individual_decision(trader):
+                        try:
+                            logger.info(f"\n{'─'*80}")
+                            logger.info(f"🎯 {trader.name} 开始独立决策")
+                            logger.info(f"{'─'*80}")
+                            
+                            # 🔥 每轮决策前同步交易所实际持仓
+                            for platform_name, platform_trader in trader.multi_trader.platform_traders.items():
+                                await self._sync_and_clean_positions(platform_trader, trading_symbol)
+                            
+                            # 更新K线
+                            trader.kline_manager.update_price(
+                                price=current_price,
+                                volume=market_data.get('volume', 0)
+                            )
+                            
+                            # 获取持仓信息
+                            first_trader = list(trader.multi_trader.platform_traders.values())[0]
+                            position_info = first_trader.auto_trader.positions.get(trading_symbol)
+                            
+                            # 获取AI决策
+                            decision, confidence, reasoning = await trader.get_decision(
+                                trading_symbol, market_data, orderbook_data, recent_trades, position_info
+                            )
+                            
+                            # 返回AI名称和决策结果
+                            return (trader.ai_name, {
+                                'ai_name': trader.ai_name,
+                                'decision': decision,
+                                'confidence': confidence,
+                                'reasoning': reasoning,
+                                'trader': trader
+                            })
+                        except Exception as e:
+                            logger.error(f"[{trader.name}] ❌ 决策失败: {e}")
+                            import traceback
+                            logger.error(traceback.format_exc())
+                            return (trader.ai_name, None)
+                    
+                    # 并行获取所有独立AI的决策
+                    results = await asyncio.gather(*[get_individual_decision(trader) for trader in self.individual_traders])
+                    
+                    # 保存决策结果
+                    for ai_name, result in results:
+                        if result:
+                            individual_ai_decisions[ai_name] = result
+                    
+                    logger.info(f"\n✅ 独立AI决策完成，共收集到 {len(individual_ai_decisions)} 个决策结果")
+                
+                # ========================================
+                # 🎯 步骤2：基于独立AI决策，得出Alpha和Beta组的共识
+                # ========================================
+                logger.info(f"\n{'='*80}")
+                logger.info(f"📊 步骤2：组共识决策 (基于独立AI决策结果)")
+                logger.info(f"{'='*80}")
+                
+                # 并行处理各组（使用预计算的决策）
                 async def process_group(group):
                     try:
                         logger.info(f"\n{'─'*80}")
@@ -927,8 +1014,10 @@ class ConsensusArena:
                         first_trader = list(group.multi_trader.platform_traders.values())[0]
                         position_info = first_trader.auto_trader.positions.get(trading_symbol)
                         
+                        # 🎯 使用预计算的决策结果
                         consensus_decision, confidence, summary, ai_votes = await group.get_consensus_decision(
-                            trading_symbol, market_data, orderbook_data, recent_trades, position_info
+                            trading_symbol, market_data, orderbook_data, recent_trades, position_info,
+                            pre_computed_decisions=individual_ai_decisions
                         )
                         
                         # 记录决策
@@ -1004,31 +1093,25 @@ class ConsensusArena:
                 # 并行处理所有组
                 await asyncio.gather(*[process_group(group) for group in self.groups])
                 
-                # 并行处理所有独立AI交易者
-                async def process_individual_trader(trader):
+                # ========================================
+                # 🎯 步骤3：独立AI交易者执行决策（使用步骤1的决策结果）
+                # ========================================
+                logger.info(f"\n{'='*80}")
+                logger.info(f"⚡ 步骤3：独立AI交易者执行交易 (基于步骤1的决策)")
+                logger.info(f"{'='*80}")
+                
+                # 并行处理所有独立AI交易者（执行已有决策）
+                async def process_individual_trader_execution(decision_data):
+                    trader = decision_data['trader']
                     try:
                         logger.info(f"\n{'─'*80}")
-                        logger.info(f"🎯 {trader.name} 开始独立决策")
+                        logger.info(f"⚡ {trader.name} 执行交易决策")
                         logger.info(f"{'─'*80}")
                         
-                        # 🔥 每轮决策前同步交易所实际持仓（处理手动操作）
-                        for platform_name, platform_trader in trader.multi_trader.platform_traders.items():
-                            await self._sync_and_clean_positions(platform_trader, trading_symbol)
-                        
-                        # 更新K线
-                        trader.kline_manager.update_price(
-                            price=current_price,
-                            volume=market_data.get('volume', 0)
-                        )
-                        
-                        # 获取持仓信息（使用任意平台的持仓信息即可）
-                        first_trader = list(trader.multi_trader.platform_traders.values())[0]
-                        position_info = first_trader.auto_trader.positions.get(trading_symbol)
-                        
-                        # 获取AI决策
-                        decision, confidence, reasoning = await trader.get_decision(
-                            trading_symbol, market_data, orderbook_data, recent_trades, position_info
-                        )
+                        # 获取已有的决策
+                        decision = decision_data['decision']
+                        confidence = decision_data['confidence']
+                        reasoning = decision_data['reasoning']
                         
                         # 记录决策
                         decision_record = {
@@ -1079,12 +1162,16 @@ class ConsensusArena:
                                           f"胜率={platform_stats['win_rate']:.1f}%")
                         
                     except Exception as e:
-                        logger.error(f"[{trader.name}] ❌ 决策执行错误: {e}")
+                        logger.error(f"[{trader.name}] ❌ 交易执行错误: {e}")
                         import traceback
                         logger.error(traceback.format_exc())
                 
-                if self.individual_traders:
-                    await asyncio.gather(*[process_individual_trader(trader) for trader in self.individual_traders])
+                # 并行执行所有独立AI交易者的交易
+                if individual_ai_decisions:
+                    await asyncio.gather(*[
+                        process_individual_trader_execution(decision_data) 
+                        for decision_data in individual_ai_decisions.values()
+                    ])
                 
                 # 保存余额快照到 Redis
                 try:
