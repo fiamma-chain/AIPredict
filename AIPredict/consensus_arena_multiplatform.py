@@ -1219,8 +1219,8 @@ class ConsensusArena:
                     for platform_name, trader in group.multi_trader.platform_traders.items():
                         try:
                             account_info = await trader.client.get_account_info()
-                            total_balance = account_info.get('marginSummary', {}).get('accountValue', 0)
-                            available_balance = account_info.get('availableBalance', 0)
+                            total_balance = float(account_info.get('marginSummary', {}).get('accountValue', 0))
+                            available_balance = float(account_info.get('availableBalance', 0))
                             used_margin = total_balance - available_balance
                             positions_count = len(account_info.get('assetPositions', []))
                             
@@ -1238,8 +1238,8 @@ class ConsensusArena:
                     for platform_name, trader in individual_trader.multi_trader.platform_traders.items():
                         try:
                             account_info = await trader.client.get_account_info()
-                            total_balance = account_info.get('marginSummary', {}).get('accountValue', 0)
-                            available_balance = account_info.get('availableBalance', 0)
+                            total_balance = float(account_info.get('marginSummary', {}).get('accountValue', 0))
+                            available_balance = float(account_info.get('availableBalance', 0))
                             used_margin = total_balance - available_balance
                             positions_count = len(account_info.get('assetPositions', []))
                             
@@ -1320,11 +1320,15 @@ def _sanitize_for_json(obj):
     Remove any type annotations or non-serializable objects
     """
     import json
+    from enum import Enum
     
     if obj is None:
         return None
     elif isinstance(obj, (str, int, float, bool)):
         return obj
+    elif isinstance(obj, Enum):
+        # Handle Enum types (like TradingDecision)
+        return str(obj.value) if hasattr(obj, 'value') else str(obj)
     elif isinstance(obj, dict):
         return {k: _sanitize_for_json(v) for k, v in obj.items()}
     elif isinstance(obj, (list, tuple)):

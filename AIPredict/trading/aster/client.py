@@ -433,8 +433,8 @@ class AsterClient(BaseExchangeClient):
                 try:
                     # 🔍 Check account available balance first
                     account_info = await self.get_account_info()
-                    available_balance = account_info.get('availableBalance', 0)
-                    total_balance = account_info.get('marginSummary', {}).get('accountValue', 0)
+                    available_balance = float(account_info.get('availableBalance', 0))
+                    total_balance = float(account_info.get('marginSummary', {}).get('accountValue', 0))
                     
                     logger.info(f"[Aster] 💰 Account balance check:")
                     logger.info(f"   Total balance (accountValue): ${total_balance:.2f}")

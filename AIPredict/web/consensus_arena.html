@@ -1489,6 +1489,22 @@
                 console.log(`⏰ [${now}] Starting data update...`);
                 
                 const response = await fetch('/api/status');
+                
+                // Check if response is OK (status 200-299)
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`❌ API returned error status ${response.status}:`, errorText.substring(0, 200));
+                    return;
+                }
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('❌ API returned non-JSON response:', text.substring(0, 200));
+                    return;
+                }
+                
                 const data = await response.json();
                 
                 if (!data.groups || data.groups.length < 2) return;
