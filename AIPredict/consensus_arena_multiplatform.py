@@ -1314,57 +1314,100 @@ async def shutdown_event():
         await arena.stop()
 
 
+def _sanitize_for_json(obj):
+    """
+    Sanitize data structure to ensure it can be serialized to JSON
+    Remove any type annotations or non-serializable objects
+    """
+    import json
+    
+    if obj is None:
+        return None
+    elif isinstance(obj, (str, int, float, bool)):
+        return obj
+    elif isinstance(obj, dict):
+        return {k: _sanitize_for_json(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [_sanitize_for_json(item) for item in obj]
+    elif isinstance(obj, datetime):
+        return obj.isoformat()
+    elif hasattr(obj, '__dict__'):
+        # Try to convert to dict, but filter out methods and private attributes
+        try:
+            return _sanitize_for_json(obj.__dict__)
+        except:
+            return str(obj)
+    else:
+        # For any other type, try to convert to string
+        try:
+            json.dumps(obj)
+            return obj
+        except:
+            return str(obj)
+
+
 @app.get("/api/status")
 async def get_status():
     """Get system status"""
     if not arena:
         return {"status": "not_started"}
     
-    # Update statistics for all groups and traders (ensure latest data is returned)
-    for group in arena.groups:
-        await group.update_stats()
-    for trader in arena.individual_traders:
-        await trader.update_stats()
-    
-    groups_data = []
-    for group in arena.groups:
-        group_info = {
-            "type": "group",
-            "group_name": group.stats["group_name"],
-            "platforms": group.stats.get("platforms", {}),
-            "platform_comparison": group.stats.get("platform_comparison", {}),
-            "consensus_decisions": group.stats.get("consensus_decisions", [])
-        }
-        groups_data.append(group_info)
-    
-    individual_traders_data = []
-    for trader in arena.individual_traders:
-        # 获取平台地址信息
-        platform_addresses = {}
-        for platform_name, platform_trader in trader.multi_trader.platform_traders.items():
-            if hasattr(platform_trader.client, 'address'):
-                platform_addresses[platform_name] = platform_trader.client.address
+    try:
+        # Update statistics for all groups and traders (ensure latest data is returned)
+        for group in arena.groups:
+            await group.update_stats()
+        for trader in arena.individual_traders:
+            await trader.update_stats()
         
-        trader_info = {
-            "type": "individual",
-            "trader_name": trader.stats["trader_name"],
-            "ai_name": trader.stats["ai_name"],
-            "platforms": trader.stats.get("platforms", {}),
-            "platform_comparison": trader.stats.get("platform_comparison", {}),
-            "decisions": trader.stats.get("decisions", []),
-            "addresses": platform_addresses  # 添加地址信息
+        groups_data = []
+        for group in arena.groups:
+            group_info = {
+                "type": "group",
+                "group_name": group.stats.get("group_name", ""),
+                "platforms": _sanitize_for_json(group.stats.get("platforms", {})),
+                "platform_comparison": _sanitize_for_json(group.stats.get("platform_comparison", {})),
+                "consensus_decisions": _sanitize_for_json(group.stats.get("consensus_decisions", []))
+            }
+            groups_data.append(group_info)
+        
+        individual_traders_data = []
+        for trader in arena.individual_traders:
+            # 获取平台地址信息
+            platform_addresses = {}
+            for platform_name, platform_trader in trader.multi_trader.platform_traders.items():
+                if hasattr(platform_trader.client, 'address'):
+                    platform_addresses[platform_name] = platform_trader.client.address
+            
+            trader_info = {
+                "type": "individual",
+                "trader_name": trader.stats.get("trader_name", ""),
+                "ai_name": trader.stats.get("ai_name", ""),
+                "platforms": _sanitize_for_json(trader.stats.get("platforms", {})),
+                "platform_comparison": _sanitize_for_json(trader.stats.get("platform_comparison", {})),
+                "decisions": _sanitize_for_json(trader.stats.get("decisions", [])),
+                "addresses": platform_addresses  # 添加地址信息
+            }
+            individual_traders_data.append(trader_info)
+        
+        return {
+            "status": "running" if arena.running else "stopped",
+            "groups": groups_data,
+            "individual_traders": individual_traders_data,
+            "update_interval": f"{arena.update_interval//60} minute(s)",
+            "consensus_rule": f"At least {settings.consensus_min_votes} AIs must agree",
+            "enabled_platforms": get_enabled_platforms(),
+            "total_participants": len(arena.groups) + len(arena.individual_traders)
         }
-        individual_traders_data.append(trader_info)
-    
-    return {
-        "status": "running" if arena.running else "stopped",
-        "groups": groups_data,
-        "individual_traders": individual_traders_data,
-        "update_interval": f"{arena.update_interval//60} minute(s)",
-        "consensus_rule": f"At least {settings.consensus_min_votes} AIs must agree",
-        "enabled_platforms": get_enabled_platforms(),
-        "total_participants": len(arena.groups) + len(arena.individual_traders)
-    }
+    except Exception as e:
+        logger.error(f"Error in get_status: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return {
+            "status": "error",
+            "error": str(e),
+            "groups": [],
+            "individual_traders": []
+        }
 
 
 @app.get("/api/platform_comparison")
