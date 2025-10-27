@@ -1,6 +1,6 @@
 """
-多平台交易管理器
-同时管理多个交易平台，执行相同的交易决策并对比收益
+Multi-Platform Trading Manager
+Manages multiple trading platforms simultaneously, executes the same trading decisions and compares returns
 """
 import logging
 from typing import Dict, List, Optional
@@ -14,15 +14,15 @@ logger = logging.getLogger(__name__)
 
 
 class PlatformTrader:
-    """单个平台的交易器"""
+    """Trader for a single platform"""
     
     def __init__(self, client: BaseExchangeClient, name: str):
         """
-        初始化平台交易器
+        Initialize platform trader
         
         Args:
-            client: 交易客户端
-            name: 平台名称
+            client: Trading client
+            name: Platform name
         """
         self.client = client
         self.name = name
@@ -43,32 +43,32 @@ class PlatformTrader:
     
     async def initialize(self, initial_balance: float = None, group_name: str = ""):
         """
-        初始化平台交易器
+        Initialize platform trader
         
         Args:
-            initial_balance: 初始余额（如果为None，则从账户获取）
-            group_name: 组名（用于从Redis恢复交易记录）
+            initial_balance: Initial balance (if None, get from account)
+            group_name: Group name (used to restore trading records from Redis)
         """
         if initial_balance is not None:
             self.start_balance = initial_balance
         else:
-            # 从账户获取当前余额
+            # Get current balance from account
             account = await self.client.get_account_info()
             self.start_balance = float(account.get('marginSummary', {}).get('accountValue', 0))
         
         self.stats["balance"] = self.start_balance
         self.stats["initial_balance"] = self.start_balance
-        logger.info(f"[{self.name}] 初始余额: ${self.start_balance:,.2f}")
+        logger.info(f"[{self.name}] Initial balance: ${self.start_balance:,.2f}")
         
-        # 从Redis恢复历史交易记录
+        # Restore historical trading records from Redis
         if group_name and redis_manager.is_connected():
             try:
                 historical_trades = redis_manager.get_trades(group_name, self.name)
                 if historical_trades:
                     self.stats["trades"] = historical_trades
-                    logger.info(f"[{self.name}] 📚 从Redis恢复 {len(historical_trades)} 笔历史交易记录")
+                    logger.info(f"[{self.name}] 📚 Restored {len(historical_trades)} historical trades from Redis")
             except Exception as e:
-                logger.error(f"[{self.name}] ❌ 恢复历史交易记录失败: {e}")
+                logger.error(f"[{self.name}] ❌ Failed to restore historical trades: {e}")
     
     async def execute_decision(
         self,
@@ -80,29 +80,29 @@ class PlatformTrader:
         group_name: str = ""
     ) -> Optional[Dict]:
         """
-        执行交易决策
+        Execute trading decision
         
         Args:
-            coin: 币种
-            decision: 决策
-            confidence: 信心度
-            reasoning: 理由
-            current_price: 当前价格
-            group_name: 组名（用于保存到Redis）
+            coin: Coin symbol
+            decision: Trading decision
+            confidence: Confidence level
+            reasoning: Reasoning
+            current_price: Current price
+            group_name: Group name (used to save to Redis)
             
         Returns:
-            交易结果
+            Trading result
         """
-        # 获取当前余额
+        # Get current balance
         account = await self.client.get_account_info()
         balance = float(account.get('marginSummary', {}).get('accountValue', 0))
         
-        # 执行决策
+        # Execute decision
         result = await self.auto_trader.execute_decision(
             coin, decision, confidence, reasoning, current_price, balance
         )
         
-        # 更新统计
+        # Update statistics
         if result:
             trade_record = {
                 **result,
@@ -111,19 +111,19 @@ class PlatformTrader:
             self.stats["trades"].append(trade_record)
             self.stats["total_trades"] = len([t for t in self.stats["trades"] if t.get('action') == 'close'])
             
-            # 保存到Redis（如果是完整交易，即包含px和action）
+            # Save to Redis (if it's a complete trade, i.e., contains px and action)
             if group_name and redis_manager.is_connected() and 'px' in result:
                 try:
                     redis_manager.save_trade(group_name, self.name, trade_record)
                 except Exception as e:
-                    logger.error(f"[{self.name}] ❌ 保存交易到Redis失败: {e}")
+                    logger.error(f"[{self.name}] ❌ Failed to save trade to Redis: {e}")
         
         return result
     
     async def update_stats(self):
-        """更新统计数据"""
+        """Update statistics"""
         try:
-            # 获取当前余额
+            # Get current balance
             account = await self.client.get_account_info()
             current_balance = float(account.get('marginSummary', {}).get('accountValue', 0))
             
@@ -132,44 +132,44 @@ class PlatformTrader:
             self.stats["roi"] = (self.stats["pnl"] / self.start_balance * 100) if self.start_balance > 0 else 0
             self.stats["positions"] = self.auto_trader.get_all_positions()
             
-            # 计算胜率
+            # Calculate win rate
             closed_trades = [t for t in self.stats["trades"] if t.get('action') == 'close']
             if closed_trades:
                 winning_trades = sum(1 for t in closed_trades if t.get('pnl', 0) > 0)
                 self.stats["win_rate"] = (winning_trades / len(closed_trades) * 100)
             
         except Exception as e:
-            logger.error(f"[{self.name}] 更新统计失败: {e}")
+            logger.error(f"[{self.name}] Failed to update statistics: {e}")
 
 
 class MultiPlatformTrader:
-    """多平台交易管理器"""
+    """Multi-platform trading manager"""
     
     def __init__(self):
-        """初始化多平台交易管理器"""
+        """Initialize multi-platform trading manager"""
         self.platform_traders: Dict[str, PlatformTrader] = {}
         self.decision_history: List[Dict] = []
     
     def add_platform(self, client: BaseExchangeClient, name: str = None):
         """
-        添加交易平台
+        Add trading platform
         
         Args:
-            client: 交易客户端
-            name: 平台名称（如果为None，使用client.platform_name）
+            client: Trading client
+            name: Platform name (if None, use client.platform_name)
         """
         platform_name = name or client.platform_name
         trader = PlatformTrader(client, platform_name)
         self.platform_traders[platform_name] = trader
-        logger.info(f"✅ 添加交易平台: {platform_name}")
+        logger.info(f"✅ Added trading platform: {platform_name}")
     
     async def initialize_all(self, initial_balance: float = None, group_name: str = ""):
         """
-        初始化所有平台
+        Initialize all platforms
         
         Args:
-            initial_balance: 初始余额（如果为None，则从各平台账户获取）
-            group_name: 组名（用于从Redis恢复数据）
+            initial_balance: Initial balance (if None, get from each platform account)
+            group_name: Group name (used to restore data from Redis)
         """
         for name, trader in self.platform_traders.items():
             await trader.initialize(initial_balance, group_name)
@@ -184,22 +184,22 @@ class MultiPlatformTrader:
         group_name: str = ""
     ) -> Dict[str, Optional[Dict]]:
         """
-        在所有平台上执行相同的交易决策
+        Execute the same trading decision on all platforms
         
         Args:
-            coin: 币种
-            decision: 决策
-            confidence: 信心度
-            reasoning: 理由
-            current_price: 当前价格
-            group_name: 组名（用于保存到Redis）
+            coin: Coin symbol
+            decision: Trading decision
+            confidence: Confidence level
+            reasoning: Reasoning
+            current_price: Current price
+            group_name: Group name (used to save to Redis)
             
         Returns:
-            各平台的交易结果字典
+            Dictionary of trading results for each platform
         """
         results = {}
         
-        # 记录决策
+        # Record decision
         decision_record = {
             "time": datetime.now().isoformat(),
             "coin": coin,
@@ -210,7 +210,7 @@ class MultiPlatformTrader:
             "results": {}
         }
         
-        # 并行执行（可选：也可以顺序执行）
+        # Execute in parallel (optional: can also execute sequentially)
         import asyncio
         tasks = []
         for name, trader in self.platform_traders.items():
@@ -218,7 +218,7 @@ class MultiPlatformTrader:
         
         platform_results = await asyncio.gather(*tasks)
         
-        # 组合结果
+        # Combine results
         for (name, trader), result in zip(self.platform_traders.items(), platform_results):
             results[name] = result
             decision_record["results"][name] = result
@@ -228,16 +228,16 @@ class MultiPlatformTrader:
         return results
     
     async def update_all_stats(self):
-        """更新所有平台的统计数据"""
+        """Update statistics for all platforms"""
         for trader in self.platform_traders.values():
             await trader.update_stats()
     
     def get_comparison_stats(self) -> Dict:
         """
-        获取各平台对比统计
+        Get comparison statistics for all platforms
         
         Returns:
-            对比统计字典
+            Dictionary of comparison statistics
         """
         comparison = {
             "platforms": [],
@@ -249,14 +249,14 @@ class MultiPlatformTrader:
             }
         }
         
-        # 收集各平台数据
+        # Collect data from all platforms
         platform_data = []
         for name, trader in self.platform_traders.items():
             stats = trader.stats.copy()
             platform_data.append(stats)
             comparison["platforms"].append(stats)
         
-        # 计算最佳/最差平台
+        # Calculate best/worst platforms
         if platform_data:
             sorted_by_roi = sorted(platform_data, key=lambda x: x["roi"], reverse=True)
             comparison["summary"]["best_platform"] = sorted_by_roi[0]["name"]
@@ -266,10 +266,10 @@ class MultiPlatformTrader:
         return comparison
     
     def get_platform_trader(self, name: str) -> Optional[PlatformTrader]:
-        """获取指定平台的交易器"""
+        """Get trader for a specific platform"""
         return self.platform_traders.get(name)
     
     def get_all_traders(self) -> Dict[str, PlatformTrader]:
-        """获取所有平台交易器"""
+        """Get all platform traders"""
         return self.platform_traders
 

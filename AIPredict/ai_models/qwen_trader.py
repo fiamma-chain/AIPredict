@@ -1,7 +1,7 @@
 """
-Qwen AI 交易模型
-使用阿里云通义千问 API
-支持中国版和国际版
+Qwen AI Trading Model
+Uses Alibaba Cloud Tongyi Qianwen API
+Supports both China and International versions
 """
 import httpx
 from typing import Dict, List, Optional
@@ -9,18 +9,18 @@ from .base_ai import AITradingModel, TradingDecision
 
 
 class QwenTrader(AITradingModel):
-    """Qwen AI 交易员"""
+    """Qwen AI Trader"""
     
     def __init__(self, api_key: str, model: str = "qwen-max", use_international: bool = True, **kwargs):
         """
-        初始化 Qwen 交易员
+        Initialize Qwen Trader
         
         Args:
-            api_key: 阿里云 API 密钥
-            model: Qwen 模型版本 (默认: qwen-max = Qwen3-MAX)
-            use_international: 是否使用国际版 (True=国际版, False=中国版)
+            api_key: Alibaba Cloud API key
+            model: Qwen model version (default: qwen-max = Qwen3-MAX)
+            use_international: Whether to use international version (True=International, False=China)
         """
-        # 格式化模型名称显示
+        # Format model name display
         if "max" in model.lower():
             display_name = "Qwen (Max)"
         elif "turbo" in model.lower():
@@ -38,12 +38,12 @@ class QwenTrader(AITradingModel):
         self.model = model
         self.use_international = use_international
         
-        # 根据版本选择 API endpoint
+        # Select API endpoint based on version
         if use_international:
-            # 阿里云国际版 API
+            # Alibaba Cloud International API
             self.api_url = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions"
         else:
-            # 阿里云中国版 API
+            # Alibaba Cloud China API
             self.api_url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
     
     async def analyze_market(
@@ -55,16 +55,16 @@ class QwenTrader(AITradingModel):
         position_info: Optional[Dict] = None
     ) -> tuple[TradingDecision, float, str]:
         """
-        使用 Qwen 分析市场
+        Analyze market using Qwen
         
         Args:
-            coin: 币种
-            market_data: 市场数据
-            orderbook: 订单簿
-            recent_trades: 最近交易
+            coin: Coin symbol
+            market_data: Market data
+            orderbook: Order book
+            recent_trades: Recent trades
             
         Returns:
-            (决策, 置信度, 理由)
+            (decision, confidence, reasoning)
         """
         position_info = self.positions.get(coin)
         prompt = self.create_market_prompt(coin, market_data, orderbook, position_info)

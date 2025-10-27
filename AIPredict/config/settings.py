@@ -1,35 +1,35 @@
 """
-配置管理模块
+Configuration Management Module
 """
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    """应用配置"""
+    """Application Configuration"""
     
-    # 交易平台配置
-    enabled_platforms: str = "hyperliquid,aster"  # 启用的平台，逗号分隔
+    # Trading platform configuration
+    enabled_platforms: str = "hyperliquid,aster"  # Enabled platforms, comma-separated
     
-    # Hyperliquid 配置（默认主网）
+    # Hyperliquid configuration (mainnet by default)
     hyperliquid_testnet: bool = False
     hyperliquid_api_url: str = "https://api.hyperliquid.xyz"
     
-    # Aster 配置（仅支持主网）
+    # Aster configuration (mainnet only)
     aster_testnet: bool = False
     aster_api_url: str = "https://fapi.asterdex.com"
     
-    # API 配置
+    # API configuration
     api_host: str = "0.0.0.0"
     api_port: int = 46000
     
-    # Redis 配置
+    # Redis configuration
     redis_host: str = "localhost"
     redis_port: int = 6379
     redis_db: int = 0
     redis_password: str = ""
-    balance_history_ttl: int = 86400 * 7  # 7天过期
+    balance_history_ttl: int = 86400 * 7  # 7 days expiration
     
-    # 允许交易的币种
+    # Allowed trading symbols
     allowed_trading_symbols: str = "BTC"
     
     # AI API Keys
@@ -38,38 +38,38 @@ class Settings(BaseSettings):
     gpt_model: str = "gpt-4o"
     gemini_api_key: str = ""
     qwen_api_key: str = ""
-    qwen_use_international: bool = True  # 是否使用阿里云国际版 (True=国际版, False=中国版)
+    qwen_use_international: bool = True  # Whether to use Alibaba Cloud International version (True=International, False=China)
     grok_api_key: str = ""
     deepseek_api_key: str = ""
     
-    # AI 交易配置
-    ai_initial_balance: float = 1000.0  # 组账户初始余额（Alpha组和Beta组）
-    individual_ai_initial_balance: float = 1000.0  # 独立AI交易者初始余额
-    ai_min_margin: float = 200.0  # 最小保证金（U）
-    ai_max_margin: float = 500.0  # 最大保证金（U）
-    ai_min_leverage: float = 5.0  # 最小杠杆倍数（AI根据信心度动态调整）
-    ai_max_leverage: float = 20.0  # 最大杠杆倍数（AI根据信心度动态调整5-20x）
-    ai_stop_loss_pct: float = 0.02  # 止损比例 2%（短线策略）
-    ai_take_profit_pct: float = 0.03  # 止盈比例 3%（短线策略）
+    # AI Trading configuration
+    ai_initial_balance: float = 1000.0  # Group account initial balance (Alpha and Beta groups)
+    individual_ai_initial_balance: float = 1000.0  # Individual AI trader initial balance
+    ai_min_margin: float = 200.0  # Minimum margin (USDT)
+    ai_max_margin: float = 500.0  # Maximum margin (USDT)
+    ai_min_leverage: float = 5.0  # Minimum leverage (AI adjusts dynamically based on confidence)
+    ai_max_leverage: float = 20.0  # Maximum leverage (AI adjusts dynamically 5-20x based on confidence)
+    ai_stop_loss_pct: float = 0.02  # Stop loss percentage 2% (short-term strategy)
+    ai_take_profit_pct: float = 0.03  # Take profit percentage 3% (short-term strategy)
     
-    # 分组共识配置（默认主网）
-    group_1_name: str = "Alpha组"
+    # Group consensus configuration (mainnet by default)
+    group_1_name: str = "Alpha Group"
     group_1_ais: str = ""
     group_1_private_key: str = ""
-    group_2_name: str = "Beta组"
+    group_2_name: str = "Beta Group"
     group_2_ais: str = ""
     group_2_private_key: str = ""
     consensus_min_votes: int = 2
     consensus_interval: int = 300
     min_confidence: float = 60.0
     
-    # 多平台对比模式
-    multi_platform_mode: bool = True  # 是否启用多平台对比模式
-    platform_comparison_enabled: bool = True  # 是否显示平台对比
+    # Multi-platform comparison mode
+    multi_platform_mode: bool = True  # Whether to enable multi-platform comparison mode
+    platform_comparison_enabled: bool = True  # Whether to display platform comparison
     
-    # 独立AI交易者私钥配置（可选，用于AI竞技场模式）
-    # 如果配置了私钥，则该AI会作为独立交易者启动
-    # 留空则不启用该AI作为独立交易者
+    # Individual AI trader private key configuration (optional, for AI Arena mode)
+    # If a private key is configured, the AI will start as an independent trader
+    # Leave empty to not enable this AI as an independent trader
     individual_deepseek_private_key: str = ""
     individual_claude_private_key: str = ""
     individual_grok_private_key: str = ""
@@ -82,55 +82,55 @@ class Settings(BaseSettings):
         case_sensitive = False
 
 
-# 全局配置实例
+# Global configuration instance
 settings = Settings()
 
 
 def get_allowed_symbols():
-    """获取允许交易的币种列表"""
+    """Get list of allowed trading symbols"""
     if not settings.allowed_trading_symbols:
-        return []  # 空列表表示全部允许
+        return []  # Empty list means all allowed
     
     symbols = [s.strip().upper() for s in settings.allowed_trading_symbols.split(',')]
-    return [s for s in symbols if s]  # 过滤空字符串
+    return [s for s in symbols if s]  # Filter empty strings
 
 
 def is_symbol_allowed(symbol: str) -> bool:
-    """检查币种是否允许交易"""
+    """Check if symbol is allowed for trading"""
     allowed = get_allowed_symbols()
-    if not allowed:  # 空列表表示全部允许
+    if not allowed:  # Empty list means all allowed
         return True
     return symbol.upper() in allowed
 
 
 def get_enabled_platforms():
-    """获取启用的交易平台列表"""
+    """Get list of enabled trading platforms"""
     if not settings.enabled_platforms:
-        return ["hyperliquid"]  # 默认只启用 Hyperliquid
+        return ["hyperliquid"]  # Default only enable Hyperliquid
     
     platforms = [p.strip().lower() for p in settings.enabled_platforms.split(',')]
-    return [p for p in platforms if p]  # 过滤空字符串
+    return [p for p in platforms if p]  # Filter empty strings
 
 
 def is_platform_enabled(platform: str) -> bool:
-    """检查平台是否启用"""
+    """Check if platform is enabled"""
     enabled = get_enabled_platforms()
     return platform.lower() in enabled
 
 
 def get_individual_traders_config():
     """
-    获取独立AI交易者配置
+    Get individual AI trader configuration
     
     Returns:
         List[Dict]: [{"ai_name": "DeepSeek", "private_key": "0x123"}, ...]
     
     Raises:
-        ValueError: 如果配置了私钥但私钥格式无效
+        ValueError: If private key is configured but has invalid format
     """
     traders = []
     
-    # AI模型配置映射
+    # AI model configuration mapping
     ai_configs = [
         ("DeepSeek", settings.individual_deepseek_private_key),
         ("Claude", settings.individual_claude_private_key),
@@ -144,18 +144,18 @@ def get_individual_traders_config():
         if private_key and private_key.strip():
             private_key = private_key.strip()
             
-            # 验证私钥格式
+            # Validate private key format
             if not private_key.startswith('0x'):
                 raise ValueError(
-                    f"❌ {ai_name} 独立交易者私钥格式错误: 必须以 '0x' 开头\n"
-                    f"   配置项: INDIVIDUAL_{ai_name.upper()}_PRIVATE_KEY"
+                    f"❌ {ai_name} independent trader private key format error: must start with '0x'\n"
+                    f"   Config item: INDIVIDUAL_{ai_name.upper()}_PRIVATE_KEY"
                 )
             
-            if len(private_key) != 66:  # 0x + 64位十六进制
+            if len(private_key) != 66:  # 0x + 64 hex characters
                 raise ValueError(
-                    f"❌ {ai_name} 独立交易者私钥格式错误: 长度必须是66个字符 (0x + 64位十六进制)\n"
-                    f"   配置项: INDIVIDUAL_{ai_name.upper()}_PRIVATE_KEY\n"
-                    f"   当前长度: {len(private_key)}"
+                    f"❌ {ai_name} independent trader private key format error: length must be 66 characters (0x + 64 hex)\n"
+                    f"   Config item: INDIVIDUAL_{ai_name.upper()}_PRIVATE_KEY\n"
+                    f"   Current length: {len(private_key)}"
                 )
             
             traders.append({

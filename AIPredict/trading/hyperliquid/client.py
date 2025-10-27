@@ -1,5 +1,5 @@
 """
-Hyperliquid 交易客户端（使用官方SDK）
+Hyperliquid Trading Client (using official SDK)
 """
 import logging
 from typing import Dict, List, Optional
@@ -14,134 +14,134 @@ logger = logging.getLogger(__name__)
 
 
 class HyperliquidClient(BaseExchangeClient):
-    """Hyperliquid 交易客户端（官方SDK版本）"""
+    """Hyperliquid Trading Client (official SDK version)"""
     
     def __init__(self, private_key: str, testnet: bool = True, max_retries: int = 3):
         """
-        初始化 Hyperliquid 客户端
+        Initialize Hyperliquid Client
         
         Args:
-            private_key: 以太坊私钥（可以带或不带0x前缀）
-            testnet: 是否使用测试网
-            max_retries: 最大重试次数
+            private_key: Ethereum private key (with or without 0x prefix)
+            testnet: Whether to use testnet
+            max_retries: Maximum retry attempts
         """
         super().__init__(private_key, testnet)
         self.testnet = testnet
         
-        # 确保私钥格式正确
+        # Ensure private key format is correct
         if not private_key.startswith('0x'):
             private_key = '0x' + private_key
         
-        # 使用官方SDK
+        # Use official SDK
         if testnet:
             base_url = constants.TESTNET_API_URL
         else:
             base_url = constants.MAINNET_API_URL
         
-        # 添加重试机制初始化客户端
+        # Add retry mechanism to initialize client
         import time
         last_error = None
         
         for attempt in range(max_retries):
             try:
-                logger.info(f"🔄 尝试连接 Hyperliquid API (尝试 {attempt + 1}/{max_retries})...")
+                logger.info(f"🔄 Attempting to connect to Hyperliquid API (attempt {attempt + 1}/{max_retries})...")
                 
-                # 初始化 Info（查询）和 Exchange（交易）
-                # 使用更长的超时时间
+                # Initialize Info (queries) and Exchange (trading)
+                # Use longer timeout
                 self.info = Info(base_url, skip_ws=True, timeout=30)
                 self.exchange = Exchange(
-                    wallet=None,  # 使用私钥
+                    wallet=None,  # Use private key
                     base_url=base_url,
-                    account_address=None  # SDK会从私钥推导
+                    account_address=None  # SDK will derive from private key
                 )
                 
-                # 从私钥设置账户
+                # Set account from private key
                 from eth_account import Account
                 account = Account.from_key(private_key)
                 self.address = account.address
                 self.exchange.wallet = account
                 self.exchange.account_address = self.address
                 
-                logger.info(f"✅ Hyperliquid 客户端初始化成功")
-                logger.info(f"   地址: {self.address}")
-                logger.info(f"   网络: {'测试网' if testnet else '主网'}")
-                return  # 成功，退出重试循环
+                logger.info(f"✅ Hyperliquid client initialized successfully")
+                logger.info(f"   Address: {self.address}")
+                logger.info(f"   Network: {'Testnet' if testnet else 'Mainnet'}")
+                return  # Success, exit retry loop
                 
             except Exception as e:
                 last_error = e
-                logger.warning(f"⚠️  连接失败 (尝试 {attempt + 1}/{max_retries}): {str(e)[:100]}")
+                logger.warning(f"⚠️  Connection failed (attempt {attempt + 1}/{max_retries}): {str(e)[:100]}")
                 
                 if attempt < max_retries - 1:
-                    # 指数退避：等待 2^attempt 秒
+                    # Exponential backoff: wait 2^attempt seconds
                     wait_time = 2 ** attempt
-                    logger.info(f"⏳ 等待 {wait_time} 秒后重试...")
+                    logger.info(f"⏳ Waiting {wait_time} seconds before retry...")
                     time.sleep(wait_time)
                 else:
-                    # 所有重试都失败了
+                    # All retries failed
                     error_msg = (
-                        f"❌ Hyperliquid API 连接失败（已重试 {max_retries} 次）\n"
-                        f"   错误: {str(last_error)}\n"
-                        f"   这可能是由于：\n"
-                        f"   1. 网络连接问题\n"
-                        f"   2. SSL/TLS 握手失败\n"
-                        f"   3. Hyperliquid API 暂时不可用\n"
-                        f"   建议：使用备用数据源或稍后重试"
+                        f"❌ Hyperliquid API connection failed (retried {max_retries} times)\n"
+                        f"   Error: {str(last_error)}\n"
+                        f"   This may be due to:\n"
+                        f"   1. Network connection issues\n"
+                        f"   2. SSL/TLS handshake failure\n"
+                        f"   3. Hyperliquid API temporarily unavailable\n"
+                        f"   Suggestion: Use backup data source or retry later"
                     )
                     logger.error(error_msg)
                     raise last_error
     
     @property
     def platform_name(self) -> str:
-        """平台名称"""
+        """Platform name"""
         return "Hyperliquid"
     
     async def __aenter__(self):
-        """异步上下文管理器入口"""
+        """Async context manager entry"""
         return self
     
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """异步上下文管理器退出"""
+        """Async context manager exit"""
         pass
     
     async def get_account_info(self) -> Dict:
         """
-        获取账户信息
+        Get account information
         
         Returns:
-            账户信息字典
+            Account information dictionary
         """
         try:
             user_state = self.info.user_state(self.address)
             return user_state
         except Exception as e:
-            logger.error(f"获取账户信息失败: {e}")
+            logger.error(f"Failed to get account info: {e}")
             return {}
     
     async def get_market_data(self, coin: str) -> Dict:
         """
-        获取市场数据
+        Get market data
         
         Args:
-            coin: 币种符号 (如 'BTC', 'ETH')
+            coin: Coin symbol (e.g. 'BTC', 'ETH')
             
         Returns:
-            市场数据
+            Market data
         """
         try:
-            # 获取所有市场数据
+            # Get all market data
             all_mids = self.info.all_mids()
             meta = self.info.meta()
             
-            # 查找指定币种
+            # Find specified coin
             if coin not in all_mids:
                 raise ValueError(f"Coin {coin} not found")
             
             current_price = float(all_mids[coin])
             
-            # 获取详细的市场上下文
+            # Get detailed market context
             meta_and_asset_ctxs = self.info.meta_and_asset_ctxs()
             
-            # 查找币种索引
+            # Find coin index
             asset_index = None
             for i, asset in enumerate(meta_and_asset_ctxs[0]['universe']):
                 if asset['name'] == coin:
@@ -153,14 +153,14 @@ class HyperliquidClient(BaseExchangeClient):
             
             ctx = meta_and_asset_ctxs[1][asset_index]
             
-            # 提取数据
+            # Extract data
             mark_price = float(ctx.get('markPx', current_price))
             funding = float(ctx.get('funding', 0))
             open_interest = float(ctx.get('openInterest', 0))
             prev_mark_px = float(ctx.get('prevDayPx', mark_price))
             volume_usd = float(ctx.get('dayNtlVlm', 0))
             
-            # 计算24h涨跌幅
+            # Calculate 24h change
             change_24h = ((mark_price - prev_mark_px) / prev_mark_px * 100) if prev_mark_px > 0 else 0
             
             return {
@@ -174,25 +174,25 @@ class HyperliquidClient(BaseExchangeClient):
                 "raw_ctx": ctx
             }
         except Exception as e:
-            logger.error(f"获取市场数据失败: {e}")
+            logger.error(f"Failed to get market data: {e}")
             raise
     
     async def get_orderbook(self, coin: str) -> Dict:
         """
-        获取订单簿
+        Get order book
         
         Args:
-            coin: 币种符号
+            coin: Coin symbol
             
         Returns:
-            订单簿数据 {"bids": [[price, size], ...], "asks": [[price, size], ...]}
+            Order book data {"bids": [[price, size], ...], "asks": [[price, size], ...]}
         """
         try:
             l2_snapshot = self.info.l2_snapshot(coin)
-            # l2_snapshot 格式: {"levels": [[{"px": price, "sz": size, "n": count},...], [...]]}
+            # l2_snapshot format: {"levels": [[{"px": price, "sz": size, "n": count},...], [...]]}
             levels = l2_snapshot.get('levels', [[], []])
             
-            # 转换成标准格式 [[price, size], ...]
+            # Convert to standard format [[price, size], ...]
             bids = [[float(level['px']), float(level['sz'])] for level in levels[0]] if len(levels) > 0 else []
             asks = [[float(level['px']), float(level['sz'])] for level in levels[1]] if len(levels) > 1 else []
             
@@ -201,50 +201,50 @@ class HyperliquidClient(BaseExchangeClient):
                 "asks": asks
             }
         except Exception as e:
-            logger.error(f"获取订单簿失败: {e}")
+            logger.error(f"Failed to get order book: {e}")
             import traceback
             logger.error(traceback.format_exc())
             return {"bids": [], "asks": []}
     
     async def get_recent_trades(self, coin: str, limit: int = 20) -> List[Dict]:
         """
-        获取最近成交记录
+        Get recent trades
         
         Args:
-            coin: 币种符号
-            limit: 返回数量
+            coin: Coin symbol
+            limit: Return quantity
             
         Returns:
-            成交记录列表 [{"time": ts, "px": price, "sz": size, "side": "A/B"}, ...]
+            Trade list [{"time": ts, "px": price, "sz": size, "side": "A/B"}, ...]
         """
         try:
-            # ⚠️ Hyperliquid SDK 的 Info 对象没有 recent_trades 方法
-            # 目前返回空列表，此功能非核心功能，不影响交易
-            logger.debug(f"[Hyperliquid] recent_trades 功能暂未实现，返回空列表")
+            # ⚠️ Hyperliquid SDK's Info object doesn't have recent_trades method
+            # Currently returns empty list, this is not a core feature and doesn't affect trading
+            logger.debug(f"[Hyperliquid] recent_trades feature not yet implemented, returning empty list")
             return []
         except Exception as e:
-            logger.warning(f"获取最近成交失败: {e}, 返回空列表")
+            logger.warning(f"Failed to get recent trades: {e}, returning empty list")
             return []
     
     def update_leverage(self, coin: str, leverage: int, is_cross: bool = True) -> Dict:
         """
-        更新杠杆倍数
+        Update leverage
         
         Args:
-            coin: 币种
-            leverage: 杠杆倍数 (1-50)
-            is_cross: 是否全仓模式 (True=全仓, False=逐仓)
+            coin: Coin symbol
+            leverage: Leverage multiplier (1-50)
+            is_cross: Whether to use cross margin mode (True=Cross, False=Isolated)
             
         Returns:
-            更新结果
+            Update result
         """
         try:
-            # 使用官方SDK的 update_leverage 方法
+            # Use official SDK's update_leverage method
             result = self.exchange.update_leverage(leverage, coin, is_cross)
-            logger.info(f"✅ 杠杆已更新: {coin} -> {leverage}x ({'全仓' if is_cross else '逐仓'})")
+            logger.info(f"✅ Leverage updated: {coin} -> {leverage}x ({'Cross' if is_cross else 'Isolated'})")
             return result
         except Exception as e:
-            logger.error(f"❌ 更新杠杆失败: {e}")
+            logger.error(f"❌ Failed to update leverage: {e}")
             raise
     
     async def place_order(
@@ -259,94 +259,94 @@ class HyperliquidClient(BaseExchangeClient):
         leverage: int = None
     ) -> Dict:
         """
-        下单（支持失败重试和杠杆设置）
+        Place order (supports retry on failure and leverage setting)
         
         Args:
-            coin: 币种符号
-            is_buy: 是否买入
-            size: 数量
-            price: 价格
-            order_type: 订单类型 ("Limit" 或 "Market")
-            reduce_only: 是否只减仓
-            max_retries: 最大重试次数（默认3次）
-            leverage: 杠杆倍数（1-50，None表示使用当前设置）
+            coin: Coin symbol
+            is_buy: Whether to buy
+            size: Quantity
+            price: Price
+            order_type: Order type ("Limit" or "Market")
+            reduce_only: Whether to reduce only
+            max_retries: Maximum retry attempts (default 3)
+            leverage: Leverage multiplier (1-50, None means use current setting)
             
         Returns:
-            订单结果
+            Order result
         """
-        # 如果指定了杠杆，先设置杠杆
+        # If leverage is specified, set leverage first
         if leverage is not None and not reduce_only:
             try:
                 self.update_leverage(coin, leverage, is_cross=True)
             except Exception as e:
-                logger.warning(f"⚠️ 设置杠杆失败，使用当前杠杆: {e}")
+                logger.warning(f"⚠️ Failed to set leverage, using current leverage: {e}")
         
         last_error = None
         
         for attempt in range(max_retries):
             try:
                 if attempt > 0:
-                    logger.info(f"🔄 第 {attempt + 1} 次尝试下单...")
-                    await asyncio.sleep(0.5)  # 重试前等待0.5秒
+                    logger.info(f"🔄 Attempt {attempt + 1} to place order...")
+                    await asyncio.sleep(0.5)  # Wait 0.5s before retry
                 
-                # 使用官方SDK下单
-                # 官方SDK参数: name, is_buy, sz, limit_px, order_type, reduce_only
+                # Use official SDK to place order
+                # Official SDK parameters: name, is_buy, sz, limit_px, order_type, reduce_only
                 
-                # 使用统一的精度配置处理数量
+                # Use unified precision config to process quantity
                 size_rounded, _ = precision_config.format_hyperliquid_quantity(
                     coin, size, round_down=(not reduce_only)
                 )
                 
-                # 处理价格：如果为 None（市价单），则获取当前市价
+                # Process price: if None (market order), get current market price
                 if price is None:
-                    logger.info("📊 市价单，正在获取当前市价...")
+                    logger.info("📊 Market order, fetching current market price...")
                     orderbook = await self.get_orderbook(coin)
                     bids = orderbook.get("bids", [])
                     asks = orderbook.get("asks", [])
                     
-                    # 买单用卖一价，卖单用买一价（确保立即成交）
+                    # Buy order uses ask price, sell order uses bid price (ensure immediate execution)
                     if is_buy:
                         base_price = float(asks[0][0]) if asks else None
                     else:
                         base_price = float(bids[0][0]) if bids else None
                     
                     if base_price is None:
-                        raise ValueError(f"无法获取 {coin} 的市价")
+                        raise ValueError(f"Unable to get market price for {coin}")
                     
-                    # 添加价格滑点保护，重试时增加滑点
-                    # 第1次: 0.1%, 第2次: 0.15%, 第3次: 0.2%
+                    # Add slippage protection, increase slippage on retry
+                    # 1st: 0.1%, 2nd: 0.15%, 3rd: 0.2%
                     slippage = 0.001 * (1 + attempt * 0.5)  # 0.1%, 0.15%, 0.2%
                     if is_buy:
-                        # 买入时向上滑点，确保能买到
+                        # Buy with upward slippage to ensure execution
                         price = base_price * (1 + slippage)
                     else:
-                        # 卖出时向下滑点，确保能卖出
+                        # Sell with downward slippage to ensure execution
                         price = base_price * (1 - slippage)
                     
-                    logger.info(f"📊 市价单基准价格: ${base_price:,.2f}")
-                    logger.info(f"📊 添加{slippage*100:.2f}%滑点后: ${price:,.2f} ({'买入向上' if is_buy else '卖出向下'})")
+                    logger.info(f"📊 Market order base price: ${base_price:,.2f}")
+                    logger.info(f"📊 After adding {slippage*100:.2f}% slippage: ${price:,.2f} ({'Buy upward' if is_buy else 'Sell downward'})")
                 
-                # 使用统一的精度配置处理价格
+                # Use unified precision config to process price
                 price_rounded, _ = precision_config.format_hyperliquid_price(coin, price)
                 
-                # 验证订单参数
+                # Validate order parameters
                 is_valid, error_msg = precision_config.validate_hyperliquid_order(coin, size_rounded, price_rounded)
                 if not is_valid:
-                    raise ValueError(f"订单参数验证失败: {error_msg}")
+                    raise ValueError(f"Order parameter validation failed: {error_msg}")
                 
-                logger.info(f"📊 原始数量: {size}, 处理后: {size_rounded}")
-                logger.info(f"📊 原始价格: {price}, 处理后: {price_rounded}")
+                logger.info(f"📊 Original quantity: {size}, Processed: {size_rounded}")
+                logger.info(f"📊 Original price: {price}, Processed: {price_rounded}")
                 
-                # 平仓单使用 Ioc（立即成交或取消），开仓单使用 Gtc（有效直到取消）
+                # Close orders use Ioc (Immediate or Cancel), open orders use Gtc (Good Till Cancel)
                 if reduce_only:
-                    # 平仓单：使用 Ioc 确保立即成交
+                    # Close order: use Ioc to ensure immediate execution
                     order_type_param = {"limit": {"tif": "Ioc"}}
                 else:
-                    # 开仓单：根据 order_type 参数决定
+                    # Open order: decide based on order_type parameter
                     if order_type == "Limit":
                         order_type_param = {"limit": {"tif": "Gtc"}}
                     else:
-                        order_type_param = {"limit": {"tif": "Ioc"}}  # 市价单也用 Ioc
+                        order_type_param = {"limit": {"tif": "Ioc"}}  # Market orders also use Ioc
                 
                 order_result = self.exchange.order(
                     name=coin,
@@ -357,34 +357,34 @@ class HyperliquidClient(BaseExchangeClient):
                     reduce_only=reduce_only
                 )
                 
-                logger.info(f"📝 官方SDK订单结果: {order_result}")
+                logger.info(f"📝 Official SDK order result: {order_result}")
                 
-                # 检查订单是否成功
+                # Check if order is successful
                 if order_result.get('status') == 'ok':
                     response = order_result.get('response', {})
                     data = response.get('data', {})
                     statuses = data.get('statuses', [])
                     
-                    # 检查是否有错误
+                    # Check if there's an error
                     if statuses and 'error' in statuses[0]:
                         error_msg = statuses[0]['error']
                         last_error = error_msg
-                        logger.warning(f"⚠️  订单失败 (尝试 {attempt + 1}/{max_retries}): {error_msg}")
+                        logger.warning(f"⚠️  Order failed (attempt {attempt + 1}/{max_retries}): {error_msg}")
                         
-                        # 如果不是最后一次尝试，继续重试
+                        # If not last attempt, continue retrying
                         if attempt < max_retries - 1:
                             continue
                         else:
-                            logger.error(f"❌ 所有重试均失败，最后错误: {error_msg}")
+                            logger.error(f"❌ All retries failed, last error: {error_msg}")
                             return order_result
                     else:
-                        # 成功，直接返回
-                        logger.info(f"✅ 订单成功 (尝试 {attempt + 1}/{max_retries})")
+                        # Success, return directly
+                        logger.info(f"✅ Order successful (attempt {attempt + 1}/{max_retries})")
                         return order_result
                 else:
-                    # 订单被拒绝
+                    # Order rejected
                     last_error = order_result.get('response', 'Unknown error')
-                    logger.warning(f"⚠️  订单被拒绝 (尝试 {attempt + 1}/{max_retries}): {last_error}")
+                    logger.warning(f"⚠️  Order rejected (attempt {attempt + 1}/{max_retries}): {last_error}")
                     
                     if attempt < max_retries - 1:
                         continue
@@ -393,116 +393,116 @@ class HyperliquidClient(BaseExchangeClient):
                 
             except Exception as e:
                 last_error = str(e)
-                logger.warning(f"⚠️  下单异常 (尝试 {attempt + 1}/{max_retries}): {e}")
+                logger.warning(f"⚠️  Order exception (attempt {attempt + 1}/{max_retries}): {e}")
                 
                 if attempt < max_retries - 1:
                     continue
                 else:
-                    logger.error(f"❌ 所有重试均失败")
+                    logger.error(f"❌ All retries failed")
                     import traceback
                     logger.error(traceback.format_exc())
                     return {"status": "err", "response": str(e)}
         
-        # 如果所有重试都失败
-        logger.error(f"❌ 订单最终失败，已尝试 {max_retries} 次")
+        # If all retries failed
+        logger.error(f"❌ Order finally failed after {max_retries} attempts")
         return {"status": "err", "response": f"All {max_retries} attempts failed. Last error: {last_error}"}
     
     async def cancel_order(self, coin: str, order_id) -> Dict:
         """
-        取消订单
+        Cancel order
         
         Args:
-            coin: 币种符号
-            order_id: 订单ID
+            coin: Coin symbol
+            order_id: Order ID
             
         Returns:
-            取消结果
+            Cancel result
         """
         try:
             oid = int(order_id) if isinstance(order_id, str) else order_id
             result = self.exchange.cancel(coin, oid)
             return result
         except Exception as e:
-            logger.error(f"取消订单失败: {e}")
+            logger.error(f"Failed to cancel order: {e}")
             return {"status": "err", "response": str(e)}
     
     async def get_open_orders(self, coin: str = None) -> List[Dict]:
         """
-        获取未成交订单
+        Get open orders
         
         Args:
-            coin: 币种符号（可选，Hyperliquid 不支持按币种过滤）
+            coin: Coin symbol (optional, Hyperliquid doesn't support filtering by coin)
         
         Returns:
-            订单列表
+            Order list
         """
         try:
             user_state = await self.get_account_info()
             orders = user_state.get('assetPositions', [])
-            # 如果指定了币种，过滤结果
+            # If coin is specified, filter results
             if coin:
                 orders = [o for o in orders if o.get('position', {}).get('coin') == coin]
             return orders
         except Exception as e:
-            logger.error(f"获取未成交订单失败: {e}")
+            logger.error(f"Failed to get open orders: {e}")
             return []
     
     async def get_user_fills(self, limit: int = 100, start_time_ms: int = None) -> List[Dict]:
         """
-        获取用户历史成交记录
+        Get user historical trades
         
         Args:
-            limit: 返回数量限制
-            start_time_ms: 开始时间（毫秒时间戳），如果为None则获取所有
+            limit: Return quantity limit
+            start_time_ms: Start time (millisecond timestamp), if None gets all
             
         Returns:
-            成交记录列表
+            Trade list
         """
         try:
             if start_time_ms:
-                # 使用时间范围查询
+                # Use time range query
                 fills = self.info.user_fills_by_time(self.address, start_time_ms)
             else:
-                # 获取所有交易记录
+                # Get all trade records
                 fills = self.info.user_fills(self.address)
             
             if not fills:
                 return []
             
-            # 限制返回数量
+            # Limit return quantity
             if len(fills) > limit:
                 fills = fills[:limit]
             
-            logger.info(f"📊 从 Hyperliquid 获取了 {len(fills)} 条历史成交记录")
+            logger.info(f"📊 Retrieved {len(fills)} historical trade records from Hyperliquid")
             return fills
         except Exception as e:
-            logger.error(f"获取历史成交失败: {e}")
+            logger.error(f"Failed to get historical trades: {e}")
             import traceback
             logger.error(traceback.format_exc())
             return []
     
     async def get_candles(self, coin: str, interval: str = "15m", lookback: int = 100, timeout: int = 30) -> List[Dict]:
         """
-        获取 K 线数据（带超时保护）
+        Get candlestick data (with timeout protection)
         
         Args:
-            coin: 币种符号
-            interval: K线周期 ("1m", "5m", "15m", "1h", "4h", "1d")
-            lookback: 回溯K线数量
-            timeout: 超时时间（秒），默认30秒
+            coin: Coin symbol
+            interval: Candlestick period ("1m", "5m", "15m", "1h", "4h", "1d")
+            lookback: Lookback candlestick count
+            timeout: Timeout (seconds), default 30 seconds
             
         Returns:
-            K线数据列表 [{"time": timestamp, "open": o, "high": h, "low": l, "close": c, "volume": v}, ...]
+            Candlestick data list [{"time": timestamp, "open": o, "high": h, "low": l, "close": c, "volume": v}, ...]
         """
         import asyncio
         import time
         
         async def _fetch_candles():
-            """内部异步获取函数"""
-            # 使用官方SDK获取K线数据，endTime为当前时间戳（毫秒）
+            """Internal async fetch function"""
+            # Use official SDK to get candlestick data, endTime is current timestamp (milliseconds)
             end_time_ms = int(time.time() * 1000)
             
-            # SDK调用是同步的，需要在executor中运行
+            # SDK call is synchronous, need to run in executor
             loop = asyncio.get_event_loop()
             candles = await loop.run_in_executor(
                 None,
@@ -512,18 +512,18 @@ class HyperliquidClient(BaseExchangeClient):
             return candles
         
         try:
-            # 使用asyncio.wait_for添加超时保护
+            # Use asyncio.wait_for to add timeout protection
             candles = await asyncio.wait_for(_fetch_candles(), timeout=timeout)
             
             if not candles:
-                logger.warning(f"⚠️  未获取到K线数据，返回空列表")
+                logger.warning(f"⚠️  No candlestick data retrieved, returning empty list")
                 return []
             
-            # 转换成标准格式
+            # Convert to standard format
             result = []
             for candle in candles:
                 result.append({
-                    "time": candle.get('t', 0),  # 时间戳（毫秒）
+                    "time": candle.get('t', 0),  # Timestamp (milliseconds)
                     "open": float(candle.get('o', 0)),
                     "high": float(candle.get('h', 0)),
                     "low": float(candle.get('l', 0)),
@@ -531,13 +531,13 @@ class HyperliquidClient(BaseExchangeClient):
                     "volume": float(candle.get('v', 0))
                 })
             
-            logger.info(f"📊 获取了 {len(result)} 根 {interval} K线数据")
+            logger.info(f"📊 Retrieved {len(result)} {interval} candlesticks")
             return result
             
         except asyncio.TimeoutError:
-            logger.warning(f"⚠️  获取K线数据超时（{timeout}秒），返回空列表")
+            logger.warning(f"⚠️  Candlestick data request timeout ({timeout}s), returning empty list")
             return []
         except Exception as e:
-            logger.warning(f"⚠️  获取K线数据失败: {e}, 返回空列表")
+            logger.warning(f"⚠️  Failed to get candlestick data: {e}, returning empty list")
             return []
 

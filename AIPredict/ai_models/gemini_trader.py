@@ -1,6 +1,6 @@
 """
-Gemini AI 交易模型
-使用 Google Gemini API
+Gemini AI Trading Model
+Uses Google Gemini API
 """
 import httpx
 import logging
@@ -11,15 +11,15 @@ logger = logging.getLogger(__name__)
 
 
 class GeminiTrader(AITradingModel):
-    """Gemini AI 交易员"""
+    """Gemini AI Trader"""
     
     def __init__(self, api_key: str, model: str = "gemini-2.5-pro", **kwargs):
         """
-        初始化 Gemini 交易员
+        Initialize Gemini Trader
         
         Args:
-            api_key: Google API 密钥
-            model: Gemini 模型版本
+            api_key: Google API key
+            model: Gemini model version
         """
         super().__init__(
             model_name=f"Gemini ({model.split('-')[1].capitalize()})",
@@ -38,16 +38,16 @@ class GeminiTrader(AITradingModel):
         position_info: Optional[Dict] = None
     ) -> tuple[TradingDecision, float, str]:
         """
-        使用 Gemini 分析市场
+        Analyze market using Gemini
         
         Args:
-            coin: 币种
-            market_data: 市场数据
-            orderbook: 订单簿
-            recent_trades: 最近交易
+            coin: Coin symbol
+            market_data: Market data
+            orderbook: Order book
+            recent_trades: Recent trades
             
         Returns:
-            (决策, 置信度, 理由)
+            (decision, confidence, reasoning)
         """
         position_info = self.positions.get(coin)
         prompt = self.create_market_prompt(coin, market_data, orderbook, position_info)

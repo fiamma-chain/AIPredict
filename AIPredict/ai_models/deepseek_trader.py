@@ -1,6 +1,6 @@
 """
-DeepSeek AI 交易模型
-使用 DeepSeek API
+DeepSeek AI Trading Model
+Uses DeepSeek API
 """
 import httpx
 from typing import Dict, List, Optional
@@ -8,15 +8,15 @@ from .base_ai import AITradingModel, TradingDecision
 
 
 class DeepSeekTrader(AITradingModel):
-    """DeepSeek AI 交易员"""
+    """DeepSeek AI Trader"""
     
     def __init__(self, api_key: str, model: str = "deepseek-chat", **kwargs):
         """
-        初始化 DeepSeek 交易员
+        Initialize DeepSeek Trader
         
         Args:
-            api_key: DeepSeek API 密钥
-            model: DeepSeek 模型版本
+            api_key: DeepSeek API key
+            model: DeepSeek model version
         """
         super().__init__(
             model_name=f"DeepSeek ({model.split('-')[1].capitalize()})",
@@ -35,16 +35,16 @@ class DeepSeekTrader(AITradingModel):
         position_info: Optional[Dict] = None
     ) -> tuple[TradingDecision, float, str]:
         """
-        使用 DeepSeek 分析市场
+        Analyze market using DeepSeek
         
         Args:
-            coin: 币种
-            market_data: 市场数据
-            orderbook: 订单簿
-            recent_trades: 最近交易
+            coin: Coin symbol
+            market_data: Market data
+            orderbook: Order book
+            recent_trades: Recent trades
             
         Returns:
-            (决策, 置信度, 理由)
+            (decision, confidence, reasoning)
         """
         position_info = self.positions.get(coin)
         prompt = self.create_market_prompt(coin, market_data, orderbook, position_info)

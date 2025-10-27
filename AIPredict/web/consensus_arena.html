@@ -926,13 +926,13 @@
         let lastDecisionCount = 0;  // Last decision count
         let currentPeriodStartIndex = 0;  // Current period start index
         
-        // Logo图片缓存
+        // Logo image cache
         const logoImages = {};
         const logoMapping = {
-            'Alpha-HL': ['hyperliquid'],  // Alpha Hyperliquid 平台
-            'Alpha-Aster': ['aster'],     // Alpha Aster 平台
-            'Beta-HL': ['hyperliquid'],   // Beta Hyperliquid 平台
-            'Beta-Aster': ['aster'],      // Beta Aster 平台
+            'Alpha-HL': ['hyperliquid'],  // Alpha Hyperliquid platform
+            'Alpha-Aster': ['aster'],     // Alpha Aster platform
+            'Beta-HL': ['hyperliquid'],   // Beta Hyperliquid platform
+            'Beta-Aster': ['aster'],      // Beta Aster platform
             'DeepSeek-Solo': ['deepseek'],
             'Claude-Solo': ['claude'],
             'Grok-Solo': ['grok'],
@@ -941,7 +941,7 @@
             'Qwen-Solo': ['qwen']
         };
         
-        // 预加载logo图片
+        // Preload logo images
         function preloadLogos() {
             const allLogos = ['hyperliquid', 'aster', 'deepseek', 'claude', 'grok', 'gpt4', 'gemini', 'qwen'];
             allLogos.forEach(name => {
@@ -956,7 +956,7 @@
             });
         }
         
-        // Chart.js插件：在曲线末端绘制logo和余额
+        // Chart.js plugin: draw logo and balance at curve endpoints
         const endPointLogoPlugin = {
             id: 'endPointLogo',
             afterDatasetsDraw(chart, args, options) {
@@ -966,7 +966,7 @@
                     const meta = chart.getDatasetMeta(i);
                     if (!meta.visible || !dataset.data || dataset.data.length === 0) return;
                     
-                    // 获取最后一个点的坐标和余额
+                    // Get coordinates and balance of last point
                     const lastIndex = dataset.data.length - 1;
                     const lastPoint = meta.data[lastIndex];
                     if (!lastPoint) return;
@@ -981,24 +981,24 @@
                     const gap = 4;
                     const totalWidth = logos.length * logoSize + (logos.length - 1) * gap;
                     
-                    // 计算起始X坐标（始终放在点的右侧）
-                    const startX = lastPoint.x + 20;  // 点的右侧20px处
+                    // Calculate starting X coordinate (always place to the right of the point)
+                    const startX = lastPoint.x + 20;  // 20px to the right of the point
                     
-                    // Y坐标使用端点位置
+                    // Y coordinate uses endpoint position
                     const centerY = lastPoint.y;
                     
-                    // 测量余额文本宽度
+                    // Measure balance text width
                     ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto"';
                     const balanceTextWidth = ctx.measureText(balanceText).width;
                     
-                    // 计算总宽度（logo + 间距 + 余额文本）
+                    // Calculate total width (logo + spacing + balance text)
                     const totalContentWidth = totalWidth + 10 + balanceTextWidth;
                     
-                    // 绘制背景（半透明黑色，增强可读性）
+                    // Draw background (semi-transparent black for better readability)
                     ctx.save();
                     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
                     
-                    // 绘制圆角矩形背景（手动实现以确保兼容性）
+                    // Draw rounded rectangle background (manual implementation for compatibility)
                     const bgX = startX - 4;
                     const bgY = centerY - logoSize / 2 - 4;
                     const bgWidth = totalContentWidth + 8;
@@ -1018,36 +1018,36 @@
                     ctx.closePath();
                     ctx.fill();
                     
-                    // 绘制边框（使用曲线颜色）
+                    // Draw border (using curve color)
                     ctx.strokeStyle = dataset.borderColor;
                     ctx.lineWidth = 2;
                     ctx.stroke();
                     
-                    // 绘制logos
+                    // Draw logos
                     logos.forEach((logoName, idx) => {
                         const img = logoImages[logoName];
                         if (img && img.complete) {
                             const x = startX + idx * (logoSize + gap);
                             const y = centerY - logoSize / 2;
                             
-                            // 绘制圆形遮罩
+                            // Draw circular mask
                             ctx.beginPath();
                             ctx.arc(x + logoSize / 2, y + logoSize / 2, logoSize / 2, 0, Math.PI * 2);
                             ctx.closePath();
                             ctx.clip();
                             
-                            // 绘制logo
+                            // Draw logo
                             ctx.drawImage(img, x, y, logoSize, logoSize);
                             
-                            // 恢复canvas状态
+                            // Restore canvas state
                             ctx.restore();
                             ctx.save();
                             
-                            // 重新绘制背景和边框（因为clip会影响后续的logo）
+                            // Redraw background and border (because clip affects subsequent logos)
                             if (idx < logos.length - 1) {
                                 ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
                                 
-                                // 绘制圆角矩形背景
+                                // Draw rounded rectangle background
                                 ctx.beginPath();
                                 ctx.moveTo(bgX + radius, bgY);
                                 ctx.lineTo(bgX + bgWidth - radius, bgY);
@@ -1068,7 +1068,7 @@
                         }
                     });
                     
-                    // 绘制余额文本
+                    // Draw balance text
                     ctx.fillStyle = '#ffffff';
                     ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto"';
                     ctx.textAlign = 'left';
@@ -1081,16 +1081,16 @@
             }
         };
         
-        // 简化的图例更新函数（不再显示HTML图例）
+        // Simplified legend update function (no longer displays HTML legend)
         function updateEquityLegend(legendItems) {
-            // 图例已通过Chart.js插件直接绘制在曲线末端，此函数留空
-            // 如果需要保留一些基本信息，可以在这里添加
+            // Legend is now drawn directly at curve endpoints via Chart.js plugin, this function is left empty
+            // If you need to keep some basic information, you can add it here
         }
         
         function initKlineChart() {
             const chartContainer = document.getElementById('klineChart');
             
-            // 检查 LightweightCharts 是否加载
+            // Check if LightweightCharts is loaded
             if (typeof LightweightCharts === 'undefined') {
                 console.error('❌ LightweightCharts not loaded');
                 return;
@@ -1122,7 +1122,7 @@
             console.log('klineChart created:', klineChart);
             console.log('Available methods:', Object.keys(klineChart));
             
-            // 使用正确的API方法名
+            // Use correct API method name
             if (typeof klineChart.addCandlestickSeries === 'function') {
                 candlestickSeries = klineChart.addCandlestickSeries({
                     upColor: '#4ade80',
@@ -1133,7 +1133,7 @@
                     wickDownColor: '#f87171',
                 });
             } else if (typeof klineChart.addAreaSeries === 'function') {
-                // 如果addCandlestickSeries不存在，尝试其他方法
+                // If addCandlestickSeries doesn't exist, try other methods
                 console.log('Using fallback: addAreaSeries');
                 candlestickSeries = klineChart.addAreaSeries({
                     topColor: 'rgba(74, 222, 128, 0.4)',
@@ -1148,7 +1148,7 @@
             
             console.log('candlestickSeries created successfully');
             
-            // 响应式调整
+            // Responsive adjustment
             window.addEventListener('resize', () => {
                 klineChart.applyOptions({ width: chartContainer.clientWidth });
             });
@@ -1156,13 +1156,13 @@
         
         async function updateKlineChart() {
             try {
-                // 检查candlestickSeries是否已初始化
+                // Check if candlestickSeries is initialized
                 if (!candlestickSeries) {
                     console.error('❌ candlestickSeries not initialized');
                     return;
                 }
                 
-                // 使用当前选择的时间周期
+                // Use currently selected time interval
                 const response = await fetch(`/api/chart?interval=${currentInterval}`);
                 const data = await response.json();
                 
@@ -1176,9 +1176,9 @@
                     return;
                 }
                 
-                // 转换K线数据格式
+                // Convert K-line data format
                 const candlesData = data.candles.map(candle => ({
-                    time: candle.time / 1000, // 转换为秒
+                    time: candle.time / 1000, // Convert to seconds
                     open: candle.open,
                     high: candle.high,
                     low: candle.low,
@@ -1191,7 +1191,7 @@
                 // Add trade markers [v2.0] - Color-coded arrows for groups and individual traders
                 console.log('🎨 [v2.0] Rendering trade markers, count:', data.trade_markers?.length || 0);
                 
-                // 🔍 校验 Hyperliquid 交易捕获情况
+                // Verify Hyperliquid trade capture status
                 const hlMarkers = data.trade_markers?.filter(t => t.platform && t.platform.includes('Hyperliquid')) || [];
                 const asterMarkers = data.trade_markers?.filter(t => t.platform && t.platform.includes('Aster')) || [];
                 console.log(`📊 [Platform Stats] Hyperliquid: ${hlMarkers.length} trades, Aster: ${asterMarkers.length} trades`);
@@ -1205,7 +1205,7 @@
                     const markers = data.trade_markers.map(trade => {
                         console.log('🔍 [DEBUG] trade.group =', trade.group, 'trade.platform =', trade.platform, 'trade.action =', trade.action, 'trade.side =', trade.side, 'trade.price =', trade.price);
                         
-                        // ⚠️ 跳过价格为0的交易标记（无效数据）
+                        // Skip trade markers with price 0 (invalid data)
                         if (!trade.price || trade.price === 0) {
                             console.warn('⚠️ Skipping trade marker with invalid price:', trade);
                             return null;
@@ -1283,7 +1283,7 @@
                             shape: shape,
                             text: text
                         };
-                    }).filter(m => m !== null);  // 过滤掉无效的标记
+                    }).filter(m => m !== null);  // Filter out invalid markers
                     
                     console.log(`📍 [K-line Markers] Valid markers to display: ${markers.length}`);
                     candlestickSeries.setMarkers(markers);
@@ -1298,7 +1298,7 @@
             console.log('📊 Switch K-line interval:', interval);
             currentInterval = interval;
             
-            // 更新按钮状态
+            // Update button state
             document.querySelectorAll('.kline-controls button').forEach(btn => {
                 btn.classList.remove('active');
                 if (btn.textContent === interval) {
@@ -1306,7 +1306,7 @@
                 }
             });
             
-            // 重新加载K线数据
+            // Reload K-line data
             console.log('🔄 Reload K-line data, interval:', currentInterval);
             updateKlineChart();
         }
@@ -1321,18 +1321,18 @@
                         {
                             label: 'Alpha-HL',
                             data: [],
-                            borderColor: 'rgb(16, 185, 129)',  // 翠绿色 #10B981
+                            borderColor: 'rgb(16, 185, 129)',  // Emerald green #10B981
                             backgroundColor: 'rgba(16, 185, 129, 0.1)',
                             tension: 0.4,
                             borderWidth: 3,
-                            pointRadius: 0,  // 默认不显示圆点
-                            pointHoverRadius: 0,  // 鼠标悬停时也不显示
+                            pointRadius: 0,  // Don't show dots by default
+                            pointHoverRadius: 0,  // Don't show on hover either
                             platform: 'hyperliquid'
                         },
                         {
                             label: 'Alpha-Aster',
                             data: [],
-                            borderColor: 'rgb(52, 211, 153)',  // 青绿色 #34D399
+                            borderColor: 'rgb(52, 211, 153)',  // Teal green #34D399
                             backgroundColor: 'rgba(52, 211, 153, 0.1)',
                             tension: 0.4,
                             borderWidth: 3,
@@ -1343,7 +1343,7 @@
                         {
                             label: 'Beta-HL',
                             data: [],
-                            borderColor: 'rgb(37, 99, 235)',  // 宝蓝色 #2563EB
+                            borderColor: 'rgb(37, 99, 235)',  // Royal blue #2563EB
                             backgroundColor: 'rgba(37, 99, 235, 0.1)',
                             tension: 0.4,
                             borderWidth: 3,
@@ -1354,7 +1354,7 @@
                         {
                             label: 'Beta-Aster',
                             data: [],
-                            borderColor: 'rgb(56, 189, 248)',  // 天蓝色 #38BDF8
+                            borderColor: 'rgb(56, 189, 248)',  // Sky blue #38BDF8
                             backgroundColor: 'rgba(56, 189, 248, 0.1)',
                             tension: 0.4,
                             borderWidth: 3,
@@ -1362,22 +1362,22 @@
                             pointHoverRadius: 0,
                             platform: 'aster'
                         },
-                        // 独立AI交易者曲线
+                        // Individual AI trader curves
                         {
                             label: 'DeepSeek-Solo',
                             data: [],
-                            borderColor: 'rgb(168, 85, 247)',  // 亮紫色 #A855F7
+                            borderColor: 'rgb(168, 85, 247)',  // Bright purple #A855F7
                             backgroundColor: 'rgba(168, 85, 247, 0.1)',
                             tension: 0.4,
                             borderWidth: 2,
-                            borderDash: [5, 5],  // 虚线
+                            borderDash: [5, 5],  // Dashed line
                             pointRadius: 0,
                             pointHoverRadius: 0
                         },
                         {
                             label: 'Claude-Solo',
                             data: [],
-                            borderColor: 'rgb(236, 72, 153)',  // 品红色 #EC4899
+                            borderColor: 'rgb(236, 72, 153)',  // Magenta #EC4899
                             backgroundColor: 'rgba(236, 72, 153, 0.1)',
                             tension: 0.4,
                             borderWidth: 2,
@@ -1388,7 +1388,7 @@
                         {
                             label: 'Grok-Solo',
                             data: [],
-                            borderColor: 'rgb(249, 115, 22)',  // 鲜橙色 #F97316
+                            borderColor: 'rgb(249, 115, 22)',  // Bright orange #F97316
                             backgroundColor: 'rgba(249, 115, 22, 0.1)',
                             tension: 0.4,
                             borderWidth: 2,
@@ -1399,7 +1399,7 @@
                         {
                             label: 'GPT-Solo',
                             data: [],
-                            borderColor: 'rgb(6, 182, 212)',  // 青蓝色 #06B6D4
+                            borderColor: 'rgb(6, 182, 212)',  // Cyan blue #06B6D4
                             backgroundColor: 'rgba(6, 182, 212, 0.1)',
                             tension: 0.4,
                             borderWidth: 2,
@@ -1410,7 +1410,7 @@
                         {
                             label: 'Gemini-Solo',
                             data: [],
-                            borderColor: 'rgb(245, 158, 11)',  // 金黄色 #F59E0B
+                            borderColor: 'rgb(245, 158, 11)',  // Golden yellow #F59E0B
                             backgroundColor: 'rgba(245, 158, 11, 0.1)',
                             tension: 0.4,
                             borderWidth: 2,
@@ -1421,7 +1421,7 @@
                         {
                             label: 'Qwen-Solo',
                             data: [],
-                            borderColor: 'rgb(239, 68, 68)',  // 鲜红色 #EF4444
+                            borderColor: 'rgb(239, 68, 68)',  // Bright red #EF4444
                             backgroundColor: 'rgba(239, 68, 68, 0.1)',
                             tension: 0.4,
                             borderWidth: 2,
@@ -1431,29 +1431,29 @@
                         }
                     ]
                 },
-                plugins: [endPointLogoPlugin],  // 注册自定义插件
+                plugins: [endPointLogoPlugin],  // Register custom plugin
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     layout: {
                         padding: {
-                            right: 120  // 为右侧的logo和余额文本预留空间
+                            right: 120  // Reserve space for logo and balance text on the right
                         }
                     },
                     plugins: {
                         legend: {
-                            display: false  // 禁用默认图例
+                            display: false  // Disable default legend
                         },
                         tooltip: {
-                            enabled: false  // 禁用鼠标悬浮提示
+                            enabled: false  // Disable hover tooltip
                         }
                     },
                     scales: {
                         y: {
-                            // 动态调整Y轴范围（根据实际数据自动计算）
+                            // Dynamically adjust Y-axis range (auto-calculate based on actual data)
                             ticks: { 
                                 color: '#666',
-                                stepSize: 10  // 每10刻度一格
+                                stepSize: 10  // One grid per 10 ticks
                             },
                             grid: { 
                                 color: 'rgba(200, 200, 200, 0.3)',
@@ -1465,10 +1465,10 @@
                         x: {
                             ticks: { 
                                 color: '#666',
-                                maxTicksLimit: 12,  // 最多显示12个标签（约1小时数据）
-                                autoSkip: true,     // 自动跳过标签避免重叠
-                                autoSkipPadding: 10, // 标签之间的最小间距
-                                maxRotation: 0,     // 水平显示
+                                maxTicksLimit: 12,  // Max 12 labels (about 1 hour of data)
+                                autoSkip: true,     // Auto skip labels to avoid overlap
+                                autoSkipPadding: 10, // Minimum spacing between labels
+                                maxRotation: 0,     // Display horizontally
                                 minRotation: 0
                             },
                             grid: { 
@@ -1486,7 +1486,7 @@
         async function updateData() {
             try {
                 const now = new Date().toLocaleTimeString('en-US');
-                console.log(`⏰ [${now}] 开始更新数据...`);
+                console.log(`⏰ [${now}] Starting data update...`);
                 
                 const response = await fetch('/api/status');
                 const data = await response.json();
@@ -1496,42 +1496,42 @@
                 const alphaGroup = data.groups[0];
                 const betaGroup = data.groups[1];
                 
-                // 调试：输出完整的groups数据结构
-                console.log('🔍 [DEBUG] Alpha Group 完整数据:', alphaGroup);
+                // Debug: output complete groups data structure
+                console.log('🔍 [DEBUG] Alpha Group complete data:', alphaGroup);
                 console.log('🔍 [DEBUG] Alpha platforms keys:', Object.keys(alphaGroup.platforms || {}));
-                console.log('🔍 [DEBUG] Beta Group 完整数据:', betaGroup);
+                console.log('🔍 [DEBUG] Beta Group complete data:', betaGroup);
                 console.log('🔍 [DEBUG] Beta platforms keys:', Object.keys(betaGroup.platforms || {}));
                 
-                // 获取各平台数据
+                // Get platform data
                 const alphaPlatforms = alphaGroup.platforms || {};
                 const betaPlatforms = betaGroup.platforms || {};
                 
-                // 提取 Alpha 组的两个平台数据
+                // Extract two platform data for Alpha group
                 const alphaHL = alphaPlatforms['Alpha组-Hyperliquid'] || alphaPlatforms['Alpha-Hyperliquid'] || {};
                 const alphaAster = alphaPlatforms['Alpha组-Aster'] || alphaPlatforms['Alpha-Aster'] || {};
                 
-                // 提取 Beta 组的两个平台数据
+                // Extract two platform data for Beta group
                 const betaHL = betaPlatforms['Beta组-Hyperliquid'] || betaPlatforms['Beta-Hyperliquid'] || {};
                 const betaAster = betaPlatforms['Beta组-Aster'] || betaPlatforms['Beta-Aster'] || {};
                 
-                console.log('🔍 [DEBUG] Alpha HL 数据:', alphaHL);
-                console.log('🔍 [DEBUG] Alpha Aster 数据:', alphaAster);
-                console.log('🔍 [DEBUG] Beta HL 数据:', betaHL);
-                console.log('🔍 [DEBUG] Beta Aster 数据:', betaAster);
+                console.log('🔍 [DEBUG] Alpha HL data:', alphaHL);
+                console.log('🔍 [DEBUG] Alpha Aster data:', alphaAster);
+                console.log('🔍 [DEBUG] Beta HL data:', betaHL);
+                console.log('🔍 [DEBUG] Beta Aster data:', betaAster);
                 
-                // 计算各平台ROI
+                // Calculate ROI for each platform
                 const alphaHLRoi = (alphaHL && typeof alphaHL.roi === 'number') ? alphaHL.roi : 0;
                 const alphaAsterRoi = (alphaAster && typeof alphaAster.roi === 'number') ? alphaAster.roi : 0;
                 const betaHLRoi = (betaHL && typeof betaHL.roi === 'number') ? betaHL.roi : 0;
                 const betaAsterRoi = (betaAster && typeof betaAster.roi === 'number') ? betaAster.roi : 0;
                 
-                // 更新 Alpha/Beta 组各平台的 ROI 显示
+                // Update ROI display for each platform of Alpha/Beta groups
                 document.getElementById('alpha-hl-roi').textContent = `${alphaHLRoi >= 0 ? '+' : ''}${alphaHLRoi.toFixed(2)}%`;
                 document.getElementById('alpha-aster-roi').textContent = `${alphaAsterRoi >= 0 ? '+' : ''}${alphaAsterRoi.toFixed(2)}%`;
                 document.getElementById('beta-hl-roi').textContent = `${betaHLRoi >= 0 ? '+' : ''}${betaHLRoi.toFixed(2)}%`;
                 document.getElementById('beta-aster-roi').textContent = `${betaAsterRoi >= 0 ? '+' : ''}${betaAsterRoi.toFixed(2)}%`;
                 
-                // 获取独立AI交易者的ROI数据
+                // Get ROI data for individual AI traders
                 const individualTraders = data.individual_traders || [];
                 const soloRois = {};
                 
@@ -1543,7 +1543,7 @@
                     }
                 });
                 
-                // 更新每个独立AI的ROI和地址显示
+                // Update ROI and address display for each individual AI
                 const soloElements = {
                     'DeepSeek': { roi: 'deepseek-solo-roi', address: 'deepseek-solo-address' },
                     'Claude': { roi: 'claude-solo-roi', address: 'claude-solo-address' },
@@ -1553,7 +1553,7 @@
                     'Qwen': { roi: 'qwen-solo-roi', address: 'qwen-solo-address' }
                 };
                 
-                // 辅助函数：精简显示地址
+                // Helper function: compact address display
                 function formatAddress(address) {
                     if (!address || address.length < 12) return address || '-';
                     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
@@ -1563,29 +1563,29 @@
                     const ids = soloElements[aiName];
                     const roi = soloRois[aiName] || 0;
                     
-                    // 更新ROI
+                    // Update ROI
                     const roiElement = document.getElementById(ids.roi);
                     if (roiElement) {
                         roiElement.textContent = `${roi >= 0 ? '+' : ''}${roi.toFixed(2)}%`;
                     }
                     
-                    // 更新地址
+                    // Update address
                     const addressElement = document.getElementById(ids.address);
                     if (addressElement) {
-                        // 从individualTraders中查找对应AI的地址
+                        // Find corresponding AI address from individualTraders
                         const trader = individualTraders.find(t => t.ai_name === aiName);
                         if (trader && trader.addresses) {
-                            // 获取Aster平台的地址
-                            const asterAddress = Object.values(trader.addresses)[0]; // 取第一个平台地址（当前只有Aster）
+                            // Get Aster platform address
+                            const asterAddress = Object.values(trader.addresses)[0]; // Get first platform address (currently only Aster)
                             addressElement.textContent = formatAddress(asterAddress);
-                            addressElement.title = asterAddress || ''; // 鼠标悬停显示完整地址
+                            addressElement.title = asterAddress || ''; // Show full address on hover
                         } else {
                             addressElement.textContent = '-';
                         }
                     }
                 });
                 
-                // 输出数据对比信息
+                // Output data comparison info
                 console.log('📊 AI Teams Performance (Multi-Platform):');
                 console.log(`  Alpha-HL ROI: ${alphaHLRoi.toFixed(2)}%`);
                 console.log(`  Alpha-Aster ROI: ${alphaAsterRoi.toFixed(2)}%`);
@@ -1596,41 +1596,41 @@
                     console.log(`  ${ai}: ${soloRois[ai].toFixed(2)}%`);
                 });
                 
-                // 更新权益曲线 - 智能数据点管理
+                // Update equity curve - smart data point management
                 const currentTime = new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
                 
-                // 获取Aster平台的真实余额（不使用初始余额fallback）
+                // Get real balance from Aster platform (don't use initial balance fallback)
                 const alphaBalance = (alphaAster && typeof alphaAster.balance === 'number') ? alphaAster.balance : 0;
                 const betaBalance = (betaAster && typeof betaAster.balance === 'number') ? betaAster.balance : 0;
                 
                 if (alphaBalance === 0) {
-                    console.warn('⚠️ Alpha余额为0或未获取到数据！alphaAster:', alphaAster);
+                    console.warn('⚠️ Alpha balance is 0 or data not retrieved! alphaAster:', alphaAster);
                 }
                 if (betaBalance === 0) {
-                    console.warn('⚠️ Beta余额为0或未获取到数据！betaAster:', betaAster);
+                    console.warn('⚠️ Beta balance is 0 or data not retrieved! betaAster:', betaAster);
                 }
                 
-                console.log(`📊 组账户余额:`);
-                console.log(`  Alpha: $${alphaBalance.toFixed(2)} (balance字段: ${alphaAster?.balance}, from platforms: ${Object.keys(alphaPlatforms).join(', ') || 'none'})`);
-                console.log(`  Beta: $${betaBalance.toFixed(2)} (balance字段: ${betaAster?.balance}, from platforms: ${Object.keys(betaPlatforms).join(', ') || 'none'})`);
+                console.log(`📊 Group account balance:`);
+                console.log(`  Alpha: $${alphaBalance.toFixed(2)} (balance field: ${alphaAster?.balance}, from platforms: ${Object.keys(alphaPlatforms).join(', ') || 'none'})`);
+                console.log(`  Beta: $${betaBalance.toFixed(2)} (balance field: ${betaAster?.balance}, from platforms: ${Object.keys(betaPlatforms).join(', ') || 'none'})`);
                 
-                // 获取 Alpha/Beta 各平台余额
+                // Get Alpha/Beta platform balances
                 const alphaHLBalance = alphaHL?.balance || 200;
                 const alphaAsterBalance = alphaAster?.balance || 200;
                 const betaHLBalance = betaHL?.balance || 200;
                 const betaAsterBalance = betaAster?.balance || 200;
                 
-                console.log(`📊 Alpha/Beta 各平台余额:`);
+                console.log(`📊 Alpha/Beta platform balances:`);
                 console.log(`  Alpha-HL: $${alphaHLBalance.toFixed(2)}`);
                 console.log(`  Alpha-Aster: $${alphaAsterBalance.toFixed(2)}`);
                 console.log(`  Beta-HL: $${betaHLBalance.toFixed(2)}`);
                 console.log(`  Beta-Aster: $${betaAsterBalance.toFixed(2)}`);
                 
-                // 获取独立AI交易者的余额数据（复用前面获取的individualTraders和soloRois）
+                // Get balance data for individual AI traders (reuse previously obtained individualTraders and soloRois)
                 const traderBalances = {};
-                const traderRois = soloRois; // 复用前面获取的ROI数据
+                const traderRois = soloRois; // Reuse previously obtained ROI data
                 
-                console.log(`📊 独立AI交易者数量: ${individualTraders.length}`);
+                console.log(`📊 Individual AI traders count: ${individualTraders.length}`);
                 
                 individualTraders.forEach(trader => {
                     const traderName = trader.trader_name;
@@ -1638,13 +1638,13 @@
                     const platformKey = `${traderName}-Aster`;
                     if (trader.platforms && trader.platforms[platformKey]) {
                         traderBalances[aiName] = trader.platforms[platformKey].balance || 0;
-                        console.log(`  ${aiName}: 余额=$${traderBalances[aiName].toFixed(2)}, ROI=${traderRois[aiName]?.toFixed(2) || '0.00'}%`);
+                        console.log(`  ${aiName}: balance=$${traderBalances[aiName].toFixed(2)}, ROI=${traderRois[aiName]?.toFixed(2) || '0.00'}%`);
                     } else {
-                        console.log(`  ${aiName}: ⚠️ 未找到 Aster 平台数据`);
+                        console.log(`  ${aiName}: ⚠️ Aster platform data not found`);
                     }
                 });
                 
-                // 更新图例标签（用于tooltip）
+                // Update legend labels (for tooltip)
                 equityChart.data.datasets[0].label = `Alpha-HL`;
                 equityChart.data.datasets[1].label = `Alpha-Aster`;
                 equityChart.data.datasets[2].label = `Beta-HL`;
@@ -1656,7 +1656,7 @@
                 equityChart.data.datasets[8].label = `Gemini-Solo`;
                 equityChart.data.datasets[9].label = `Qwen-Solo`;
                 
-                // 构建图例数据（包含 4 个平台曲线）
+                // Build legend data (including 4 platform curves)
                 const legendItems = [
                     {
                         label: 'Alpha-HL',
@@ -1684,7 +1684,7 @@
                     }
                 ];
                 
-                // 添加独立AI交易者到图例
+                // Add individual AI traders to legend
                 const soloAIs = [
                     { name: 'DeepSeek-Solo', color: 'rgb(147, 51, 234)' },
                     { name: 'Claude-Solo', color: 'rgb(236, 72, 153)' },
@@ -1705,39 +1705,39 @@
                     }
                 });
                 
-                // 更新自定义HTML图例
+                // Update custom HTML legend
                 updateEquityLegend(legendItems);
                 
-                // 检测是否有新决策（通过决策数量变化判断）
+                // Detect if there's a new decision (judged by change in decision count)
                 const currentDecisionCount = (alphaGroup.consensus_decisions?.length || 0) + (betaGroup.consensus_decisions?.length || 0);
                 const hasNewDecision = currentDecisionCount > lastDecisionCount;
                 
                 if (hasNewDecision) {
-                    // 新决策产生：清理当前周期的临时点，保留决策点
+                    // New decision: clean temporary points in current period, keep decision point
                     console.log(`🎯 New decision detected: ${lastDecisionCount} -> ${currentDecisionCount}`);
                     
-                    // 如果当前周期有临时点，删除除最后一个之外的所有临时点
+                    // If there are temporary points in current period, delete all except the last one
                     const tempPointsCount = equityChart.data.labels.length - currentPeriodStartIndex;
                     if (tempPointsCount > 1) {
-                        // 保留决策点（当前周期的最后一个点），删除其他临时点
+                        // Keep decision point (last point of current period), delete other temporary points
                         equityChart.data.labels.splice(currentPeriodStartIndex, tempPointsCount - 1);
                         equityChart.data.datasets.forEach(ds => {
                             ds.data.splice(currentPeriodStartIndex, tempPointsCount - 1);
                         });
                     }
                     
-                    // 更新决策点索引和决策计数
+                    // Update decision point index and decision count
                     currentPeriodStartIndex = equityChart.data.labels.length;
                     lastDecisionCount = currentDecisionCount;
                     
-                    // 添加新周期的第一个数据点（决策点）
+                    // Add first data point of new period (decision point)
                     equityChart.data.labels.push(currentTime);
-                    // Alpha/Beta 各平台数据
+                    // Alpha/Beta platform data
                     equityChart.data.datasets[0].data.push(alphaHLBalance);
                     equityChart.data.datasets[1].data.push(alphaAsterBalance);
                     equityChart.data.datasets[2].data.push(betaHLBalance);
                     equityChart.data.datasets[3].data.push(betaAsterBalance);
-                    // 独立AI如果没有余额数据，使用初始余额200 USDT
+                    // If individual AI has no balance data, use initial balance 200 USDT
                     equityChart.data.datasets[4].data.push(traderBalances['DeepSeek'] || 200);
                     equityChart.data.datasets[5].data.push(traderBalances['Claude'] || 200);
                     equityChart.data.datasets[6].data.push(traderBalances['Grok'] || 200);
@@ -1746,17 +1746,17 @@
                     equityChart.data.datasets[9].data.push(traderBalances['Qwen'] || 200);
                     
                 } else {
-                    // 同一周期内：更新或添加临时点
+                    // Within same period: update or add temporary point
                     if (equityChart.data.labels.length === 0) {
-                        // 首次加载，添加初始点
+                        // First time loading, add initial point
                         console.log('📊 First time loading curve data');
                         equityChart.data.labels.push(currentTime);
-                        // Alpha/Beta 各平台数据
+                        // Alpha/Beta platform data
                         equityChart.data.datasets[0].data.push(alphaHLBalance);
                         equityChart.data.datasets[1].data.push(alphaAsterBalance);
                         equityChart.data.datasets[2].data.push(betaHLBalance);
                         equityChart.data.datasets[3].data.push(betaAsterBalance);
-                        // 独立AI如果没有余额数据，使用初始余额200 USDT
+                        // If individual AI has no balance data, use initial balance 200 USDT
                         equityChart.data.datasets[4].data.push(traderBalances['DeepSeek'] || 200);
                         equityChart.data.datasets[5].data.push(traderBalances['Claude'] || 200);
                         equityChart.data.datasets[6].data.push(traderBalances['Grok'] || 200);
@@ -1765,7 +1765,7 @@
                         equityChart.data.datasets[9].data.push(traderBalances['Qwen'] || 200);
                         currentPeriodStartIndex = 0;
                     } else {
-                        // 更新当前周期的最后一个点（临时点）
+                        // Update last point of current period (temporary point)
                         const lastIndex = equityChart.data.labels.length - 1;
                         
                         console.log(`🔄 Update curve tail [${currentTime}]:`, 
@@ -1774,12 +1774,12 @@
                         );
                         
                         equityChart.data.labels[lastIndex] = currentTime;
-                        // Alpha/Beta 各平台数据
+                        // Alpha/Beta platform data
                         equityChart.data.datasets[0].data[lastIndex] = alphaHLBalance;
                         equityChart.data.datasets[1].data[lastIndex] = alphaAsterBalance;
                         equityChart.data.datasets[2].data[lastIndex] = betaHLBalance;
                         equityChart.data.datasets[3].data[lastIndex] = betaAsterBalance;
-                        // 独立AI如果没有余额数据，使用初始余额200 USDT
+                        // If individual AI has no balance data, use initial balance 200 USDT
                         equityChart.data.datasets[4].data[lastIndex] = traderBalances['DeepSeek'] || 200;
                         equityChart.data.datasets[5].data[lastIndex] = traderBalances['Claude'] || 200;
                         equityChart.data.datasets[6].data[lastIndex] = traderBalances['Grok'] || 200;
@@ -1790,57 +1790,57 @@
                 }
                 
                 
-                // 动态调整Y轴范围 - 紧密贴合实际值（向下取整最小值，向上取整最大值）
+                // Dynamically adjust Y-axis range - closely fit actual values (floor min, ceil max)
                 const allValues = equityChart.data.datasets.flatMap(ds => ds.data.filter(v => v > 0));
                 if (allValues.length > 0) {
                     const minVal = Math.min(...allValues);
                     const maxVal = Math.max(...allValues);
                     
-                    // 上限：大于最大值的最小整数（向上取整）
-                    // 下限：小于最小值的最大整数（向下取整）
+                    // Upper limit: smallest integer greater than max (ceil)
+                    // Lower limit: largest integer less than min (floor)
                     equityChart.options.scales.y.min = Math.floor(minVal);
                     equityChart.options.scales.y.max = Math.ceil(maxVal);
                     
-                    console.log(`📊 Y轴范围: ${equityChart.options.scales.y.min} ~ ${equityChart.options.scales.y.max} (实际: ${minVal.toFixed(2)} ~ ${maxVal.toFixed(2)})`);
+                    console.log(`📊 Y-axis range: ${equityChart.options.scales.y.min} ~ ${equityChart.options.scales.y.max} (actual: ${minVal.toFixed(2)} ~ ${maxVal.toFixed(2)})`);
                 } else {
-                    // 如果没有有效数据，使用默认范围（独立AI初始200，组初始240）
+                    // If no valid data, use default range (individual AI initial 200, group initial 240)
                     equityChart.options.scales.y.min = 180;
                     equityChart.options.scales.y.max = 280;
-                    console.log('⚠️ 没有有效数据，使用默认Y轴范围');
+                    console.log('⚠️ No valid data, using default Y-axis range');
                 }
                 
-                // 输出图表数据点信息
-                console.log(`📈 图表数据点数量: ${equityChart.data.labels.length}`);
+                // Output chart data point info
+                console.log(`📈 Chart data points count: ${equityChart.data.labels.length}`);
                 if (equityChart.data.labels.length > 0) {
-                    console.log(`   最后一个时间点: ${equityChart.data.labels[equityChart.data.labels.length - 1]}`);
-                    console.log(`   Alpha余额: $${equityChart.data.datasets[0].data[equityChart.data.datasets[0].data.length - 1]?.toFixed(2) || '0.00'}`);
-                    console.log(`   Beta余额: $${equityChart.data.datasets[1].data[equityChart.data.datasets[1].data.length - 1]?.toFixed(2) || '0.00'}`);
+                    console.log(`   Last time point: ${equityChart.data.labels[equityChart.data.labels.length - 1]}`);
+                    console.log(`   Alpha balance: $${equityChart.data.datasets[0].data[equityChart.data.datasets[0].data.length - 1]?.toFixed(2) || '0.00'}`);
+                    console.log(`   Beta balance: $${equityChart.data.datasets[1].data[equityChart.data.datasets[1].data.length - 1]?.toFixed(2) || '0.00'}`);
                 }
                 
-                // 动态设置最后一个点显示圆圈
+                // Dynamically set last point to show circle
                 equityChart.data.datasets.forEach(dataset => {
                     const dataLength = dataset.data.length;
                     if (dataLength > 0) {
-                        // 创建一个数组，所有点默认为0（不显示），最后一个点为5（显示）
+                        // Create an array, all points default to 0 (not shown), last point is 5 (shown)
                         dataset.pointRadius = new Array(dataLength).fill(0);
-                        dataset.pointRadius[dataLength - 1] = 5;  // 最后一个点显示圆圈
+                        dataset.pointRadius[dataLength - 1] = 5;  // Last point shows circle
                         
-                        // 同样设置悬停时的圆圈大小
+                        // Also set circle size on hover
                         dataset.pointHoverRadius = new Array(dataLength).fill(0);
-                        dataset.pointHoverRadius[dataLength - 1] = 7;  // 最后一个点悬停时稍大
+                        dataset.pointHoverRadius[dataLength - 1] = 7;  // Last point slightly larger on hover
                     }
                 });
                 
-                // 使用默认动画模式更新，让变化更明显
+                // Use default animation mode for update, make changes more visible
                 equityChart.update('active');
                 
-                // 更新Alpha组决策
+                // Update Alpha group decisions
                 updateDecisions('alpha-decisions', alphaGroup.consensus_decisions);
                 
-                // 更新Beta组决策
+                // Update Beta group decisions
                 updateDecisions('beta-decisions', betaGroup.consensus_decisions);
                 
-                // 更新独立AI决策
+                // Update individual AI decisions
                 const soloAIConfigs = [
                     { aiName: 'DeepSeek', containerId: 'deepseek-decisions', color: '#9333ea' },
                     { aiName: 'Claude', containerId: 'claude-decisions', color: '#ec4899' },
@@ -1973,50 +1973,50 @@
             }).join('');
         }
         
-        // 等待页面完全加载后再初始化
-        // 从Redis加载历史余额数据
+        // Wait for page to fully load before initialization
+        // Load historical balance data from Redis
         async function loadHistoricalBalanceData() {
             try {
                 console.log('📚 Loading all historical data from Redis...');
-                const response = await fetch('/api/balance_history');  // 不传limit参数，默认返回所有数据
+                const response = await fetch('/api/balance_history');  // Don't pass limit parameter, returns all data by default
                 const data = await response.json();
                 
                 if (data.history && data.history.length > 0) {
                     console.log(`✅ Loaded ${data.history.length} historical records`);
                     
-                    // 清空现有数据
+                    // Clear existing data
                     equityChart.data.labels = [];
                     equityChart.data.datasets.forEach(ds => ds.data = []);
                     
-                    // 反转历史数据（Redis返回的是倒序，最新的在前，需要反转为正序）
+                    // Reverse historical data (Redis returns in reverse order, newest first, needs to be reversed to chronological order)
                     const sortedHistory = [...data.history].reverse();
                     
-                    // 填充历史数据
+                    // Fill historical data
                     sortedHistory.forEach(record => {
                         const time = new Date(record.timestamp).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
                         equityChart.data.labels.push(time);
                         
-                        // 将accounts数组转换为字典
+                        // Convert accounts array to dictionary
                         const balances = {};
                         const traderBalances = {};
                         
                         record.accounts.forEach(acc => {
                             if (acc.type === 'group') {
-                                // 组账户
+                                // Group account
                                 balances[acc.platform] = acc.balance;
                             } else if (acc.type === 'individual') {
-                                // 独立AI交易者账户
+                                // Individual AI trader account
                                 const aiName = acc.ai_name;
                                 traderBalances[aiName] = acc.balance;
                             }
                         });
                         
-                        // Alpha/Beta 各平台数据 (组初始200 USDT)
+                        // Alpha/Beta platform data (group initial 200 USDT)
                         equityChart.data.datasets[0].data.push(balances['Alpha组-Hyperliquid'] || 200);
                         equityChart.data.datasets[1].data.push(balances['Alpha组-Aster'] || 200);
                         equityChart.data.datasets[2].data.push(balances['Beta组-Hyperliquid'] || 200);
                         equityChart.data.datasets[3].data.push(balances['Beta组-Aster'] || 200);
-                        // 独立AI交易者 (初始200 USDT)
+                        // Individual AI traders (initial 200 USDT)
                         equityChart.data.datasets[4].data.push(traderBalances['DeepSeek'] || 200);
                         equityChart.data.datasets[5].data.push(traderBalances['Claude'] || 200);
                         equityChart.data.datasets[6].data.push(traderBalances['Grok'] || 200);
@@ -2025,25 +2025,25 @@
                         equityChart.data.datasets[9].data.push(traderBalances['Qwen'] || 200);
                     });
                     
-                    // 更新当前周期起始索引为最后一个数据点
+                    // Update current period start index to last data point
                     currentPeriodStartIndex = equityChart.data.labels.length - 1;
                     
-                    // 动态设置最后一个点显示圆圈
+                    // Dynamically set last point to show circle
                     equityChart.data.datasets.forEach(dataset => {
                         const dataLength = dataset.data.length;
                         if (dataLength > 0) {
-                            // 创建一个数组，所有点默认为0（不显示），最后一个点为5（显示）
+                            // Create an array, all points default to 0 (not shown), last point is 5 (shown)
                             dataset.pointRadius = new Array(dataLength).fill(0);
-                            dataset.pointRadius[dataLength - 1] = 5;  // 最后一个点显示圆圈
+                            dataset.pointRadius[dataLength - 1] = 5;  // Last point shows circle
                             
-                            // 同样设置悬停时的圆圈大小
+                            // Also set circle size on hover
                             dataset.pointHoverRadius = new Array(dataLength).fill(0);
-                            dataset.pointHoverRadius[dataLength - 1] = 7;  // 最后一个点悬停时稍大
+                            dataset.pointHoverRadius[dataLength - 1] = 7;  // Last point slightly larger on hover
                         }
                     });
                     
-                    // 更新图表
-                    equityChart.update('none'); // 'none'模式快速更新，不播放动画
+                    // Update chart
+                    equityChart.update('none'); // 'none' mode for fast update, no animation
                     
                     console.log('✅ Historical data loaded successfully');
                     return true;
@@ -2060,7 +2060,7 @@
         window.addEventListener('DOMContentLoaded', async function() {
             console.log('Page loaded, starting initialization...');
             
-            // 预加载logos（在初始化图表之前）
+            // Preload logos (before initializing charts)
             try {
                 preloadLogos();
                 console.log('✅ Logos preloaded');
@@ -2068,7 +2068,7 @@
                 console.error('❌ Failed to preload logos:', e);
             }
             
-            // 隐藏HTML图例容器（改用曲线末端显示）
+            // Hide HTML legend container (use curve endpoint display instead)
             const legendContainer = document.getElementById('equity-legend');
             if (legendContainer) {
                 legendContainer.style.display = 'none';
@@ -2088,14 +2088,14 @@
                 console.error('❌ Failed to initialize equity curve:', e);
             }
             
-            // 先加载历史数据
+            // Load historical data first
             try {
                 await loadHistoricalBalanceData();
             } catch (e) {
                 console.error('❌ Failed to load historical data:', e);
             }
             
-            // 立即加载当前数据
+            // Load current data immediately
             try {
                 await updateData();
                 console.log('✅ Data updated successfully');
@@ -2110,9 +2110,9 @@
                 console.error('❌ Failed to load K-line data:', e);
             }
             
-            // 设置定时刷新
-            setInterval(updateData, 5000);        // 每5秒更新数据
-            setInterval(updateKlineChart, 30000); // K线每30秒更新一次
+            // Set up periodic refresh
+            setInterval(updateData, 5000);        // Update data every 5 seconds
+            setInterval(updateKlineChart, 30000); // Update K-line every 30 seconds
             
             console.log('✅ All initialization completed');
         });

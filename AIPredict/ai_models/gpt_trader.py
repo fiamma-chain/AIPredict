@@ -1,6 +1,6 @@
 """
-GPT AI 交易模型
-使用 OpenAI GPT API
+GPT AI Trading Model
+Uses OpenAI GPT API
 """
 import httpx
 from typing import Dict, List, Optional
@@ -8,15 +8,15 @@ from .base_ai import AITradingModel, TradingDecision
 
 
 class GPTTrader(AITradingModel):
-    """GPT AI 交易员"""
+    """GPT AI Trader"""
     
     def __init__(self, api_key: str, model: str = "gpt-5", **kwargs):
         """
-        初始化 GPT 交易员
+        Initialize GPT Trader
         
         Args:
-            api_key: OpenAI API 密钥
-            model: GPT 模型版本
+            api_key: OpenAI API key
+            model: GPT model version
         """
         super().__init__(
             model_name=f"GPT-5 Mini" if "mini" in model.lower() else (f"GPT-5" if model.startswith("gpt-5") else f"GPT-4 ({model.split('-')[1]})"),
@@ -35,16 +35,16 @@ class GPTTrader(AITradingModel):
         position_info: Optional[Dict] = None
     ) -> tuple[TradingDecision, float, str]:
         """
-        使用 GPT 分析市场
+        Analyze market using GPT
         
         Args:
-            coin: 币种
-            market_data: 市场数据
-            orderbook: 订单簿
-            recent_trades: 最近交易
+            coin: Coin symbol
+            market_data: Market data
+            orderbook: Order book
+            recent_trades: Recent trades
             
         Returns:
-            (决策, 置信度, 理由)
+            (decision, confidence, reasoning)
         """
         position_info = self.positions.get(coin)
         prompt = self.create_market_prompt(coin, market_data, orderbook, position_info)

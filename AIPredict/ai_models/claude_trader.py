@@ -1,6 +1,6 @@
 """
-Claude AI 交易模型
-使用 Anthropic Claude API
+Claude AI Trading Model
+Uses Anthropic Claude API
 """
 import httpx
 from typing import Dict, List, Optional
@@ -8,15 +8,15 @@ from .base_ai import AITradingModel, TradingDecision
 
 
 class ClaudeTrader(AITradingModel):
-    """Claude AI 交易员"""
+    """Claude AI Trader"""
     
     def __init__(self, api_key: str, model: str = "claude-sonnet-4-5", **kwargs):
         """
-        初始化 Claude 交易员
+        Initialize Claude Trader
         
         Args:
-            api_key: Anthropic API 密钥
-            model: Claude 模型版本
+            api_key: Anthropic API key
+            model: Claude model version
         """
         super().__init__(
             model_name=f"Claude ({model.split('-')[2]})",
@@ -35,25 +35,25 @@ class ClaudeTrader(AITradingModel):
         position_info: Optional[Dict] = None
     ) -> tuple[TradingDecision, float, str]:
         """
-        使用 Claude 分析市场
+        Analyze market using Claude
         
         Args:
-            coin: 币种
-            market_data: 市场数据
-            orderbook: 订单簿
-            recent_trades: 最近交易
+            coin: Coin symbol
+            market_data: Market data
+            orderbook: Order book
+            recent_trades: Recent trades
             
         Returns:
-            (决策, 置信度, 理由)
+            (decision, confidence, reasoning)
         """
-        # 获取当前持仓信息
+        # Get current position info
         position_info = self.positions.get(coin)
         
-        # 创建提示词
+        # Create prompt
         prompt = self.create_market_prompt(coin, market_data, orderbook, position_info)
         
         try:
-            # 调用 Claude API
+            # Call Claude API
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.post(
                     self.api_url,

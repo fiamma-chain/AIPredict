@@ -1,6 +1,6 @@
 """
-从交易所获取各个账户的实际余额
-忽略配置文件中的初始金额配置
+Get actual account balances from exchanges
+Ignore initial balance configuration in config files
 """
 import asyncio
 import logging
@@ -17,18 +17,18 @@ logger = logging.getLogger(__name__)
 
 async def get_account_balance(name: str, private_key: str, platform: str):
     """
-    获取账户实际余额
+    Get actual account balance
     
     Args:
-        name: 账户名称
-        private_key: 私钥
-        platform: 平台名称
+        name: Account name
+        private_key: Private key
+        platform: Platform name
     
     Returns:
-        账户信息字典
+        Account information dictionary
     """
     try:
-        # 创建客户端
+        # Create client
         if platform.lower() == "hyperliquid":
             client = HyperliquidClient(private_key, settings.hyperliquid_testnet)
             platform_display = "Hyperliquid"
@@ -36,19 +36,19 @@ async def get_account_balance(name: str, private_key: str, platform: str):
             client = AsterClient(private_key, settings.aster_testnet)
             platform_display = "Aster"
         else:
-            logger.error(f"❌ 不支持的平台: {platform}")
+            logger.error(f"❌ Unsupported platform: {platform}")
             return None
         
-        # 获取账户信息
+        # Get account information
         account = await client.get_account_info()
         
-        # 获取余额（账户价值）
+        # Get balance (account value)
         account_value = float(account.get('marginSummary', {}).get('accountValue', 0))
         
-        # 获取可用余额
+        # Get withdrawable balance
         withdrawable = float(account.get('withdrawable', 0))
         
-        # 获取持仓
+        # Get positions
         positions = account.get('assetPositions', [])
         position_list = []
         total_position_value = 0
@@ -63,7 +63,7 @@ async def get_account_balance(name: str, private_key: str, platform: str):
                     is_long = size > 0
                     abs_size = abs(size)
                     
-                    # 计算持仓价值（未实现盈亏）
+                    # Calculate position value (unrealized PnL)
                     unrealized_pnl = float(pos['position'].get('unrealizedPnl', 0))
                     position_value = abs_size * entry_px
                     
@@ -78,40 +78,40 @@ async def get_account_balance(name: str, private_key: str, platform: str):
                     
                     total_position_value += position_value
         
-        # 关闭会话
+        # Close session
         await client.close_session()
         
         return {
             'name': name,
             'platform': platform_display,
             'address': client.address if hasattr(client, 'address') else 'N/A',
-            'account_value': account_value,  # 账户总价值（包含未实现盈亏）
-            'withdrawable': withdrawable,     # 可提现余额
+            'account_value': account_value,  # Total account value (including unrealized PnL)
+            'withdrawable': withdrawable,     # Withdrawable balance
             'position_count': len(position_list),
             'positions': position_list,
             'total_position_value': total_position_value
         }
     
     except Exception as e:
-        logger.error(f"❌ 获取 {name} ({platform}) 余额失败: {e}")
+        logger.error(f"❌ Failed to get {name} ({platform}) balance: {e}")
         return None
 
 
 async def check_all_accounts():
-    """检查所有账户的实际余额"""
+    """Check actual balances of all accounts"""
     logger.info("=" * 100)
-    logger.info("🔍 从交易所获取各个账户的实际保证金余额")
+    logger.info("🔍 Get actual margin balances of all accounts from exchanges")
     logger.info("=" * 100)
     
     all_accounts = []
     
-    # 1. 检查 Alpha 组
-    logger.info("\n📊 Alpha组 (DeepSeek + Claude + Grok):")
+    # 1. Check Alpha Group
+    logger.info("\n📊 Alpha Group (DeepSeek + Claude + Grok):")
     
     if settings.group_1_private_key:
         # Hyperliquid
         result = await get_account_balance(
-            "Alpha组",
+            "Alpha Group",
             settings.group_1_private_key,
             "hyperliquid"
         )
@@ -120,22 +120,22 @@ async def check_all_accounts():
         
         # Aster
         result = await get_account_balance(
-            "Alpha组",
+            "Alpha Group",
             settings.group_1_private_key,
             "aster"
         )
         if result:
             all_accounts.append(result)
     else:
-        logger.warning("   ⚠️  未配置 GROUP_1_PRIVATE_KEY")
+        logger.warning("   ⚠️  GROUP_1_PRIVATE_KEY not configured")
     
-    # 2. 检查 Beta 组
-    logger.info("\n📊 Beta组 (GPT-4 + Gemini + Qwen):")
+    # 2. Check Beta Group
+    logger.info("\n📊 Beta Group (GPT-4 + Gemini + Qwen):")
     
     if settings.group_2_private_key:
         # Hyperliquid
         result = await get_account_balance(
-            "Beta组",
+            "Beta Group",
             settings.group_2_private_key,
             "hyperliquid"
         )
@@ -144,17 +144,17 @@ async def check_all_accounts():
         
         # Aster
         result = await get_account_balance(
-            "Beta组",
+            "Beta Group",
             settings.group_2_private_key,
             "aster"
         )
         if result:
             all_accounts.append(result)
     else:
-        logger.warning("   ⚠️  未配置 GROUP_2_PRIVATE_KEY")
+        logger.warning("   ⚠️  GROUP_2_PRIVATE_KEY not configured")
     
-    # 3. 检查独立 AI 交易者
-    logger.info("\n🎯 独立AI交易者:")
+    # 3. Check individual AI traders
+    logger.info("\n🎯 Individual AI Traders:")
     
     try:
         individual_configs = get_individual_traders_config()
@@ -166,7 +166,7 @@ async def check_all_accounts():
                 
                 logger.info(f"\n   {ai_name}-Solo:")
                 
-                # 独立交易者只在 Aster 平台
+                # Individual traders only trade on Aster platform
                 result = await get_account_balance(
                     f"{ai_name}-Solo",
                     private_key,
@@ -175,51 +175,51 @@ async def check_all_accounts():
                 if result:
                     all_accounts.append(result)
         else:
-            logger.info("   没有配置独立AI交易者")
+            logger.info("   No individual AI traders configured")
     
     except ValueError as e:
-        logger.error(f"   ❌ 配置错误: {e}")
+        logger.error(f"   ❌ Configuration error: {e}")
     
-    # 打印详细信息
+    # Print detailed information
     if not all_accounts:
-        logger.warning("\n⚠️  没有找到任何配置的账户")
-        logger.info("\n请在 .env 文件中配置以下私钥:")
-        logger.info("  - GROUP_1_PRIVATE_KEY (Alpha组)")
-        logger.info("  - GROUP_2_PRIVATE_KEY (Beta组)")
-        logger.info("  - INDIVIDUAL_<AI_NAME>_PRIVATE_KEY (独立交易者)")
+        logger.warning("\n⚠️  No configured accounts found")
+        logger.info("\nPlease configure the following private keys in .env file:")
+        logger.info("  - GROUP_1_PRIVATE_KEY (Alpha Group)")
+        logger.info("  - GROUP_2_PRIVATE_KEY (Beta Group)")
+        logger.info("  - INDIVIDUAL_<AI_NAME>_PRIVATE_KEY (Individual Traders)")
         return
     
     logger.info("\n" + "=" * 100)
-    logger.info("💰 账户实际保证金详情")
+    logger.info("💰 Account Actual Margin Details")
     logger.info("=" * 100)
     
     for account in all_accounts:
         logger.info(f"\n{'─' * 100}")
         logger.info(f"📍 {account['name']} - {account['platform']}")
         logger.info(f"{'─' * 100}")
-        logger.info(f"   地址: {account['address']}")
-        logger.info(f"   💰 账户总价值: ${account['account_value']:.2f}")
-        logger.info(f"   💵 可提现余额: ${account['withdrawable']:.2f}")
+        logger.info(f"   Address: {account['address']}")
+        logger.info(f"   💰 Total Account Value: ${account['account_value']:.2f}")
+        logger.info(f"   💵 Withdrawable Balance: ${account['withdrawable']:.2f}")
         
         if account['position_count'] > 0:
-            logger.info(f"\n   📊 持仓详情 ({account['position_count']}个):")
+            logger.info(f"\n   📊 Position Details ({account['position_count']} positions):")
             for i, pos in enumerate(account['positions'], 1):
                 logger.info(f"      {i}. {pos['coin']} {pos['side']}")
-                logger.info(f"         数量: {pos['size']:.6f}")
-                logger.info(f"         开仓价: ${pos['entry_price']:,.2f}")
-                logger.info(f"         持仓价值: ${pos['position_value']:,.2f}")
-                logger.info(f"         未实现盈亏: ${pos['unrealized_pnl']:+.2f}")
+                logger.info(f"         Size: {pos['size']:.6f}")
+                logger.info(f"         Entry Price: ${pos['entry_price']:,.2f}")
+                logger.info(f"         Position Value: ${pos['position_value']:,.2f}")
+                logger.info(f"         Unrealized PnL: ${pos['unrealized_pnl']:+.2f}")
             
-            logger.info(f"\n   📊 总持仓价值: ${account['total_position_value']:,.2f}")
+            logger.info(f"\n   📊 Total Position Value: ${account['total_position_value']:,.2f}")
         else:
-            logger.info(f"\n   📭 无持仓")
+            logger.info(f"\n   📭 No Positions")
     
-    # 统计汇总
+    # Statistical Summary
     logger.info("\n" + "=" * 100)
-    logger.info("📊 统计汇总")
+    logger.info("📊 Statistical Summary")
     logger.info("=" * 100)
     
-    # 按账户类型分组
+    # Group by account type
     groups = {}
     individuals = {}
     
@@ -228,30 +228,30 @@ async def check_all_accounts():
         platform = account['platform']
         
         if '-Solo' in name:
-            # 独立交易者
+            # Individual traders
             if name not in individuals:
                 individuals[name] = {}
             individuals[name][platform] = account
         else:
-            # AI组
+            # AI groups
             if name not in groups:
                 groups[name] = {}
             groups[name][platform] = account
     
-    # 打印 AI 组汇总
+    # Print AI group summary
     if groups:
-        logger.info("\n📊 AI组账户汇总:")
+        logger.info("\n📊 AI Group Account Summary:")
         for group_name, platforms in groups.items():
             logger.info(f"\n   {group_name}:")
             total_value = 0
             for platform, account in platforms.items():
                 logger.info(f"      {platform:12s}: ${account['account_value']:>10.2f}")
                 total_value += account['account_value']
-            logger.info(f"      {'总计':12s}: ${total_value:>10.2f}")
+            logger.info(f"      {'Total':12s}: ${total_value:>10.2f}")
     
-    # 打印独立交易者汇总
+    # Print individual trader summary
     if individuals:
-        logger.info("\n🎯 独立AI交易者账户汇总:")
+        logger.info("\n🎯 Individual AI Trader Account Summary:")
         for trader_name, platforms in individuals.items():
             logger.info(f"\n   {trader_name}:")
             total_value = 0
@@ -259,10 +259,10 @@ async def check_all_accounts():
                 logger.info(f"      {platform:12s}: ${account['account_value']:>10.2f}")
                 total_value += account['account_value']
             if len(platforms) > 1:
-                logger.info(f"      {'总计':12s}: ${total_value:>10.2f}")
+                logger.info(f"      {'Total':12s}: ${total_value:>10.2f}")
     
-    # 按平台汇总
-    logger.info("\n💎 平台汇总:")
+    # Summary by platform
+    logger.info("\n💎 Platform Summary:")
     platform_summary = {}
     
     for account in all_accounts:
@@ -280,23 +280,23 @@ async def check_all_accounts():
     
     for platform, stats in sorted(platform_summary.items()):
         logger.info(f"\n   {platform}:")
-        logger.info(f"      账户数量: {stats['account_count']}")
-        logger.info(f"      总资金: ${stats['total_value']:,.2f}")
-        logger.info(f"      总持仓数: {stats['total_positions']}")
+        logger.info(f"      Account Count: {stats['account_count']}")
+        logger.info(f"      Total Funds: ${stats['total_value']:,.2f}")
+        logger.info(f"      Total Positions: {stats['total_positions']}")
     
-    # 总计
+    # Grand total
     total_all = sum(acc['account_value'] for acc in all_accounts)
-    logger.info(f"\n💵 所有账户总资金: ${total_all:,.2f}")
+    logger.info(f"\n💵 Total Funds Across All Accounts: ${total_all:,.2f}")
     
     logger.info("\n" + "=" * 100)
 
 
 async def main():
-    """主函数"""
+    """Main function"""
     try:
         await check_all_accounts()
     except Exception as e:
-        logger.error(f"❌ 检查失败: {e}")
+        logger.error(f"❌ Check failed: {e}")
         import traceback
         traceback.print_exc()
 

@@ -1,6 +1,6 @@
 """
-AI 模型基类
-用于调用真实的 AI API 进行交易决策
+AI Model Base Class
+Used to call real AI APIs for trading decisions
 """
 from abc import ABC, abstractmethod
 from typing import Dict, Optional, List
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class TradingDecision(Enum):
-    """交易决策"""
+    """Trading Decision"""
     STRONG_BUY = "strong_buy"
     BUY = "buy"
     HOLD = "hold"
@@ -21,7 +21,7 @@ class TradingDecision(Enum):
 
 
 class AITradingModel(ABC):
-    """AI 交易模型基类"""
+    """AI Trading Model Base Class"""
     
     def __init__(
         self,
@@ -31,13 +31,13 @@ class AITradingModel(ABC):
         max_position_size: float = 200.0
     ):
         """
-        初始化 AI 模型
+        Initialize AI Model
         
         Args:
-            model_name: 模型名称
-            api_key: API 密钥
-            initial_balance: 初始资金
-            max_position_size: 最大仓位大小
+            model_name: Model name
+            api_key: API key
+            initial_balance: Initial balance
+            max_position_size: Maximum position size
         """
         self.model_name = model_name
         self.api_key = api_key
@@ -45,16 +45,16 @@ class AITradingModel(ABC):
         self.current_balance = initial_balance
         self.max_position_size = max_position_size
         
-        # 交易状态
+        # Trading state
         self.positions: Dict[str, Dict] = {}
         self.trade_history: List[Dict] = []
         self.total_trades = 0
         self.winning_trades = 0
         
-        # AI 响应记录
+        # AI response records
         self.ai_responses: List[Dict] = []
         
-        # 从 Redis 加载历史响应
+        # Load historical responses from Redis
         self._load_responses_from_redis()
     
     @abstractmethod
@@ -67,16 +67,16 @@ class AITradingModel(ABC):
         position_info: Optional[Dict] = None
     ) -> tuple[TradingDecision, float, str]:
         """
-        分析市场并做出交易决策
+        Analyze market and make trading decision
         
         Args:
-            coin: 币种
-            market_data: 市场数据（价格、成交量等）
-            orderbook: 订单簿数据
-            recent_trades: 最近的交易记录
+            coin: Coin symbol
+            market_data: Market data (price, volume, etc.)
+            orderbook: Orderbook data
+            recent_trades: Recent trade records
             
         Returns:
-            (决策, 置信度, 理由说明)
+            (decision, confidence, reasoning)
         """
         pass
     
@@ -89,31 +89,31 @@ class AITradingModel(ABC):
         kline_history: str = None
     ) -> str:
         """
-        创建市场分析提示词
+        Create market analysis prompt
         
         Args:
-            coin: 币种
-            market_data: 市场数据
-            orderbook: 订单簿
-            position_info: 当前持仓信息
+            coin: Coin symbol
+            market_data: Market data
+            orderbook: Orderbook
+            position_info: Current position info
             
         Returns:
-            提示词文本
+            Prompt text
         """
-        # 支持多种字段名（Hyperliquid 原始 API 和规范化字段名）
+        # Support multiple field names (Hyperliquid original API and normalized field names)
         current_price = float(market_data.get("price", market_data.get("markPx", market_data.get("mark_price", 0))))
         funding_rate = float(market_data.get("funding_rate", market_data.get("funding", 0)))
         volume_24h = float(market_data.get("volume", market_data.get("dayNtlVlm", 0)))
         open_interest = float(market_data.get("open_interest", market_data.get("openInterest", 0)))
         
-        # 获取订单簿深度（新格式：{"bids": [...], "asks": [...]}）
+        # Get orderbook depth (new format: {"bids": [...], "asks": [...]})
         bids = orderbook.get("bids", [])[:5] if orderbook else []
         asks = orderbook.get("asks", [])[:5] if orderbook else []
         
-        # 24h涨跌幅
+        # 24h change
         change_24h = market_data.get("change_24h", 0)
         
-        # 基础市场信息
+        # Basic market information
         prompt = f"""You are a cryptocurrency futures trading expert. Please analyze the following market data and provide trading advice.
 
 Asset: {coin}
@@ -124,7 +124,7 @@ Funding Rate: {funding_rate * 100:.4f}%
 Open Interest: ${open_interest:,.0f}
 """
         
-        # 如果有K线历史数据，添加时间序列分析
+        # If K-line history data exists, add time series analysis
         if kline_history:
             prompt += f"""
 
@@ -141,7 +141,7 @@ Based on the above time series, you can:
 • Evaluate current price position within the range
 """
         
-        # 订单簿数据
+        # Orderbook data
         prompt += f"""
 
 Order Book (Top 5 Levels):
@@ -210,7 +210,7 @@ REASONING: [your analysis reasoning, 50-100 words]
         return prompt
     
     def _format_orderbook_levels(self, levels: List) -> str:
-        """格式化订单簿档位"""
+        """Format orderbook levels"""
         if not levels:
             return "  No data"
         
@@ -230,13 +230,13 @@ REASONING: [your analysis reasoning, 50-100 words]
     
     def parse_ai_response(self, response: str) -> tuple[TradingDecision, float, str]:
         """
-        解析 AI 响应
+        Parse AI response
         
         Args:
-            response: AI 模型的响应文本
+            response: Response text from AI model
             
         Returns:
-            (决策, 置信度, 理由)
+            (decision, confidence, reasoning)
         """
         decision = TradingDecision.HOLD
         confidence = 50.0
@@ -245,17 +245,17 @@ REASONING: [your analysis reasoning, 50-100 words]
         try:
             response_text = response.strip()
             
-            # 尝试提取 DECISION
+            # Try to extract DECISION
             if 'DECISION:' in response_text:
                 decision_line = response_text.split('DECISION:')[1].split('\n')[0].strip()
                 decision_str = decision_line.upper()
                 
                 try:
-                    # 移除可能的末尾空格和标点
+                    # Remove possible trailing spaces and punctuation
                     decision_str = decision_str.strip().rstrip('.,;')
                     decision = TradingDecision(decision_str.lower())
                 except ValueError:
-                    # 尝试匹配部分文本
+                    # Try to match partial text
                     if 'STRONG_BUY' in decision_str or 'STRONG BUY' in decision_str:
                         decision = TradingDecision.STRONG_BUY
                     elif 'STRONG_SELL' in decision_str or 'STRONG SELL' in decision_str:
@@ -267,23 +267,23 @@ REASONING: [your analysis reasoning, 50-100 words]
                     else:
                         decision = TradingDecision.HOLD
             
-            # 尝试提取 CONFIDENCE
+            # Try to extract CONFIDENCE
             if 'CONFIDENCE:' in response_text:
                 conf_line = response_text.split('CONFIDENCE:')[1].split('\n')[0].strip()
-                # 提取数字
+                # Extract numbers
                 import re
                 numbers = re.findall(r'\d+\.?\d*', conf_line)
                 if numbers:
                     confidence = float(numbers[0])
                     confidence = max(0.0, min(100.0, confidence))
             
-            # 尝试提取 REASONING（支持多行）
+            # Try to extract REASONING (support multi-line)
             if 'REASONING:' in response_text:
                 reasoning_part = response_text.split('REASONING:')[1]
-                # 取到下一个大写字段或结束
+                # Read until next uppercase field or end
                 reasoning_lines = []
                 for line in reasoning_part.split('\n'):
-                    # 如果遇到markdown标题或新的大写字段，停止
+                    # Stop if markdown heading or new uppercase field
                     if line.strip().startswith('#') or (line.isupper() and ':' in line):
                         break
                     reasoning_lines.append(line.strip())
@@ -306,37 +306,37 @@ REASONING: [your analysis reasoning, 50-100 words]
         current_price: float
     ) -> float:
         """
-        根据决策和置信度计算仓位大小
+        Calculate position size based on decision and confidence
         
         Args:
-            decision: 交易决策
-            confidence: 置信度 (0-100)
-            current_price: 当前价格
+            decision: Trading decision
+            confidence: Confidence level (0-100)
+            current_price: Current price
             
         Returns:
-            仓位大小（USD）
+            Position size (USD)
         """
         if decision == TradingDecision.HOLD:
             return 0.0
         
-        # 基础仓位比例
+        # Base position ratio
         base_ratio = 0.1  # 10%
         
-        # 根据决策强度调整
+        # Adjust based on decision strength
         if decision in [TradingDecision.STRONG_BUY, TradingDecision.STRONG_SELL]:
             base_ratio = 0.15  # 15%
         
-        # 根据置信度调整
+        # Adjust based on confidence
         confidence_multiplier = confidence / 100.0
         
-        # 计算仓位大小
+        # Calculate position size
         position_value = self.current_balance * base_ratio * confidence_multiplier
         position_value = min(position_value, self.max_position_size)
         
         return position_value
     
     def _load_responses_from_redis(self):
-        """从 Redis 加载历史响应"""
+        """Load historical responses from Redis"""
         try:
             from utils.redis_manager import redis_manager
             
@@ -360,7 +360,7 @@ REASONING: [your analysis reasoning, 50-100 words]
         reasoning: str,
         raw_response: str
     ):
-        """记录 AI 响应并保存到 Redis"""
+        """Record AI response and save to Redis"""
         response = {
             "timestamp": datetime.now().isoformat(),
             "coin": coin,
@@ -372,11 +372,11 @@ REASONING: [your analysis reasoning, 50-100 words]
         
         self.ai_responses.append(response)
         
-        # 只保留最近 100 条
+        # Keep only the last 100 entries
         if len(self.ai_responses) > 100:
             self.ai_responses = self.ai_responses[-100:]
         
-        # 记录完整响应到日志文件
+        # Log complete response to log file
         logger.info(f"""
 {'='*80}
 🤖 AI Model: {self.model_name}
@@ -401,7 +401,7 @@ REASONING: [your analysis reasoning, 50-100 words]
             logger.error(f"Failed to save {self.model_name} response to Redis: {e}")
     
     def get_stats(self) -> Dict:
-        """获取统计信息"""
+        """Get statistics"""
         win_rate = (self.winning_trades / self.total_trades * 100) if self.total_trades > 0 else 0
         total_pnl = self.current_balance - self.initial_balance
         roi = (total_pnl / self.initial_balance * 100) if self.initial_balance > 0 else 0

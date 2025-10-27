@@ -1,6 +1,6 @@
 """
-自动交易模块
-负责执行AI决策并管理持仓
+Automated Trading Module
+Responsible for executing AI decisions and managing positions
 """
 import logging
 import asyncio
@@ -14,139 +14,139 @@ logger = logging.getLogger(__name__)
 
 
 class AutoTrader:
-    """自动交易器"""
+    """Automated Trader"""
     
     def __init__(self, hyperliquid_client: HyperliquidClient):
         """
-        初始化自动交易器
+        Initialize Automated Trader
         
         Args:
-            hyperliquid_client: Hyperliquid 客户端
+            hyperliquid_client: Hyperliquid client
         """
         self.client = hyperliquid_client
         
-        # 交易配置（激进波段交易 + 动态杠杆）
-        self.min_confidence = settings.min_confidence  # 从配置读取
-        self.min_margin = settings.ai_min_margin  # 最小保证金（从配置读取）
-        self.max_margin = settings.ai_max_margin  # 最大保证金（从配置读取）
-        self.min_leverage = settings.ai_min_leverage  # 最小杠杆（从配置读取）
-        self.max_leverage = settings.ai_max_leverage  # 最大杠杆（从配置读取）
-        self.stop_loss_pct = settings.ai_stop_loss_pct  # 止损比例（从配置读取）
-        self.take_profit_pct = settings.ai_take_profit_pct  # 止盈比例（从配置读取）
+        # Trading configuration (aggressive swing trading + dynamic leverage)
+        self.min_confidence = settings.min_confidence  # Read from config
+        self.min_margin = settings.ai_min_margin  # Minimum margin (from config)
+        self.max_margin = settings.ai_max_margin  # Maximum margin (from config)
+        self.min_leverage = settings.ai_min_leverage  # Minimum leverage (from config)
+        self.max_leverage = settings.ai_max_leverage  # Maximum leverage (from config)
+        self.stop_loss_pct = settings.ai_stop_loss_pct  # Stop loss percentage (from config)
+        self.take_profit_pct = settings.ai_take_profit_pct  # Take profit percentage (from config)
         
-        # 持仓管理
+        # Position management
         self.positions: Dict[str, Dict] = {}  # {coin: position_info}
-        self.trades: List[Dict] = []  # 交易历史
+        self.trades: List[Dict] = []  # Trading history
         
-        # 风险控制
-        self.daily_loss_limit = 10.0  # 每日最大亏损（USDC）
+        # Risk control
+        self.daily_loss_limit = 10.0  # Daily maximum loss (USDC)
         self.daily_pnl = 0.0
         self.daily_trade_count = 0
         self.last_reset_date = datetime.now().date()
         
-        logger.info("🤖 自动交易器初始化完成")
-        logger.info(f"   最小信心阈值: {self.min_confidence}%")
-        logger.info(f"   保证金范围: ${self.min_margin:.0f} - ${self.max_margin:.0f}")
-        logger.info(f"   杠杆范围: {self.min_leverage:.0f}x - {self.max_leverage:.0f}x (AI根据信心度动态调整)")
-        logger.info(f"   止损/止盈: {self.stop_loss_pct*100:.1f}% / {self.take_profit_pct*100:.1f}%")
+        logger.info("🤖 Automated trader initialized")
+        logger.info(f"   Minimum confidence threshold: {self.min_confidence}%")
+        logger.info(f"   Margin range: ${self.min_margin:.0f} - ${self.max_margin:.0f}")
+        logger.info(f"   Leverage range: {self.min_leverage:.0f}x - {self.max_leverage:.0f}x (AI adjusts dynamically based on confidence)")
+        logger.info(f"   Stop loss/Take profit: {self.stop_loss_pct*100:.1f}% / {self.take_profit_pct*100:.1f}%")
     
     def reset_daily_stats(self):
-        """重置每日统计"""
+        """Reset daily statistics"""
         today = datetime.now().date()
         if today != self.last_reset_date:
-            logger.info(f"📅 新的交易日，重置统计")
-            logger.info(f"   昨日盈亏: ${self.daily_pnl:,.2f}")
-            logger.info(f"   昨日交易次数: {self.daily_trade_count}")
+            logger.info(f"📅 New trading day, resetting statistics")
+            logger.info(f"   Yesterday's PnL: ${self.daily_pnl:,.2f}")
+            logger.info(f"   Yesterday's trade count: {self.daily_trade_count}")
             self.daily_pnl = 0.0
             self.daily_trade_count = 0
             self.last_reset_date = today
     
     def check_risk_limits(self) -> bool:
         """
-        检查风险限制
+        Check risk limits
         
         Returns:
-            是否允许交易
+            Whether trading is allowed
         """
         self.reset_daily_stats()
         
-        # 检查每日亏损限制
+        # Check daily loss limit
         if self.daily_pnl < -self.daily_loss_limit:
-            logger.warning(f"⚠️  已达每日亏损限制: ${self.daily_pnl:,.2f}")
+            logger.warning(f"⚠️  Daily loss limit reached: ${self.daily_pnl:,.2f}")
             return False
         
         return True
     
     async def _sync_position_from_exchange(self, coin: str):
         """
-        从交易所实时同步指定币种的持仓
-        确保系统记录与交易所一致，避免持仓不同步导致的交易错误
+        Real-time sync position for specified coin from exchange
+        Ensure system records match exchange to avoid trading errors from position desync
         
         Args:
-            coin: 币种
+            coin: Coin symbol
         """
         try:
-            # 获取交易所账户信息
+            # Get exchange account info
             account = await self.client.get_account_info()
             positions = account.get('assetPositions', [])
             
-            # 查找该币种的实际持仓（需要累加所有相同币种的持仓）
+            # Find actual position for this coin (need to sum all positions for same coin)
             actual_position = None
             total_size = 0.0
-            total_value = 0.0  # 用于计算加权平均入场价
+            total_value = 0.0  # For calculating weighted average entry price
             position_side = None
             
             for pos in positions:
                 try:
-                    # 🔥 支持多平台数据格式
+                    # 🔥 Support multi-platform data formats
                     
-                    # Hyperliquid 格式: {"position": {"coin": "BTC", "szi": "0.001", "entryPx": "60000"}}
+                    # Hyperliquid format: {"position": {"coin": "BTC", "szi": "0.001", "entryPx": "60000"}}
                     if 'position' in pos:
                         pos_coin = pos['position']['coin']
                         if pos_coin == coin:
                             size = float(pos['position']['szi'])
-                            if size != 0:  # 有持仓
-                                # Hyperliquid 通常每个币种只有一个持仓
+                            if size != 0:  # Has position
+                                # Hyperliquid typically has one position per coin
                                 actual_position = {
                                     'coin': coin,
                                     'size': abs(size),
                                     'side': 'long' if size > 0 else 'short',
                                     'entry_px': float(pos['position']['entryPx'])
                                 }
-                            break  # Hyperliquid 每个币种只有一个持仓
+                            break  # Hyperliquid has one position per coin
                     
-                    # Aster 格式: {"symbol": "BTCUSDT", "positionAmt": "0.001", "entryPrice": "60000"}
+                    # Aster format: {"symbol": "BTCUSDT", "positionAmt": "0.001", "entryPrice": "60000"}
                     elif 'symbol' in pos:
                         symbol = pos['symbol']
-                        # 转换 symbol 为 coin (BTCUSDT -> BTC)
+                        # Convert symbol to coin (BTCUSDT -> BTC)
                         pos_coin = symbol.replace('USDT', '').replace('USDC', '')
                         
                         if pos_coin == coin:
                             position_amt = float(pos.get('positionAmt', 0))
-                            if position_amt != 0:  # 有持仓
+                            if position_amt != 0:  # Has position
                                 entry_price = float(pos.get('entryPrice', 0))
                                 
-                                # 🔥 关键修复：累加所有相同币种的持仓（Aster可能有多个）
+                                # 🔥 Critical fix: Sum all positions for same coin (Aster may have multiple)
                                 if position_side is None:
                                     position_side = 'long' if position_amt > 0 else 'short'
                                 
-                                # 检查方向是否一致（正常情况下应该一致）
+                                # Check if direction is consistent (should be consistent normally)
                                 current_side = 'long' if position_amt > 0 else 'short'
                                 if current_side != position_side:
-                                    logger.warning(f"⚠️  检测到相同币种的对冲持仓: {coin} {position_side} & {current_side}")
+                                    logger.warning(f"⚠️  Detected hedged positions for same coin: {coin} {position_side} & {current_side}")
                                 
-                                # 累加数量和价值（用于计算加权平均价格）
+                                # Sum quantity and value (for calculating weighted average price)
                                 total_size += abs(position_amt)
                                 total_value += abs(position_amt) * entry_price
                                 
-                                logger.debug(f"   找到持仓: {symbol} {position_amt:+.8f} @ ${entry_price:,.2f}")
-                            # ⚠️ 不要 break，继续查找其他相同币种的持仓
+                                logger.debug(f"   Found position: {symbol} {position_amt:+.8f} @ ${entry_price:,.2f}")
+                            # ⚠️ Don't break, continue looking for other positions of same coin
                     
                 except Exception as e:
-                    logger.warning(f"解析持仓失败: {e}, pos={pos}")
+                    logger.warning(f"Failed to parse position: {e}, pos={pos}")
                     continue
             
-            # 🔥 如果累加了多个 Aster 持仓，计算加权平均入场价
+            # 🔥 If summed multiple Aster positions, calculate weighted average entry price
             if total_size > 0 and position_side is not None:
                 avg_entry_price = total_value / total_size
                 actual_position = {
@@ -155,17 +155,17 @@ class AutoTrader:
                     'side': position_side,
                     'entry_px': avg_entry_price
                 }
-                # 记录累加的持仓数量（帮助调试）
-                logger.info(f"📊 {coin} 总持仓: {total_size:.8f} {position_side.upper()}, 加权均价=${avg_entry_price:,.2f}")
+                # Log summed position quantity (helps debugging)
+                logger.info(f"📊 {coin} total position: {total_size:.8f} {position_side.upper()}, weighted avg price=${avg_entry_price:,.2f}")
             
-            # 获取系统记录的持仓
+            # Get system recorded position
             system_position = self.positions.get(coin)
             
-            # 🔥 情况1: 交易所有持仓，但系统无记录（手动开仓或记录丢失）
+            # 🔥 Case 1: Exchange has position but system has no record (manual open or record lost)
             if actual_position and not system_position:
-                logger.warning(f"⚠️  检测到交易所持仓但系统无记录: {coin}")
-                logger.warning(f"    交易所: {actual_position['side'].upper()} {actual_position['size']:.8f} @ ${actual_position['entry_px']:,.2f}")
-                logger.info(f"🔄 同步到系统记录")
+                logger.warning(f"⚠️  Detected exchange position but no system record: {coin}")
+                logger.warning(f"    Exchange: {actual_position['side'].upper()} {actual_position['size']:.8f} @ ${actual_position['entry_px']:,.2f}")
+                logger.info(f"🔄 Syncing to system record")
                 
                 self.positions[coin] = {
                     'side': actual_position['side'],
@@ -173,27 +173,27 @@ class AutoTrader:
                     'size': actual_position['size'],
                     'entry_time': datetime.now(),
                     'confidence': 0,
-                    'reasoning': '从交易所同步的持仓',
+                    'reasoning': 'Position synced from exchange',
                     'order_id': 'synced'
                 }
             
-            # 🔥 情况2: 交易所无持仓，但系统有记录（手动平仓或平仓失败）
+            # 🔥 Case 2: Exchange has no position but system has record (manual close or close failed)
             elif not actual_position and system_position:
-                logger.warning(f"⚠️  系统记录持仓但交易所无持仓: {coin}")
-                logger.warning(f"    系统记录: {system_position['side'].upper()} {system_position['size']:.8f}")
-                logger.info(f"🧹 清理系统记录")
+                logger.warning(f"⚠️  System has position record but exchange has none: {coin}")
+                logger.warning(f"    System record: {system_position['side'].upper()} {system_position['size']:.8f}")
+                logger.info(f"🧹 Cleaning system record")
                 del self.positions[coin]
             
-            # 🔥 情况3: 都有持仓，但数量或方向不一致
+            # 🔥 Case 3: Both have positions but quantity or direction inconsistent
             elif actual_position and system_position:
                 size_diff = abs(actual_position['size'] - system_position['size'])
                 side_mismatch = actual_position['side'] != system_position['side']
                 
                 if size_diff > 0.00001 or side_mismatch:
-                    logger.warning(f"⚠️  持仓不一致: {coin}")
-                    logger.warning(f"    系统: {system_position['side'].upper()} {system_position['size']:.8f}")
-                    logger.warning(f"    交易所: {actual_position['side'].upper()} {actual_position['size']:.8f}")
-                    logger.info(f"🔄 以交易所实际持仓为准，更新系统记录")
+                    logger.warning(f"⚠️  Position inconsistent: {coin}")
+                    logger.warning(f"    System: {system_position['side'].upper()} {system_position['size']:.8f}")
+                    logger.warning(f"    Exchange: {actual_position['side'].upper()} {actual_position['size']:.8f}")
+                    logger.info(f"🔄 Using exchange actual position as reference, updating system record")
                     
                     self.positions[coin] = {
                         'side': actual_position['side'],
@@ -201,15 +201,15 @@ class AutoTrader:
                         'size': actual_position['size'],
                         'entry_time': system_position.get('entry_time', datetime.now()),
                         'confidence': system_position.get('confidence', 0),
-                        'reasoning': system_position.get('reasoning', '从交易所同步'),
+                        'reasoning': system_position.get('reasoning', 'Synced from exchange'),
                         'order_id': system_position.get('order_id', 'synced')
                     }
             
-            # 情况4: 都无持仓（正常）
-            # 无需操作
+            # Case 4: Both have no position (normal)
+            # No action needed
             
         except Exception as e:
-            logger.error(f"❌ 同步持仓失败: {e}")
+            logger.error(f"❌ Failed to sync position: {e}")
             import traceback
             logger.error(traceback.format_exc())
     
@@ -223,101 +223,101 @@ class AutoTrader:
         balance: float
     ) -> Optional[Dict]:
         """
-        执行AI决策
+        Execute AI decision
         
         Args:
-            coin: 币种
-            decision: AI决策
-            confidence: 信心度
-            reasoning: 决策理由
-            current_price: 当前价格
-            balance: 账户余额
+            coin: Coin symbol
+            decision: AI decision
+            confidence: Confidence level
+            reasoning: Decision reasoning
+            current_price: Current price
+            balance: Account balance
             
         Returns:
-            交易结果（如果执行了交易）
+            Trade result (if a trade was executed)
         """
-        # 检查风险限制
+        # Check risk limits
         if not self.check_risk_limits():
             return None
         
-        # 🔥 关键修复：实时从交易所同步持仓，确保系统记录与交易所一致
+        # 🔥 Critical fix: Real-time sync position from exchange, ensure system records match exchange
         await self._sync_position_from_exchange(coin)
         
-        # 检查是否有持仓
+        # Check if has position
         has_position = coin in self.positions
         
-        # 打印当前持仓状态（用于调试）
+        # Print current position status (for debugging)
         if has_position:
             pos = self.positions[coin]
-            logger.info(f"📊 当前持仓: {coin} {pos['side'].upper()} {pos['size']:.8f} @ ${pos['entry_price']:,.2f}")
+            logger.info(f"📊 Current position: {coin} {pos['side'].upper()} {pos['size']:.8f} @ ${pos['entry_price']:,.2f}")
         else:
-            logger.info(f"📊 当前持仓: {coin} - 无持仓")
+            logger.info(f"📊 Current position: {coin} - No position")
         
-        # 检查止损止盈
+        # Check stop loss and take profit
         if has_position:
             position = self.positions[coin]
             pnl_pct = (current_price - position['entry_price']) / position['entry_price']
             
-            # 多头止损止盈
+            # Long position stop loss/take profit
             if position['side'] == 'long':
                 if pnl_pct <= -self.stop_loss_pct:
-                    logger.warning(f"🛑 触发止损: {pnl_pct*100:.2f}%")
-                    return await self._close_position(coin, current_price, "止损")
+                    logger.warning(f"🛑 Stop loss triggered: {pnl_pct*100:.2f}%")
+                    return await self._close_position(coin, current_price, "Stop loss")
                 elif pnl_pct >= self.take_profit_pct:
-                    logger.info(f"🎯 触发止盈: {pnl_pct*100:.2f}%")
-                    return await self._close_position(coin, current_price, "止盈")
+                    logger.info(f"🎯 Take profit triggered: {pnl_pct*100:.2f}%")
+                    return await self._close_position(coin, current_price, "Take profit")
             
-            # 空头止损止盈
+            # Short position stop loss/take profit
             elif position['side'] == 'short':
                 if pnl_pct >= self.stop_loss_pct:
-                    logger.warning(f"🛑 触发止损: {pnl_pct*100:.2f}%")
-                    return await self._close_position(coin, current_price, "止损")
+                    logger.warning(f"🛑 Stop loss triggered: {pnl_pct*100:.2f}%")
+                    return await self._close_position(coin, current_price, "Stop loss")
                 elif pnl_pct <= -self.take_profit_pct:
-                    logger.info(f"🎯 触发止盈: {pnl_pct*100:.2f}%")
-                    return await self._close_position(coin, current_price, "止盈")
+                    logger.info(f"🎯 Take profit triggered: {pnl_pct*100:.2f}%")
+                    return await self._close_position(coin, current_price, "Take profit")
         
-        # 信心度不足，不执行新交易
+        # Insufficient confidence, don't execute new trade
         if confidence < self.min_confidence:
-            logger.debug(f"📊 信心度 {confidence:.1f}% < {self.min_confidence}%，不执行交易")
+            logger.debug(f"📊 Confidence {confidence:.1f}% < {self.min_confidence}%, not executing trade")
             return None
         
-        # 执行交易决策
+        # Execute trading decision
         if decision == TradingDecision.STRONG_BUY or decision == TradingDecision.BUY:
             if not has_position:
                 return await self._open_position(coin, 'long', confidence, reasoning, current_price, balance)
             elif self.positions[coin]['side'] == 'short':
-                # 先平空仓
-                close_result = await self._close_position(coin, current_price, "反向信号")
+                # Close short position first
+                close_result = await self._close_position(coin, current_price, "Reverse signal")
                 if close_result is None:
-                    logger.error(f"❌ 平空仓失败，取消开多仓操作")
+                    logger.error(f"❌ Failed to close short position, canceling long position open")
                     return None
                 
-                # 平仓后重新获取余额
+                # Get updated balance after closing
                 account_info = await self.client.get_account_info()
                 new_balance = float(account_info.get('marginSummary', {}).get('accountValue', balance))
-                logger.info(f"   平仓后余额更新: ${balance:.2f} → ${new_balance:.2f}")
-                # 再开多仓
+                logger.info(f"   Balance updated after close: ${balance:.2f} → ${new_balance:.2f}")
+                # Then open long position
                 return await self._open_position(coin, 'long', confidence, reasoning, current_price, new_balance)
         
         elif decision == TradingDecision.STRONG_SELL or decision == TradingDecision.SELL:
             if not has_position:
                 return await self._open_position(coin, 'short', confidence, reasoning, current_price, balance)
             elif self.positions[coin]['side'] == 'long':
-                # 先平多仓
-                close_result = await self._close_position(coin, current_price, "反向信号")
+                # Close long position first
+                close_result = await self._close_position(coin, current_price, "Reverse signal")
                 if close_result is None:
-                    logger.error(f"❌ 平多仓失败，取消开空仓操作")
+                    logger.error(f"❌ Failed to close long position, canceling short position open")
                     return None
                 
-                # 平仓后重新获取余额
+                # Get updated balance after closing
                 account_info = await self.client.get_account_info()
                 new_balance = float(account_info.get('marginSummary', {}).get('accountValue', balance))
-                logger.info(f"   平仓后余额更新: ${balance:.2f} → ${new_balance:.2f}")
-                # 再开空仓
+                logger.info(f"   Balance updated after close: ${balance:.2f} → ${new_balance:.2f}")
+                # Then open short position
                 return await self._open_position(coin, 'short', confidence, reasoning, current_price, new_balance)
         
         elif decision == TradingDecision.HOLD:
-            logger.debug(f"💤 AI 建议观望")
+            logger.debug(f"💤 AI suggests hold")
             return None
         
         return None
@@ -332,73 +332,73 @@ class AutoTrader:
         balance: float
     ) -> Optional[Dict]:
         """
-        开仓
+        Open position
         
         Args:
-            coin: 币种
-            side: 方向 ('long' 或 'short')
-            confidence: 信心度
-            reasoning: 决策理由
-            current_price: 当前价格
-            balance: 账户余额
+            coin: Coin symbol
+            side: Direction ('long' or 'short')
+            confidence: Confidence level
+            reasoning: Decision reasoning
+            current_price: Current price
+            balance: Account balance
             
         Returns:
-            交易结果
+            Trade result
         """
         try:
-            # 🎯 动态杠杆策略：根据AI信心度调整杠杆（min_leverage - max_leverage）
-            # 信心度50% -> min_leverage, 信心度100% -> max_leverage (线性映射)
+            # 🎯 Dynamic leverage strategy: Adjust leverage based on AI confidence (min_leverage - max_leverage)
+            # Confidence 50% -> min_leverage, Confidence 100% -> max_leverage (linear mapping)
             leverage = self.min_leverage + ((confidence - 50.0) / 50.0) * (self.max_leverage - self.min_leverage)
-            leverage = max(self.min_leverage, min(leverage, self.max_leverage))  # 确保在配置范围内
+            leverage = max(self.min_leverage, min(leverage, self.max_leverage))  # Ensure within config range
             
-            # 📊 计算保证金（根据信心度线性插值：50%->min_margin, 100%->max_margin）
-            # 信心度越高，使用的保证金越多
+            # 📊 Calculate margin (linear interpolation based on confidence: 50%->min_margin, 100%->max_margin)
+            # Higher confidence uses more margin
             margin_by_confidence = self.min_margin + ((confidence - 50) / 50.0) * (self.max_margin - self.min_margin)
             
-            # 限制在配置的最大保证金范围内
+            # Limit to configured maximum margin range
             margin = min(margin_by_confidence, self.max_margin)
             
-            # 确保满足最小保证金要求
+            # Ensure minimum margin requirement is met
             if margin < self.min_margin:
                 margin = self.min_margin
-                logger.info(f"   ⚠️  保证金已调整至最小值: ${margin:.2f}")
+                logger.info(f"   ⚠️  Margin adjusted to minimum: ${margin:.2f}")
             
-            # 检查余额是否充足
+            # Check if balance is sufficient
             if margin > balance:
-                logger.warning(f"⚠️  保证金${margin:.2f}超过账户余额${balance:.2f}，无法开仓")
+                logger.warning(f"⚠️  Margin ${margin:.2f} exceeds account balance ${balance:.2f}, cannot open position")
                 return None
             
-            # 💰 计算仓位价值 = 保证金 × 杠杆倍数
+            # 💰 Calculate position value = margin × leverage
             position_value = margin * leverage
             
-            # 📉 计算数量（币的数量）
+            # 📉 Calculate quantity (coin quantity)
             size = position_value / current_price
             
-            # 确保满足最小交易单位
+            # Ensure minimum trading unit is met
             if size < 0.0001:
-                logger.warning(f"⚠️  仓位太小，无法开仓: {size:.6f} {coin}")
+                logger.warning(f"⚠️  Position too small, cannot open: {size:.6f} {coin}")
                 return None
             
             logger.info("=" * 60)
-            logger.info(f"📈 开{'多' if side == 'long' else '空'}仓 (AI动态杠杆策略)")
-            logger.info(f"   币种: {coin}")
-            logger.info(f"   价格: ${current_price:,.2f}")
-            logger.info(f"   信心度: {confidence:.1f}%")
-            logger.info(f"   🎯 AI决策杠杆: {leverage:.2f}x (基于信心度)")
-            logger.info(f"   💰 保证金: ${margin:.2f}")
-            logger.info(f"   📊 仓位价值: ${position_value:.2f} (保证金 × 杠杆)")
-            logger.info(f"   🔢 数量: {size:.5f} {coin}")
-            logger.info(f"   💡 理由: {reasoning[:100]}...")
+            logger.info(f"📈 Open {'Long' if side == 'long' else 'Short'} position (AI dynamic leverage strategy)")
+            logger.info(f"   Coin: {coin}")
+            logger.info(f"   Price: ${current_price:,.2f}")
+            logger.info(f"   Confidence: {confidence:.1f}%")
+            logger.info(f"   🎯 AI decision leverage: {leverage:.2f}x (based on confidence)")
+            logger.info(f"   💰 Margin: ${margin:.2f}")
+            logger.info(f"   📊 Position value: ${position_value:.2f} (margin × leverage)")
+            logger.info(f"   🔢 Quantity: {size:.5f} {coin}")
+            logger.info(f"   💡 Reason: {reasoning[:100]}...")
             logger.info("=" * 60)
             
-            # 下单（市价单）
+            # Place order (market order)
             is_buy = (side == 'long')
             
-            # 注意：Hyperliquid 使用市价单需要特殊处理
-            # 这里使用略微偏离市场价的限价单来模拟市价单
+            # Note: Hyperliquid market orders require special handling
+            # Using slightly off-market limit order to simulate market order
             order_price = current_price * 1.001 if is_buy else current_price * 0.999
             
-            # 准备下单参数（传入AI计算的杠杆）
+            # Prepare order parameters (pass AI calculated leverage)
             order_params = {
                 "coin": coin,
                 "is_buy": is_buy,
@@ -408,28 +408,28 @@ class AutoTrader:
                 "reduce_only": False
             }
             
-            # 如果客户端支持杠杆设置，传入杠杆参数
+            # If client supports leverage setting, pass leverage parameter
             if hasattr(self.client, 'update_leverage'):
                 # Aster: 1-125x, Hyperliquid: 1-50x
-                # 使用更宽松的上限以兼容不同平台
+                # Use more relaxed upper limit to be compatible with different platforms
                 max_platform_leverage = 125
                 leverage_int = max(int(self.min_leverage), min(int(round(leverage)), max_platform_leverage))
                 order_params["leverage"] = leverage_int
                 platform_name = getattr(self.client, 'platform_name', 'Platform')
-                logger.info(f"   🎯 传递{platform_name}杠杆参数: {leverage_int}x (原始: {leverage:.2f}x)")
-                logger.info(f"   💰 预期保证金: ${margin:.2f}")
-                logger.info(f"   📊 预期仓位价值: ${position_value:.2f}")
+                logger.info(f"   🎯 Passing {platform_name} leverage parameter: {leverage_int}x (original: {leverage:.2f}x)")
+                logger.info(f"   💰 Expected margin: ${margin:.2f}")
+                logger.info(f"   📊 Expected position value: ${position_value:.2f}")
             
             order_result = await self.client.place_order(**order_params)
             
-            # 检查订单是否成功（适配官方SDK返回格式）
+            # Check if order succeeded (adapted for official SDK return format)
             if order_result.get('status') == 'err':
                 error_msg = order_result.get('response', 'Unknown error')
-                logger.error(f"❌ 订单被拒绝: {error_msg}")
-                logger.error(f"   请检查 Hyperliquid 账户状态和余额")
+                logger.error(f"❌ Order rejected: {error_msg}")
+                logger.error(f"   Please check Hyperliquid account status and balance")
                 return None
             
-            # 检查订单详细状态
+            # Check order detailed status
             if order_result.get('status') == 'ok':
                 response = order_result.get('response', {})
                 data = response.get('data', {})
@@ -437,13 +437,13 @@ class AutoTrader:
                 
                 if statuses and 'error' in statuses[0]:
                     error_msg = statuses[0]['error']
-                    logger.error(f"❌ 订单失败: {error_msg}")
-                    logger.error(f"   订单详情: {order_result}")
+                    logger.error(f"❌ Order failed: {error_msg}")
+                    logger.error(f"   Order details: {order_result}")
                     return None
                 
-                logger.info(f"✅ 订单已提交: {statuses}")
+                logger.info(f"✅ Order submitted: {statuses}")
                 
-                # 提取订单ID（适配官方SDK格式）
+                # Extract order ID (adapted for official SDK format)
                 order_id = 'unknown'
                 if statuses:
                     status = statuses[0]
@@ -452,7 +452,7 @@ class AutoTrader:
                     elif 'resting' in status:
                         order_id = status['resting'].get('oid', 'unknown')
             
-            # 记录持仓
+            # Record position
             self.positions[coin] = {
                 'side': side,
                 'entry_price': current_price,
@@ -466,7 +466,7 @@ class AutoTrader:
                 'order_id': order_id
             }
             
-            # 记录交易
+            # Record trade
             trade_record = {
                 'time': datetime.now().isoformat(),
                 'coin': coin,
@@ -482,12 +482,12 @@ class AutoTrader:
             self.trades.append(trade_record)
             self.daily_trade_count += 1
             
-            logger.info(f"✅ 开仓成功: {side.upper()} {size:.5f} {coin} @ ${current_price:,.2f}")
+            logger.info(f"✅ Position opened successfully: {side.upper()} {size:.5f} {coin} @ ${current_price:,.2f}")
             
             return trade_record
             
         except Exception as e:
-            logger.error(f"❌ 开仓失败: {e}")
+            logger.error(f"❌ Failed to open position: {e}")
             import traceback
             logger.error(traceback.format_exc())
             return None
@@ -499,42 +499,42 @@ class AutoTrader:
         reason: str
     ) -> Optional[Dict]:
         """
-        平仓
+        Close position
         
         Args:
-            coin: 币种
-            current_price: 当前价格
-            reason: 平仓原因
+            coin: Coin symbol
+            current_price: Current price
+            reason: Close reason
             
         Returns:
-            交易结果
+            Trade result
         """
         if coin not in self.positions:
-            logger.warning(f"⚠️  没有 {coin} 的持仓，无法平仓")
+            logger.warning(f"⚠️  No position for {coin}, cannot close")
             return None
         
         try:
             position = self.positions[coin]
             
-            # 🔑 关键修复：从交易所获取实际持仓数量（支持多平台）
-            logger.info(f"🔍 获取 {coin} 在交易所的实际持仓数量...")
+            # 🔑 Critical fix: Get actual position quantity from exchange (supports multi-platform)
+            logger.info(f"🔍 Getting actual position quantity for {coin} on exchange...")
             account_info = await self.client.get_account_info()
             actual_size = None
             actual_side = None
             total_size = 0.0
             
             for asset_pos in account_info.get('assetPositions', []):
-                # Hyperliquid 格式
+                # Hyperliquid format
                 if 'position' in asset_pos:
                     if asset_pos['position']['coin'] == coin:
                         szi = float(asset_pos['position']['szi'])
                         actual_size = abs(szi)
                         actual_side = 'long' if szi > 0 else 'short'
                         
-                        logger.info(f"✅ 交易所实际持仓: {actual_size:.8f} {coin} {actual_side.upper()}")
+                        logger.info(f"✅ Exchange actual position: {actual_size:.8f} {coin} {actual_side.upper()}")
                         break
                 
-                # Aster 格式（可能有多个持仓）
+                # Aster format (may have multiple positions)
                 elif 'symbol' in asset_pos:
                     symbol = asset_pos['symbol']
                     pos_coin = symbol.replace('USDT', '').replace('USDC', '')
@@ -542,32 +542,32 @@ class AutoTrader:
                     if pos_coin == coin:
                         position_amt = float(asset_pos.get('positionAmt', 0))
                         if position_amt != 0:
-                            # 累加所有相同币种的持仓
+                            # Sum all positions for same coin
                             total_size += abs(position_amt)
                             if actual_side is None:
                                 actual_side = 'long' if position_amt > 0 else 'short'
                             
-                            logger.debug(f"   找到持仓: {symbol} {position_amt:+.8f}")
+                            logger.debug(f"   Found position: {symbol} {position_amt:+.8f}")
             
-            # Aster 累加后的总持仓
+            # Aster total position after summing
             if total_size > 0:
                 actual_size = total_size
-                logger.info(f"✅ 交易所实际持仓(累加): {actual_size:.8f} {coin} {actual_side.upper()}")
+                logger.info(f"✅ Exchange actual position (summed): {actual_size:.8f} {coin} {actual_side.upper()}")
             
             if actual_size is None or actual_size == 0:
-                logger.error(f"❌ 交易所无 {coin} 持仓，但系统有记录！")
-                logger.warning(f"⚠️  清理系统内的无效持仓记录")
+                logger.error(f"❌ No position for {coin} on exchange, but system has record!")
+                logger.warning(f"⚠️  Cleaning invalid position record in system")
                 del self.positions[coin]
                 return None
             
-            # 验证方向是否一致
+            # Verify direction consistency
             if actual_side and actual_side != position['side']:
-                logger.warning(f"⚠️  持仓方向不一致！系统记录: {position['side']}, 实际: {actual_side}")
+                logger.warning(f"⚠️  Position direction inconsistent! System record: {position['side']}, actual: {actual_side}")
             
-            # 使用交易所的实际数量（避免精度导致残余）
+            # Use exchange actual quantity (avoid precision causing remainder)
             close_size = actual_size
             
-            # 计算盈亏（使用实际数量）
+            # Calculate PnL (using actual quantity)
             if position['side'] == 'long':
                 pnl = (current_price - position['entry_price']) * close_size
             else:  # short
@@ -576,50 +576,50 @@ class AutoTrader:
             pnl_pct = (pnl / (position['entry_price'] * close_size)) * 100 if close_size > 0 else 0
             
             logger.info("=" * 60)
-            logger.info(f"📉 平{'多' if position['side'] == 'long' else '空'}仓")
-            logger.info(f"   币种: {coin}")
-            logger.info(f"   开仓价: ${position['entry_price']:,.2f}")
-            logger.info(f"   平仓价: ${current_price:,.2f}")
-            logger.info(f"   系统记录数量: {position['size']:.8f} {coin}")
-            logger.info(f"   实际平仓数量: {close_size:.8f} {coin} ✅")
-            logger.info(f"   盈亏: ${pnl:+.2f} ({pnl_pct:+.2f}%)")
-            logger.info(f"   原因: {reason}")
+            logger.info(f"📉 Close {'Long' if position['side'] == 'long' else 'Short'} position")
+            logger.info(f"   Coin: {coin}")
+            logger.info(f"   Entry price: ${position['entry_price']:,.2f}")
+            logger.info(f"   Exit price: ${current_price:,.2f}")
+            logger.info(f"   System recorded quantity: {position['size']:.8f} {coin}")
+            logger.info(f"   Actual close quantity: {close_size:.8f} {coin} ✅")
+            logger.info(f"   PnL: ${pnl:+.2f} ({pnl_pct:+.2f}%)")
+            logger.info(f"   Reason: {reason}")
             logger.info("=" * 60)
             
-            # 下单平仓（反向操作）
-            is_buy = (position['side'] == 'short')  # 平空仓需要买入
+            # Place order to close position (reverse operation)
+            is_buy = (position['side'] == 'short')  # Close short requires buy
             order_price = current_price * 1.001 if is_buy else current_price * 0.999
             
-            # 🔥 关键：对于Aster平台，使用市价单确保完全成交
+            # 🔥 Critical: For Aster platform, use market order to ensure complete execution
             platform_name = getattr(self.client, 'platform_name', 'Unknown')
             if platform_name == 'Aster':
-                logger.info(f"[Aster] 使用市价单平仓以确保完全成交")
+                logger.info(f"[Aster] Using market order to close position ensuring complete execution")
                 order_result = await self.client.place_order(
                     coin=coin,
                     is_buy=is_buy,
-                    size=close_size,  # 使用交易所实际数量
-                    price=None,  # 市价单
+                    size=close_size,  # Use exchange actual quantity
+                    price=None,  # Market order
                     order_type="Market",
-                    reduce_only=True  # 只减仓
+                    reduce_only=True  # Reduce only
                 )
             else:
                 order_result = await self.client.place_order(
                     coin=coin,
                     is_buy=is_buy,
-                    size=close_size,  # 使用交易所实际数量
+                    size=close_size,  # Use exchange actual quantity
                     price=order_price,
                     order_type="Limit",
-                    reduce_only=True  # 只减仓
+                    reduce_only=True  # Reduce only
                 )
             
-            # 检查订单是否成功
+            # Check if order succeeded
             if order_result.get('status') == 'err':
                 error_msg = order_result.get('response', 'Unknown error')
-                logger.error(f"❌ 平仓订单被拒绝: {error_msg}")
-                logger.error(f"   请检查 Hyperliquid 账户状态和持仓")
+                logger.error(f"❌ Close order rejected: {error_msg}")
+                logger.error(f"   Please check Hyperliquid account status and position")
                 return None
             
-            # 检查订单详细状态
+            # Check order detailed status
             if order_result.get('status') == 'ok':
                 response = order_result.get('response', {})
                 data = response.get('data', {})
@@ -627,12 +627,12 @@ class AutoTrader:
                 
                 if statuses and 'error' in statuses[0]:
                     error_msg = statuses[0]['error']
-                    logger.error(f"❌ 平仓订单失败: {error_msg}")
-                    logger.error(f"   订单详情: {order_result}")
-                    logger.warning(f"⚠️  系统持仓与交易所不同步，保留内部持仓记录")
+                    logger.error(f"❌ Close order failed: {error_msg}")
+                    logger.error(f"   Order details: {order_result}")
+                    logger.warning(f"⚠️  System position out of sync with exchange, keeping internal position record")
                     return None
             
-            # 记录交易（使用实际平仓数量）
+            # Record trade (using actual close quantity)
             trade_record = {
                 'time': datetime.now().isoformat(),
                 'coin': coin,
@@ -640,7 +640,7 @@ class AutoTrader:
                 'side': position['side'],
                 'entry_price': position['entry_price'],
                 'exit_price': current_price,
-                'size': close_size,  # 使用实际平仓数量
+                'size': close_size,  # Use actual close quantity
                 'pnl': pnl,
                 'pnl_pct': pnl_pct,
                 'reason': reason,
@@ -651,17 +651,17 @@ class AutoTrader:
             self.daily_trade_count += 1
             self.daily_pnl += pnl
             
-            # 移除持仓
+            # Remove position
             del self.positions[coin]
             
-            logger.info(f"✅ 平仓成功: {position['side'].upper()} {close_size:.8f} {coin}, 盈亏: ${pnl:+.2f}")
+            logger.info(f"✅ Position closed successfully: {position['side'].upper()} {close_size:.8f} {coin}, PnL: ${pnl:+.2f}")
             
-            # 🔥 验证平仓结果（特别是Aster平台）
+            # 🔥 Verify close result (especially Aster platform)
             if platform_name == 'Aster':
-                logger.info(f"[Aster] 等待2秒后验证平仓结果...")
-                await asyncio.sleep(2)  # 等待订单完全处理
+                logger.info(f"[Aster] Waiting 2 seconds to verify close result...")
+                await asyncio.sleep(2)  # Wait for order to be fully processed
                 
-                # 重新获取持仓验证
+                # Get position again to verify
                 verify_account = await self.client.get_account_info()
                 remaining_size = None
                 for asset_pos in verify_account.get('assetPositions', []):
@@ -669,37 +669,37 @@ class AutoTrader:
                         szi = float(asset_pos['position']['szi'])
                         remaining_size = abs(szi)
                         if remaining_size > 0:
-                            logger.warning(f"⚠️  [Aster] 平仓后仍有残余仓位: {remaining_size:.8f} {coin}")
-                            logger.warning(f"⚠️  [Aster] 可能原因: 订单部分成交或精度问题")
+                            logger.warning(f"⚠️  [Aster] Remaining position after close: {remaining_size:.8f} {coin}")
+                            logger.warning(f"⚠️  [Aster] Possible reasons: Partial fill or precision issues")
                         else:
-                            logger.info(f"✅ [Aster] 平仓验证成功: 无残余仓位")
+                            logger.info(f"✅ [Aster] Close verification successful: No remaining position")
                         break
                 
                 if remaining_size is None:
-                    logger.info(f"✅ [Aster] 平仓验证成功: 无该币种持仓")
+                    logger.info(f"✅ [Aster] Close verification successful: No position for this coin")
             
             return trade_record
             
         except Exception as e:
-            logger.error(f"❌ 平仓失败: {e}")
+            logger.error(f"❌ Failed to close position: {e}")
             import traceback
             logger.error(traceback.format_exc())
             return None
     
     def get_position_info(self, coin: str) -> Optional[Dict]:
-        """获取持仓信息"""
+        """Get position info"""
         return self.positions.get(coin)
     
     def get_all_positions(self) -> Dict[str, Dict]:
-        """获取所有持仓"""
+        """Get all positions"""
         return self.positions
     
     def get_trade_history(self, limit: int = 50) -> List[Dict]:
-        """获取交易历史"""
+        """Get trade history"""
         return self.trades[-limit:]
     
     def get_statistics(self) -> Dict:
-        """获取交易统计"""
+        """Get trading statistics"""
         if not self.trades:
             return {
                 'total_trades': 0,

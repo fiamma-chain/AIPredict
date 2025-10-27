@@ -1,24 +1,24 @@
 """
-交易精度配置模块
+Trading precision configuration module
 
-统一管理不同交易所、不同币种的精度要求
+Unified management of precision requirements for different exchanges and coins
 """
 from decimal import Decimal
 from typing import Dict, Tuple
 
 
 class PrecisionConfig:
-    """精度配置管理器"""
+    """Precision configuration manager"""
     
-    # Aster 精度配置
+    # Aster precision configuration
     ASTER_PRECISION = {
         "BTC": {
-            "quantity_precision": 3,  # 数量精度：3位小数
-            "price_precision": 1,     # 价格精度：1位小数
-            "quantity_step": "0.001", # 数量步长
-            "price_tick": "0.1",      # 价格步长
-            "min_quantity": "0.001",  # 最小数量
-            "min_notional": "50"      # 最小名义价值（USDT）- 与AI_MIN_POSITION_SIZE一致
+            "quantity_precision": 3,  # Quantity precision: 3 decimal places
+            "price_precision": 1,     # Price precision: 1 decimal place
+            "quantity_step": "0.001", # Quantity step size
+            "price_tick": "0.1",      # Price tick size
+            "min_quantity": "0.001",  # Minimum quantity
+            "min_notional": "50"      # Minimum notional value (USDT) - consistent with AI_MIN_POSITION_SIZE
         },
         "ETH": {
             "quantity_precision": 3,
@@ -26,19 +26,19 @@ class PrecisionConfig:
             "quantity_step": "0.001",
             "price_tick": "0.01",
             "min_quantity": "0.001",
-            "min_notional": "50"      # 最小名义价值（USDT）- 与AI_MIN_POSITION_SIZE一致
+            "min_notional": "50"      # Minimum notional value (USDT) - consistent with AI_MIN_POSITION_SIZE
         }
     }
     
-    # Hyperliquid 精度配置
+    # Hyperliquid precision configuration
     HYPERLIQUID_PRECISION = {
         "BTC": {
-            "quantity_precision": 5,  # 数量精度：5位小数
-            "price_precision": 0,     # 价格精度：整数
+            "quantity_precision": 5,  # Quantity precision: 5 decimal places
+            "price_precision": 0,     # Price precision: integer
             "quantity_step": "0.00001",
             "price_tick": "1",
             "min_quantity": "0.00001",
-            "min_notional": "50"      # 最小名义价值（USD）- 与AI_MIN_POSITION_SIZE一致
+            "min_notional": "50"      # Minimum notional value (USD) - consistent with AI_MIN_POSITION_SIZE
         },
         "ETH": {
             "quantity_precision": 4,
@@ -46,48 +46,48 @@ class PrecisionConfig:
             "quantity_step": "0.0001",
             "price_tick": "1",
             "min_quantity": "0.0001",
-            "min_notional": "50"      # 最小名义价值（USD）- 与AI_MIN_POSITION_SIZE一致
+            "min_notional": "50"      # Minimum notional value (USD) - consistent with AI_MIN_POSITION_SIZE
         }
     }
     
     @classmethod
     def get_aster_precision(cls, coin: str) -> Dict:
         """
-        获取Aster平台的精度配置
+        Get precision configuration for Aster platform
         
         Args:
-            coin: 币种符号（如 BTC, ETH）
+            coin: Coin symbol (e.g., BTC, ETH)
             
         Returns:
-            精度配置字典
+            Precision configuration dictionary
         """
         return cls.ASTER_PRECISION.get(coin, cls.ASTER_PRECISION["BTC"])
     
     @classmethod
     def get_hyperliquid_precision(cls, coin: str) -> Dict:
         """
-        获取Hyperliquid平台的精度配置
+        Get precision configuration for Hyperliquid platform
         
         Args:
-            coin: 币种符号（如 BTC, ETH）
+            coin: Coin symbol (e.g., BTC, ETH)
             
         Returns:
-            精度配置字典
+            Precision configuration dictionary
         """
         return cls.HYPERLIQUID_PRECISION.get(coin, cls.HYPERLIQUID_PRECISION["BTC"])
     
     @classmethod
     def format_aster_quantity(cls, coin: str, quantity: float, round_down: bool = True) -> Tuple[float, str]:
         """
-        格式化Aster数量
+        Format Aster quantity
         
         Args:
-            coin: 币种
-            quantity: 原始数量
-            round_down: 是否向下取整（开仓用），否则四舍五入（平仓用）
+            coin: Coin symbol
+            quantity: Original quantity
+            round_down: Whether to round down (for opening positions), otherwise round half up (for closing positions)
             
         Returns:
-            (格式化后的数量, 数量字符串)
+            (Formatted quantity, quantity string)
         """
         from decimal import ROUND_DOWN, ROUND_HALF_UP
         
@@ -101,7 +101,7 @@ class PrecisionConfig:
         else:
             formatted = float(decimal_qty.quantize(step, rounding=ROUND_HALF_UP))
         
-        # 确保不小于最小数量
+        # Ensure not less than minimum quantity
         min_qty = float(config["min_quantity"])
         if formatted < min_qty and formatted > 0:
             formatted = min_qty
@@ -111,14 +111,14 @@ class PrecisionConfig:
     @classmethod
     def format_aster_price(cls, coin: str, price: float) -> Tuple[float, str]:
         """
-        格式化Aster价格
+        Format Aster price
         
         Args:
-            coin: 币种
-            price: 原始价格
+            coin: Coin symbol
+            price: Original price
             
         Returns:
-            (格式化后的价格, 价格字符串)
+            (Formatted price, price string)
         """
         from decimal import ROUND_HALF_UP
         
@@ -133,15 +133,15 @@ class PrecisionConfig:
     @classmethod
     def format_hyperliquid_quantity(cls, coin: str, quantity: float, round_down: bool = True) -> Tuple[float, str]:
         """
-        格式化Hyperliquid数量
+        Format Hyperliquid quantity
         
         Args:
-            coin: 币种
-            quantity: 原始数量
-            round_down: 是否向下取整（开仓用），否则四舍五入（平仓用）
+            coin: Coin symbol
+            quantity: Original quantity
+            round_down: Whether to round down (for opening positions), otherwise round half up (for closing positions)
             
         Returns:
-            (格式化后的数量, 数量字符串)
+            (Formatted quantity, quantity string)
         """
         from decimal import ROUND_DOWN, ROUND_HALF_UP
         
@@ -155,7 +155,7 @@ class PrecisionConfig:
         else:
             formatted = float(decimal_qty.quantize(step, rounding=ROUND_HALF_UP))
         
-        # 确保不小于最小数量
+        # Ensure not less than minimum quantity
         min_qty = float(config["min_quantity"])
         if formatted < min_qty and formatted > 0:
             formatted = min_qty
@@ -165,14 +165,14 @@ class PrecisionConfig:
     @classmethod
     def format_hyperliquid_price(cls, coin: str, price: float) -> Tuple[float, str]:
         """
-        格式化Hyperliquid价格
+        Format Hyperliquid price
         
         Args:
-            coin: 币种
-            price: 原始价格
+            coin: Coin symbol
+            price: Original price
             
         Returns:
-            (格式化后的价格, 价格字符串)
+            (Formatted price, price string)
         """
         from decimal import ROUND_HALF_UP
         
@@ -187,52 +187,52 @@ class PrecisionConfig:
     @classmethod
     def validate_aster_order(cls, coin: str, quantity: float, price: float = None) -> Tuple[bool, str]:
         """
-        验证Aster订单参数
+        Validate Aster order parameters
         
         Returns:
-            (是否有效, 错误信息)
+            (Whether valid, error message)
         """
         config = cls.get_aster_precision(coin)
         
-        # 检查最小数量
+        # Check minimum quantity
         min_qty = float(config["min_quantity"])
         if quantity < min_qty:
-            return False, f"数量 {quantity} 小于最小值 {min_qty}"
+            return False, f"Quantity {quantity} is less than minimum {min_qty}"
         
-        # 检查最小名义价值
+        # Check minimum notional value
         if price:
             notional = quantity * price
             min_notional = float(config["min_notional"])
             if notional < min_notional:
-                return False, f"名义价值 {notional:.2f} USDT 小于最小值 {min_notional} USDT"
+                return False, f"Notional value {notional:.2f} USDT is less than minimum {min_notional} USDT"
         
         return True, ""
     
     @classmethod
     def validate_hyperliquid_order(cls, coin: str, quantity: float, price: float = None) -> Tuple[bool, str]:
         """
-        验证Hyperliquid订单参数
+        Validate Hyperliquid order parameters
         
         Returns:
-            (是否有效, 错误信息)
+            (Whether valid, error message)
         """
         config = cls.get_hyperliquid_precision(coin)
         
-        # 检查最小数量
+        # Check minimum quantity
         min_qty = float(config["min_quantity"])
         if quantity < min_qty:
-            return False, f"数量 {quantity} 小于最小值 {min_qty}"
+            return False, f"Quantity {quantity} is less than minimum {min_qty}"
         
-        # 检查最小名义价值
+        # Check minimum notional value
         if price:
             notional = quantity * price
             min_notional = float(config["min_notional"])
             if notional < min_notional:
-                return False, f"名义价值 {notional:.2f} USD 小于最小值 {min_notional} USD"
+                return False, f"Notional value {notional:.2f} USD is less than minimum {min_notional} USD"
         
         return True, ""
 
 
-# 全局实例
+# Global instance
 precision_config = PrecisionConfig()
 

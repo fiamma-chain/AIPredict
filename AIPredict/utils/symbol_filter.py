@@ -1,6 +1,6 @@
 """
-交易币种过滤器
-用于限制只交易指定的加密货币
+Trading symbol filter
+Used to restrict trading to specified cryptocurrencies only
 """
 from typing import List, Optional
 from config.settings import settings, get_allowed_symbols, is_symbol_allowed
@@ -10,107 +10,107 @@ logger = logging.getLogger(__name__)
 
 
 class SymbolFilter:
-    """币种过滤器"""
+    """Symbol filter"""
     
     def __init__(self):
         self.allowed_symbols = get_allowed_symbols()
         self._log_configuration()
     
     def _log_configuration(self):
-        """记录配置信息"""
+        """Log configuration information"""
         if not self.allowed_symbols:
-            logger.info("🌐 交易币种: 全部允许")
+            logger.info("🌐 Trading symbols: All allowed")
         else:
-            logger.info(f"🎯 交易币种限制: {', '.join(self.allowed_symbols)}")
+            logger.info(f"🎯 Trading symbol restrictions: {', '.join(self.allowed_symbols)}")
     
     def is_allowed(self, symbol: str) -> bool:
         """
-        检查币种是否允许交易
+        Check if symbol is allowed for trading
         
         Args:
-            symbol: 币种符号（如 BTC, ETH）
+            symbol: Symbol code (e.g. BTC, ETH)
             
         Returns:
-            是否允许交易
+            Whether trading is allowed
         """
         return is_symbol_allowed(symbol)
     
     def filter_symbols(self, symbols: List[str]) -> List[str]:
         """
-        过滤币种列表，只保留允许交易的
+        Filter symbol list, keeping only allowed ones
         
         Args:
-            symbols: 币种列表
+            symbols: Symbol list
             
         Returns:
-            过滤后的币种列表
+            Filtered symbol list
         """
         if not self.allowed_symbols:
-            return symbols  # 全部允许
+            return symbols  # All allowed
         
         filtered = [s for s in symbols if self.is_allowed(s)]
         
         if len(filtered) < len(symbols):
             removed = set(symbols) - set(filtered)
-            logger.debug(f"过滤掉不允许的币种: {', '.join(removed)}")
+            logger.debug(f"Filtered out disallowed symbols: {', '.join(removed)}")
         
         return filtered
     
     def get_default_symbol(self) -> str:
         """
-        获取默认交易币种
+        Get default trading symbol
         
         Returns:
-            默认币种（如果有限制则返回第一个允许的币种，否则返回 BTC）
+            Default symbol (returns first allowed symbol if restricted, otherwise returns BTC)
         """
         if self.allowed_symbols:
             return self.allowed_symbols[0]
         return "BTC"
     
     def get_allowed_list(self) -> List[str]:
-        """获取允许交易的币种列表"""
+        """Get list of allowed trading symbols"""
         return self.allowed_symbols.copy() if self.allowed_symbols else []
     
     def validate_symbol(self, symbol: str) -> tuple[bool, Optional[str]]:
         """
-        验证币种并返回错误信息
+        Validate symbol and return error message
         
         Args:
-            symbol: 币种符号
+            symbol: Symbol code
             
         Returns:
-            (是否有效, 错误信息)
+            (is_valid, error_message)
         """
         symbol_upper = symbol.upper()
         
         if not self.is_allowed(symbol_upper):
             if self.allowed_symbols:
                 allowed_str = ', '.join(self.allowed_symbols)
-                return False, f"币种 {symbol_upper} 不在允许列表中。允许的币种: {allowed_str}"
+                return False, f"Symbol {symbol_upper} is not in the allowed list. Allowed symbols: {allowed_str}"
             else:
-                return False, f"币种 {symbol_upper} 无效"
+                return False, f"Symbol {symbol_upper} is invalid"
         
         return True, None
 
 
-# 全局实例
+# Global instance
 symbol_filter = SymbolFilter()
 
 
 def check_symbol_before_trade(symbol: str) -> bool:
     """
-    交易前检查币种是否允许（装饰器辅助函数）
+    Check if symbol is allowed before trading (decorator helper function)
     
     Args:
-        symbol: 币种符号
+        symbol: Symbol code
         
     Returns:
-        是否允许交易
+        Whether trading is allowed
     """
     is_valid, error_msg = symbol_filter.validate_symbol(symbol)
     
     if not is_valid:
-        logger.warning(f"⚠️  交易被阻止: {error_msg}")
+        logger.warning(f"⚠️  Trade blocked: {error_msg}")
         return False
     
     return True

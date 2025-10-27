@@ -1,6 +1,6 @@
 """
-Grok AI 交易模型
-使用 xAI Grok API
+Grok AI Trading Model
+Uses xAI Grok API
 """
 import httpx
 from typing import Dict, List, Optional
@@ -8,15 +8,15 @@ from .base_ai import AITradingModel, TradingDecision
 
 
 class GrokTrader(AITradingModel):
-    """Grok AI 交易员"""
+    """Grok AI Trader"""
     
     def __init__(self, api_key: str, model: str = "grok-4", **kwargs):
         """
-        初始化 Grok 交易员
+        Initialize Grok Trader
         
         Args:
-            api_key: xAI API 密钥
-            model: Grok 模型版本
+            api_key: xAI API key
+            model: Grok model version
         """
         super().__init__(
             model_name=f"Grok ({model.split('-')[1].capitalize() if '-' in model else 'Beta'})",
@@ -35,25 +35,25 @@ class GrokTrader(AITradingModel):
         position_info: Optional[Dict] = None
     ) -> tuple[TradingDecision, float, str]:
         """
-        使用 Grok 分析市场
+        Analyze market using Grok
         
         Args:
-            coin: 币种
-            market_data: 市场数据
-            orderbook: 订单簿
-            recent_trades: 最近交易
+            coin: Coin symbol
+            market_data: Market data
+            orderbook: Order book
+            recent_trades: Recent trades
             
         Returns:
-            (决策, 置信度, 理由)
+            (decision, confidence, reasoning)
         """
         position_info = self.positions.get(coin)
         prompt = self.create_market_prompt(coin, market_data, orderbook, position_info)
         
-        # 添加重试机制
+        # Add retry mechanism
         max_retries = 3
         for attempt in range(max_retries):
             try:
-                async with httpx.AsyncClient(timeout=45.0) as client:  # 增加timeout
+                async with httpx.AsyncClient(timeout=45.0) as client:  # Increased timeout
                     response = await client.post(
                         self.api_url,
                         headers={
