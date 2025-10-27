@@ -90,27 +90,73 @@ class AutoTrader:
             account = await self.client.get_account_info()
             positions = account.get('assetPositions', [])
             
-            # 查找该币种的实际持仓
+            # 查找该币种的实际持仓（需要累加所有相同币种的持仓）
             actual_position = None
+            total_size = 0.0
+            total_value = 0.0  # 用于计算加权平均入场价
+            position_side = None
+            
             for pos in positions:
                 try:
-                    if 'position' not in pos:
-                        continue
+                    # 🔥 支持多平台数据格式
                     
-                    pos_coin = pos['position']['coin']
-                    if pos_coin == coin:
-                        size = float(pos['position']['szi'])
-                        if size != 0:  # 有持仓
-                            actual_position = {
-                                'coin': coin,
-                                'size': abs(size),
-                                'side': 'long' if size > 0 else 'short',
-                                'entry_px': float(pos['position']['entryPx'])
-                            }
-                        break
+                    # Hyperliquid 格式: {"position": {"coin": "BTC", "szi": "0.001", "entryPx": "60000"}}
+                    if 'position' in pos:
+                        pos_coin = pos['position']['coin']
+                        if pos_coin == coin:
+                            size = float(pos['position']['szi'])
+                            if size != 0:  # 有持仓
+                                # Hyperliquid 通常每个币种只有一个持仓
+                                actual_position = {
+                                    'coin': coin,
+                                    'size': abs(size),
+                                    'side': 'long' if size > 0 else 'short',
+                                    'entry_px': float(pos['position']['entryPx'])
+                                }
+                            break  # Hyperliquid 每个币种只有一个持仓
+                    
+                    # Aster 格式: {"symbol": "BTCUSDT", "positionAmt": "0.001", "entryPrice": "60000"}
+                    elif 'symbol' in pos:
+                        symbol = pos['symbol']
+                        # 转换 symbol 为 coin (BTCUSDT -> BTC)
+                        pos_coin = symbol.replace('USDT', '').replace('USDC', '')
+                        
+                        if pos_coin == coin:
+                            position_amt = float(pos.get('positionAmt', 0))
+                            if position_amt != 0:  # 有持仓
+                                entry_price = float(pos.get('entryPrice', 0))
+                                
+                                # 🔥 关键修复：累加所有相同币种的持仓（Aster可能有多个）
+                                if position_side is None:
+                                    position_side = 'long' if position_amt > 0 else 'short'
+                                
+                                # 检查方向是否一致（正常情况下应该一致）
+                                current_side = 'long' if position_amt > 0 else 'short'
+                                if current_side != position_side:
+                                    logger.warning(f"⚠️  检测到相同币种的对冲持仓: {coin} {position_side} & {current_side}")
+                                
+                                # 累加数量和价值（用于计算加权平均价格）
+                                total_size += abs(position_amt)
+                                total_value += abs(position_amt) * entry_price
+                                
+                                logger.debug(f"   找到持仓: {symbol} {position_amt:+.8f} @ ${entry_price:,.2f}")
+                            # ⚠️ 不要 break，继续查找其他相同币种的持仓
+                    
                 except Exception as e:
-                    logger.warning(f"解析持仓失败: {e}")
+                    logger.warning(f"解析持仓失败: {e}, pos={pos}")
                     continue
+            
+            # 🔥 如果累加了多个 Aster 持仓，计算加权平均入场价
+            if total_size > 0 and position_side is not None:
+                avg_entry_price = total_value / total_size
+                actual_position = {
+                    'coin': coin,
+                    'size': total_size,
+                    'side': position_side,
+                    'entry_px': avg_entry_price
+                }
+                # 记录累加的持仓数量（帮助调试）
+                logger.info(f"📊 {coin} 总持仓: {total_size:.8f} {position_side.upper()}, 加权均价=${avg_entry_price:,.2f}")
             
             # 获取系统记录的持仓
             system_position = self.positions.get(coin)
@@ -470,29 +516,53 @@ class AutoTrader:
         try:
             position = self.positions[coin]
             
-            # 🔑 关键修复：从交易所获取实际持仓数量
+            # 🔑 关键修复：从交易所获取实际持仓数量（支持多平台）
             logger.info(f"🔍 获取 {coin} 在交易所的实际持仓数量...")
             account_info = await self.client.get_account_info()
             actual_size = None
+            actual_side = None
+            total_size = 0.0
             
             for asset_pos in account_info.get('assetPositions', []):
-                if asset_pos['position']['coin'] == coin:
-                    szi = float(asset_pos['position']['szi'])
-                    actual_size = abs(szi)
-                    actual_side = 'long' if szi > 0 else 'short'
+                # Hyperliquid 格式
+                if 'position' in asset_pos:
+                    if asset_pos['position']['coin'] == coin:
+                        szi = float(asset_pos['position']['szi'])
+                        actual_size = abs(szi)
+                        actual_side = 'long' if szi > 0 else 'short'
+                        
+                        logger.info(f"✅ 交易所实际持仓: {actual_size:.8f} {coin} {actual_side.upper()}")
+                        break
+                
+                # Aster 格式（可能有多个持仓）
+                elif 'symbol' in asset_pos:
+                    symbol = asset_pos['symbol']
+                    pos_coin = symbol.replace('USDT', '').replace('USDC', '')
                     
-                    # 验证方向是否一致
-                    if actual_side != position['side']:
-                        logger.warning(f"⚠️  持仓方向不一致！系统记录: {position['side']}, 实际: {actual_side}")
-                    
-                    logger.info(f"✅ 交易所实际持仓: {actual_size:.8f} {coin}")
-                    break
+                    if pos_coin == coin:
+                        position_amt = float(asset_pos.get('positionAmt', 0))
+                        if position_amt != 0:
+                            # 累加所有相同币种的持仓
+                            total_size += abs(position_amt)
+                            if actual_side is None:
+                                actual_side = 'long' if position_amt > 0 else 'short'
+                            
+                            logger.debug(f"   找到持仓: {symbol} {position_amt:+.8f}")
             
-            if actual_size is None:
+            # Aster 累加后的总持仓
+            if total_size > 0:
+                actual_size = total_size
+                logger.info(f"✅ 交易所实际持仓(累加): {actual_size:.8f} {coin} {actual_side.upper()}")
+            
+            if actual_size is None or actual_size == 0:
                 logger.error(f"❌ 交易所无 {coin} 持仓，但系统有记录！")
                 logger.warning(f"⚠️  清理系统内的无效持仓记录")
                 del self.positions[coin]
                 return None
+            
+            # 验证方向是否一致
+            if actual_side and actual_side != position['side']:
+                logger.warning(f"⚠️  持仓方向不一致！系统记录: {position['side']}, 实际: {actual_side}")
             
             # 使用交易所的实际数量（避免精度导致残余）
             close_size = actual_size

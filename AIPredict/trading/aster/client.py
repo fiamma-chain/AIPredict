@@ -437,9 +437,20 @@ class AsterClient(BaseExchangeClient):
                     total_balance = account_info.get('marginSummary', {}).get('accountValue', 0)
                     
                     logger.info(f"[Aster] 💰 账户余额检查:")
-                    logger.info(f"   总余额: ${total_balance:.2f}")
-                    logger.info(f"   可用余额: ${available_balance:.2f}")
+                    logger.info(f"   总余额(accountValue): ${total_balance:.2f}")
+                    logger.info(f"   可用余额(availableBalance): ${available_balance:.2f}")
+                    logger.info(f"   已用保证金: ${total_balance - available_balance:.2f}")
                     logger.info(f"   需要保证金: ${required_margin:.2f}")
+                    logger.info(f"   仓位价值: ${position_value:.2f}")
+                    logger.info(f"   杠杆: {leverage}x")
+                    
+                    # 输出持仓信息（如果有）
+                    if account_info.get('positions'):
+                        logger.info(f"   当前持仓数量: {len(account_info['positions'])} 个")
+                        for pos in account_info['positions'][:3]:  # 只显示前3个
+                            logger.info(f"      - {pos.get('symbol', 'Unknown')}: 数量={pos.get('positionAmt', 0)}")
+                    else:
+                        logger.info(f"   当前持仓数量: 0 个")
                     
                     # 检查可用余额是否充足（预留5%缓冲）
                     required_with_buffer = required_margin * 1.05
@@ -466,9 +477,13 @@ class AsterClient(BaseExchangeClient):
                                 return {"status": "err", "response": error_msg}
                         else:
                             error_msg = (
-                                f"❌ [Aster] 可用余额低于最小保证金要求\n"
+                                f"❌ [Aster] 账户余额不足，无法开仓\n"
+                                f"   总余额: ${total_balance:.2f}\n"
                                 f"   可用余额: ${available_balance:.2f}\n"
-                                f"   最小保证金: ${min_margin:.2f}"
+                                f"   已占用: ${total_balance - available_balance:.2f}\n"
+                                f"   需要保证金: ${required_with_buffer:.2f}\n"
+                                f"   最小保证金要求: ${min_margin:.2f}\n"
+                                f"   💡 建议: 平掉一些仓位以释放保证金"
                             )
                             logger.error(error_msg)
                             return {"status": "err", "response": error_msg}

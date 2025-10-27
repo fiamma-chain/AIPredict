@@ -218,16 +218,10 @@ class HyperliquidClient(BaseExchangeClient):
             成交记录列表 [{"time": ts, "px": price, "sz": size, "side": "A/B"}, ...]
         """
         try:
-            # 使用官方SDK的 recent_trades 方法
-            trades = self.info.recent_trades(coin)
-            if not trades:
-                return []
-            
-            # 限制返回数量
-            if len(trades) > limit:
-                trades = trades[:limit]
-            
-            return trades
+            # ⚠️ Hyperliquid SDK 的 Info 对象没有 recent_trades 方法
+            # 目前返回空列表，此功能非核心功能，不影响交易
+            logger.debug(f"[Hyperliquid] recent_trades 功能暂未实现，返回空列表")
+            return []
         except Exception as e:
             logger.warning(f"获取最近成交失败: {e}, 返回空列表")
             return []

@@ -1121,7 +1121,52 @@ class ConsensusArena:
                 except Exception as e:
                     logger.error(f"保存余额快照失败: {e}")
                 
-                logger.info(f"\n⏰ 等待 {self.update_interval} 秒后进行下一轮决策...")
+                # 输出所有账户余额摘要（帮助诊断余额不足问题）
+                logger.info(f"\n{'='*80}")
+                logger.info(f"💰 账户余额摘要")
+                logger.info(f"{'='*80}")
+                
+                # 输出组账户
+                for group in self.groups:
+                    logger.info(f"\n[{group.name}]")
+                    for platform_name, trader in group.multi_trader.platform_traders.items():
+                        try:
+                            account_info = await trader.client.get_account_info()
+                            total_balance = account_info.get('marginSummary', {}).get('accountValue', 0)
+                            available_balance = account_info.get('availableBalance', 0)
+                            used_margin = total_balance - available_balance
+                            positions_count = len(account_info.get('assetPositions', []))
+                            
+                            logger.info(f"  {platform_name}:")
+                            logger.info(f"    总余额: ${total_balance:.2f}")
+                            logger.info(f"    可用: ${available_balance:.2f}")
+                            logger.info(f"    占用: ${used_margin:.2f}")
+                            logger.info(f"    持仓数: {positions_count}")
+                        except Exception as e:
+                            logger.warning(f"  {platform_name}: 获取余额失败 - {e}")
+                
+                # 输出独立AI交易者账户
+                for individual_trader in self.individual_traders:
+                    logger.info(f"\n[{individual_trader.name}]")
+                    for platform_name, trader in individual_trader.multi_trader.platform_traders.items():
+                        try:
+                            account_info = await trader.client.get_account_info()
+                            total_balance = account_info.get('marginSummary', {}).get('accountValue', 0)
+                            available_balance = account_info.get('availableBalance', 0)
+                            used_margin = total_balance - available_balance
+                            positions_count = len(account_info.get('assetPositions', []))
+                            
+                            logger.info(f"  {platform_name}:")
+                            logger.info(f"    总余额: ${total_balance:.2f}")
+                            logger.info(f"    可用: ${available_balance:.2f}")
+                            logger.info(f"    占用: ${used_margin:.2f}")
+                            logger.info(f"    持仓数: {positions_count}")
+                        except Exception as e:
+                            logger.warning(f"  {platform_name}: 获取余额失败 - {e}")
+                
+                logger.info(f"{'='*80}\n")
+                
+                logger.info(f"⏰ 等待 {self.update_interval} 秒后进行下一轮决策...")
                 await asyncio.sleep(self.update_interval)
             
             except asyncio.CancelledError:
