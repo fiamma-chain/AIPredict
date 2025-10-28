@@ -37,6 +37,7 @@ class AutoTrader:
         # Position management
         self.positions: Dict[str, Dict] = {}  # {coin: position_info}
         self.trades: List[Dict] = []  # Trading history
+        self.max_trades_history = 1000  # Maximum number of trades to keep in memory
         
         # Risk control
         self.daily_loss_limit = 10.0  # Daily maximum loss (USDC)
@@ -482,6 +483,10 @@ class AutoTrader:
             self.trades.append(trade_record)
             self.daily_trade_count += 1
             
+            # Limit trades history to prevent memory leak
+            if len(self.trades) > self.max_trades_history:
+                self.trades = self.trades[-self.max_trades_history:]
+            
             logger.info(f"✅ Position opened successfully: {side.upper()} {size:.5f} {coin} @ ${current_price:,.2f}")
             
             return trade_record
@@ -650,6 +655,10 @@ class AutoTrader:
             self.trades.append(trade_record)
             self.daily_trade_count += 1
             self.daily_pnl += pnl
+            
+            # Limit trades history to prevent memory leak
+            if len(self.trades) > self.max_trades_history:
+                self.trades = self.trades[-self.max_trades_history:]
             
             # Remove position
             del self.positions[coin]

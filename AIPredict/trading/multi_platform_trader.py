@@ -28,6 +28,7 @@ class PlatformTrader:
         self.name = name
         self.auto_trader = AutoTrader(client)
         self.start_balance = 0.0
+        self.max_trades_in_stats = 1000  # Maximum number of trades to keep in stats
         self.stats = {
             "platform": client.platform_name,
             "name": name,
@@ -65,6 +66,10 @@ class PlatformTrader:
             try:
                 historical_trades = redis_manager.get_trades(group_name, self.name)
                 if historical_trades:
+                    # Limit restored trades to prevent memory issues
+                    if len(historical_trades) > self.max_trades_in_stats:
+                        historical_trades = historical_trades[-self.max_trades_in_stats:]
+                        logger.info(f"[{self.name}] ⚠️  Trimmed historical trades to {self.max_trades_in_stats} most recent records")
                     self.stats["trades"] = historical_trades
                     logger.info(f"[{self.name}] 📚 Restored {len(historical_trades)} historical trades from Redis")
             except Exception as e:
@@ -109,6 +114,11 @@ class PlatformTrader:
                 "platform": self.client.platform_name
             }
             self.stats["trades"].append(trade_record)
+            
+            # Limit trades history to prevent memory leak
+            if len(self.stats["trades"]) > self.max_trades_in_stats:
+                self.stats["trades"] = self.stats["trades"][-self.max_trades_in_stats:]
+            
             self.stats["total_trades"] = len([t for t in self.stats["trades"] if t.get('action') == 'close'])
             
             # Save to Redis (if it's a complete trade, i.e., contains px and action)
