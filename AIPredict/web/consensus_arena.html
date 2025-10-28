@@ -929,10 +929,10 @@
         // Logo image cache
         const logoImages = {};
         const logoMapping = {
-            'Alpha-HL': ['hyperliquid'],  // Alpha Hyperliquid platform
-            'Alpha-Aster': ['aster'],     // Alpha Aster platform
-            'Beta-HL': ['hyperliquid'],   // Beta Hyperliquid platform
-            'Beta-Aster': ['aster'],      // Beta Aster platform
+            'Alpha-HL': ['hyperliquid'],  // Alpha Hyperliquid platform (for display label)
+            'Alpha-Aster': ['aster'],     // Alpha Aster platform (for display label)
+            'Beta-HL': ['hyperliquid'],   // Beta Hyperliquid platform (for display label)
+            'Beta-Aster': ['aster'],      // Beta Aster platform (for display label)
             'DeepSeek-Solo': ['deepseek'],
             'Claude-Solo': ['claude'],
             'Grok-Solo': ['grok'],
@@ -1523,12 +1523,16 @@
                 const betaPlatforms = betaGroup.platforms || {};
                 
                 // Extract two platform data for Alpha group
-                const alphaHL = alphaPlatforms['Alpha-Hyperliquid'] || alphaPlatforms['Alpha-Hyperliquid'] || {};
-                const alphaAster = alphaPlatforms['Alpha-Aster'] || alphaPlatforms['Alpha-Aster'] || {};
+                // Support multiple naming formats (historical compatibility):
+                // 1. "Alpha-Hyperliquid" (new format)
+                // 2. "Alpha Group-Hyperliquid" (English)
+                // 3. "Alpha组-Hyperliquid" (Chinese)
+                const alphaHL = alphaPlatforms['Alpha-Hyperliquid'] || alphaPlatforms['Alpha Group-Hyperliquid'] || alphaPlatforms['Alpha组-Hyperliquid'] || {};
+                const alphaAster = alphaPlatforms['Alpha-Aster'] || alphaPlatforms['Alpha Group-Aster'] || alphaPlatforms['Alpha组-Aster'] || {};
                 
                 // Extract two platform data for Beta group
-                const betaHL = betaPlatforms['Beta-Hyperliquid'] || betaPlatforms['Beta-Hyperliquid'] || {};
-                const betaAster = betaPlatforms['Beta-Aster'] || betaPlatforms['Beta-Aster'] || {};
+                const betaHL = betaPlatforms['Beta-Hyperliquid'] || betaPlatforms['Beta Group-Hyperliquid'] || betaPlatforms['Beta组-Hyperliquid'] || {};
+                const betaAster = betaPlatforms['Beta-Aster'] || betaPlatforms['Beta Group-Aster'] || betaPlatforms['Beta组-Aster'] || {};
                 
                 console.log('🔍 [DEBUG] Alpha HL data:', alphaHL);
                 console.log('🔍 [DEBUG] Alpha Aster data:', alphaAster);
@@ -2039,6 +2043,7 @@
                 
                 if (data.history && data.history.length > 0) {
                     console.log(`✅ Loaded ${data.history.length} historical records`);
+                    console.log('📋 Checking platform key formats (supports: "Alpha-*" / "Alpha Group-*" / "Alpha组-*"):');
                     
                     // Clear existing data
                     equityChart.data.labels = [];
@@ -2060,10 +2065,18 @@
                             if (acc.type === 'group') {
                                 // Group account
                                 balances[acc.platform] = acc.balance;
+                                // Debug: output first 3 records' platform keys for verification
+                                if (index < 3) {
+                                    console.log(`  📊 [Record ${index}] Group Platform: "${acc.platform}", Balance: $${acc.balance.toFixed(2)}`);
+                                }
                             } else if (acc.type === 'individual') {
                                 // Individual AI trader account
                                 const aiName = acc.ai_name;
                                 traderBalances[aiName] = acc.balance;
+                                // Debug: output first record's trader info
+                                if (index === 0) {
+                                    console.log(`  📊 [Record ${index}] Individual Trader: ${aiName}, Balance: $${acc.balance.toFixed(2)}`);
+                                }
                             }
                         });
                         
@@ -2083,10 +2096,18 @@
                         };
                         
                         // Alpha/Beta platform data (group initial balance: 1000 USDT)
-                        equityChart.data.datasets[0].data.push(getValueWithFallback(balances['Alpha-Hyperliquid'], 0));
-                        equityChart.data.datasets[1].data.push(getValueWithFallback(balances['Alpha-Aster'], 1));
-                        equityChart.data.datasets[2].data.push(getValueWithFallback(balances['Beta-Hyperliquid'], 2));
-                        equityChart.data.datasets[3].data.push(getValueWithFallback(balances['Beta-Aster'], 3));
+                        // Support multiple naming formats (historical compatibility):
+                        // 1. "Alpha-Hyperliquid" (new format)
+                        // 2. "Alpha Group-Hyperliquid" (English)
+                        // 3. "Alpha组-Hyperliquid" (Chinese)
+                        equityChart.data.datasets[0].data.push(getValueWithFallback(
+                            balances['Alpha-Hyperliquid'] || balances['Alpha Group-Hyperliquid'] || balances['Alpha组-Hyperliquid'], 0));
+                        equityChart.data.datasets[1].data.push(getValueWithFallback(
+                            balances['Alpha-Aster'] || balances['Alpha Group-Aster'] || balances['Alpha组-Aster'], 1));
+                        equityChart.data.datasets[2].data.push(getValueWithFallback(
+                            balances['Beta-Hyperliquid'] || balances['Beta Group-Hyperliquid'] || balances['Beta组-Hyperliquid'], 2));
+                        equityChart.data.datasets[3].data.push(getValueWithFallback(
+                            balances['Beta-Aster'] || balances['Beta Group-Aster'] || balances['Beta组-Aster'], 3));
                         // Individual AI traders (initial balance: 1000 USDT)
                         equityChart.data.datasets[4].data.push(getValueWithFallback(traderBalances['DeepSeek'], 4));
                         equityChart.data.datasets[5].data.push(getValueWithFallback(traderBalances['Claude'], 5));
@@ -2098,6 +2119,13 @@
                     
                     // Update current period start index to last data point
                     currentPeriodStartIndex = equityChart.data.labels.length - 1;
+                    
+                    // Log summary of loaded data
+                    console.log(`📊 Historical data summary:`);
+                    console.log(`  Alpha-HL: ${equityChart.data.datasets[0].data.filter(v => v !== 1000).length} non-default data points`);
+                    console.log(`  Alpha-Aster: ${equityChart.data.datasets[1].data.filter(v => v !== 1000).length} non-default data points`);
+                    console.log(`  Beta-HL: ${equityChart.data.datasets[2].data.filter(v => v !== 1000).length} non-default data points`);
+                    console.log(`  Beta-Aster: ${equityChart.data.datasets[3].data.filter(v => v !== 1000).length} non-default data points`);
                     
                     // Dynamically set last point to show circle
                     equityChart.data.datasets.forEach(dataset => {
