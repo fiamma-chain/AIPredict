@@ -377,6 +377,9 @@ class AsterClient(BaseExchangeClient):
             leverage: Leverage multiplier (optional, will set leverage before placing order if provided)
         """
         try:
+            # Initialize effective_leverage for later use
+            effective_leverage = leverage if leverage is not None else 1
+            
             # Aster platform risk control: leverage limits and margin requirements
             if not reduce_only:
                 # 1. Leverage limit: use configured maximum leverage
@@ -405,7 +408,6 @@ class AsterClient(BaseExchangeClient):
                         return {"status": "err", "response": error_msg}
                 
                 # 3. Calculate margin: margin = (size * price) / leverage
-                effective_leverage = leverage if leverage is not None else 1
                 position_value = size * actual_price
                 required_margin = position_value / effective_leverage
                 
