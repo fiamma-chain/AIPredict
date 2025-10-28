@@ -1748,18 +1748,33 @@
                     
                     // Add first data point of new period (decision point)
                     equityChart.data.labels.push(currentTime);
+                    
+                    // Helper function: get value with smart fallback (for real-time updates)
+                    const getRealtimeValue = (value, datasetIndex) => {
+                        if (value !== undefined && value !== null) {
+                            return value;
+                        }
+                        // If there's previous data, use the last value
+                        const dataset = equityChart.data.datasets[datasetIndex];
+                        if (dataset.data.length > 0) {
+                            return dataset.data[dataset.data.length - 1];
+                        }
+                        // Otherwise use initial balance (1000 USDT)
+                        return 1000;
+                    };
+                    
                     // Alpha/Beta platform data
                     equityChart.data.datasets[0].data.push(alphaHLBalance);
                     equityChart.data.datasets[1].data.push(alphaAsterBalance);
                     equityChart.data.datasets[2].data.push(betaHLBalance);
                     equityChart.data.datasets[3].data.push(betaAsterBalance);
-                    // If individual AI has no balance data, use initial balance 200 USDT
-                    equityChart.data.datasets[4].data.push(traderBalances['DeepSeek'] || 200);
-                    equityChart.data.datasets[5].data.push(traderBalances['Claude'] || 200);
-                    equityChart.data.datasets[6].data.push(traderBalances['Grok'] || 200);
-                    equityChart.data.datasets[7].data.push(traderBalances['GPT'] || 200);
-                    equityChart.data.datasets[8].data.push(traderBalances['Gemini'] || 200);
-                    equityChart.data.datasets[9].data.push(traderBalances['Qwen'] || 200);
+                    // Individual AI traders (with smart fallback to 1000 USDT or last value)
+                    equityChart.data.datasets[4].data.push(getRealtimeValue(traderBalances['DeepSeek'], 4));
+                    equityChart.data.datasets[5].data.push(getRealtimeValue(traderBalances['Claude'], 5));
+                    equityChart.data.datasets[6].data.push(getRealtimeValue(traderBalances['Grok'], 6));
+                    equityChart.data.datasets[7].data.push(getRealtimeValue(traderBalances['GPT'], 7));
+                    equityChart.data.datasets[8].data.push(getRealtimeValue(traderBalances['Gemini'], 8));
+                    equityChart.data.datasets[9].data.push(getRealtimeValue(traderBalances['Qwen'], 9));
                     
                 } else {
                     // Within same period: update or add temporary point
@@ -1767,18 +1782,28 @@
                         // First time loading, add initial point
                         console.log('📊 First time loading curve data');
                         equityChart.data.labels.push(currentTime);
+                        
+                        // Helper function: get value with smart fallback (for first load)
+                        const getInitialValue = (value, datasetIndex) => {
+                            if (value !== undefined && value !== null) {
+                                return value;
+                            }
+                            // For first load, use initial balance (1000 USDT)
+                            return 1000;
+                        };
+                        
                         // Alpha/Beta platform data
                         equityChart.data.datasets[0].data.push(alphaHLBalance);
                         equityChart.data.datasets[1].data.push(alphaAsterBalance);
                         equityChart.data.datasets[2].data.push(betaHLBalance);
                         equityChart.data.datasets[3].data.push(betaAsterBalance);
-                        // If individual AI has no balance data, use initial balance 200 USDT
-                        equityChart.data.datasets[4].data.push(traderBalances['DeepSeek'] || 200);
-                        equityChart.data.datasets[5].data.push(traderBalances['Claude'] || 200);
-                        equityChart.data.datasets[6].data.push(traderBalances['Grok'] || 200);
-                        equityChart.data.datasets[7].data.push(traderBalances['GPT'] || 200);
-                        equityChart.data.datasets[8].data.push(traderBalances['Gemini'] || 200);
-                        equityChart.data.datasets[9].data.push(traderBalances['Qwen'] || 200);
+                        // Individual AI traders (with smart fallback to 1000 USDT)
+                        equityChart.data.datasets[4].data.push(getInitialValue(traderBalances['DeepSeek'], 4));
+                        equityChart.data.datasets[5].data.push(getInitialValue(traderBalances['Claude'], 5));
+                        equityChart.data.datasets[6].data.push(getInitialValue(traderBalances['Grok'], 6));
+                        equityChart.data.datasets[7].data.push(getInitialValue(traderBalances['GPT'], 7));
+                        equityChart.data.datasets[8].data.push(getInitialValue(traderBalances['Gemini'], 8));
+                        equityChart.data.datasets[9].data.push(getInitialValue(traderBalances['Qwen'], 9));
                         currentPeriodStartIndex = 0;
                     } else {
                         // Update last point of current period (temporary point)
@@ -1790,18 +1815,33 @@
                         );
                         
                         equityChart.data.labels[lastIndex] = currentTime;
+                        
+                        // Helper function: get value with smart fallback (for update)
+                        const getUpdateValue = (value, datasetIndex) => {
+                            if (value !== undefined && value !== null) {
+                                return value;
+                            }
+                            // If there's previous data, use the last value (before current point)
+                            const dataset = equityChart.data.datasets[datasetIndex];
+                            if (lastIndex > 0) {
+                                return dataset.data[lastIndex - 1];
+                            }
+                            // Otherwise use initial balance (1000 USDT)
+                            return 1000;
+                        };
+                        
                         // Alpha/Beta platform data
                         equityChart.data.datasets[0].data[lastIndex] = alphaHLBalance;
                         equityChart.data.datasets[1].data[lastIndex] = alphaAsterBalance;
                         equityChart.data.datasets[2].data[lastIndex] = betaHLBalance;
                         equityChart.data.datasets[3].data[lastIndex] = betaAsterBalance;
-                        // If individual AI has no balance data, use initial balance 200 USDT
-                        equityChart.data.datasets[4].data[lastIndex] = traderBalances['DeepSeek'] || 200;
-                        equityChart.data.datasets[5].data[lastIndex] = traderBalances['Claude'] || 200;
-                        equityChart.data.datasets[6].data[lastIndex] = traderBalances['Grok'] || 200;
-                        equityChart.data.datasets[7].data[lastIndex] = traderBalances['GPT'] || 200;
-                        equityChart.data.datasets[8].data[lastIndex] = traderBalances['Gemini'] || 200;
-                        equityChart.data.datasets[9].data[lastIndex] = traderBalances['Qwen'] || 200;
+                        // Individual AI traders (with smart fallback to previous value or 1000 USDT)
+                        equityChart.data.datasets[4].data[lastIndex] = getUpdateValue(traderBalances['DeepSeek'], 4);
+                        equityChart.data.datasets[5].data[lastIndex] = getUpdateValue(traderBalances['Claude'], 5);
+                        equityChart.data.datasets[6].data[lastIndex] = getUpdateValue(traderBalances['Grok'], 6);
+                        equityChart.data.datasets[7].data[lastIndex] = getUpdateValue(traderBalances['GPT'], 7);
+                        equityChart.data.datasets[8].data[lastIndex] = getUpdateValue(traderBalances['Gemini'], 8);
+                        equityChart.data.datasets[9].data[lastIndex] = getUpdateValue(traderBalances['Qwen'], 9);
                     }
                 }
                 
@@ -2008,7 +2048,7 @@
                     const sortedHistory = [...data.history].reverse();
                     
                     // Fill historical data
-                    sortedHistory.forEach(record => {
+                    sortedHistory.forEach((record, index) => {
                         const time = new Date(record.timestamp).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
                         equityChart.data.labels.push(time);
                         
@@ -2027,18 +2067,33 @@
                             }
                         });
                         
-                        // Alpha/Beta platform data (group initial 200 USDT)
-                        equityChart.data.datasets[0].data.push(balances['Alpha-Hyperliquid'] || 200);
-                        equityChart.data.datasets[1].data.push(balances['Alpha-Aster'] || 200);
-                        equityChart.data.datasets[2].data.push(balances['Beta-Hyperliquid'] || 200);
-                        equityChart.data.datasets[3].data.push(balances['Beta-Aster'] || 200);
-                        // Individual AI traders (initial 200 USDT)
-                        equityChart.data.datasets[4].data.push(traderBalances['DeepSeek'] || 200);
-                        equityChart.data.datasets[5].data.push(traderBalances['Claude'] || 200);
-                        equityChart.data.datasets[6].data.push(traderBalances['Grok'] || 200);
-                        equityChart.data.datasets[7].data.push(traderBalances['GPT'] || 200);
-                        equityChart.data.datasets[8].data.push(traderBalances['Gemini'] || 200);
-                        equityChart.data.datasets[9].data.push(traderBalances['Qwen'] || 200);
+                        // Helper function: get value with smart fallback
+                        // If data is missing, use previous value (if exists), otherwise use initial balance (1000)
+                        const getValueWithFallback = (value, datasetIndex) => {
+                            if (value !== undefined && value !== null) {
+                                return value;
+                            }
+                            // If there's previous data, use the last value
+                            const dataset = equityChart.data.datasets[datasetIndex];
+                            if (dataset.data.length > 0) {
+                                return dataset.data[dataset.data.length - 1];
+                            }
+                            // Otherwise use initial balance (1000 USDT)
+                            return 1000;
+                        };
+                        
+                        // Alpha/Beta platform data (group initial balance: 1000 USDT)
+                        equityChart.data.datasets[0].data.push(getValueWithFallback(balances['Alpha-Hyperliquid'], 0));
+                        equityChart.data.datasets[1].data.push(getValueWithFallback(balances['Alpha-Aster'], 1));
+                        equityChart.data.datasets[2].data.push(getValueWithFallback(balances['Beta-Hyperliquid'], 2));
+                        equityChart.data.datasets[3].data.push(getValueWithFallback(balances['Beta-Aster'], 3));
+                        // Individual AI traders (initial balance: 1000 USDT)
+                        equityChart.data.datasets[4].data.push(getValueWithFallback(traderBalances['DeepSeek'], 4));
+                        equityChart.data.datasets[5].data.push(getValueWithFallback(traderBalances['Claude'], 5));
+                        equityChart.data.datasets[6].data.push(getValueWithFallback(traderBalances['Grok'], 6));
+                        equityChart.data.datasets[7].data.push(getValueWithFallback(traderBalances['GPT'], 7));
+                        equityChart.data.datasets[8].data.push(getValueWithFallback(traderBalances['Gemini'], 8));
+                        equityChart.data.datasets[9].data.push(getValueWithFallback(traderBalances['Qwen'], 9));
                     });
                     
                     // Update current period start index to last data point
