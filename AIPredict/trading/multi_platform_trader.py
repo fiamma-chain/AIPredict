@@ -41,6 +41,10 @@ class PlatformTrader:
             "trades": [],
             "positions": {}
         }
+        # Cache for account info to avoid frequent API calls
+        self._account_info_cache = None
+        self._account_info_cache_time = 0
+        self._cache_ttl = 3  # Cache valid for 3 seconds
     
     async def initialize(self, initial_balance: float = None, group_name: str = ""):
         """
@@ -98,8 +102,8 @@ class PlatformTrader:
         Returns:
             Trading result
         """
-        # Get current balance
-        account = await self.client.get_account_info()
+        # Get current balance (use cached data to reduce API calls)
+        account = await self._get_account_info_cached(force_refresh=False)
         balance = float(account.get('marginSummary', {}).get('accountValue', 0))
         
         # Execute decision
@@ -130,13 +134,41 @@ class PlatformTrader:
         
         return result
     
-    async def update_stats(self):
-        """Update statistics"""
+    async def _get_account_info_cached(self, force_refresh: bool = False):
+        """
+        Get account info with caching
+        
+        Args:
+            force_refresh: Force refresh cache (ignore TTL)
+            
+        Returns:
+            Account info dict
+        """
+        import time
+        current_time = time.time()
+        
+        # Check if cache is valid
+        if (not force_refresh and 
+            self._account_info_cache is not None and 
+            (current_time - self._account_info_cache_time) < self._cache_ttl):
+            return self._account_info_cache
+        
+        # Fetch fresh data
+        account = await self.client.get_account_info()
+        self._account_info_cache = account
+        self._account_info_cache_time = current_time
+        return account
+    
+    async def update_stats(self, force_refresh: bool = False):
+        """
+        Update statistics
+        
+        Args:
+            force_refresh: Force refresh account data (ignore cache)
+        """
         try:
-            # Get current balance
-            logger.info(f"[{self.name}] Before updating account info...")
-            account = await self.client.get_account_info()
-            logger.info(f"[{self.name}] After updating account info...")
+            # Get current balance (with caching to avoid frequent API calls)
+            account = await self._get_account_info_cached(force_refresh)
             current_balance = float(account.get('marginSummary', {}).get('accountValue', 0))
             
             self.stats["balance"] = current_balance
@@ -239,10 +271,15 @@ class MultiPlatformTrader:
         
         return results
     
-    async def update_all_stats(self):
-        """Update statistics for all platforms"""
+    async def update_all_stats(self, force_refresh: bool = False):
+        """
+        Update statistics for all platforms
+        
+        Args:
+            force_refresh: Force refresh account data (ignore cache)
+        """
         for trader in self.platform_traders.values():
-            await trader.update_stats()
+            await trader.update_stats(force_refresh=force_refresh)
     
     def get_comparison_stats(self) -> Dict:
         """

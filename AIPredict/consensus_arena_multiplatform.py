@@ -1409,47 +1409,90 @@ async def get_health():
 
 
 @app.get("/api/status")
-async def get_status():
-    """Get system status"""
+async def get_status(last_update_time: str = None):
+    """Get system status (supports incremental updates)
+    
+    Args:
+        last_update_time: ISO format timestamp of last update. If provided, only returns incremental data.
+    """
     if not arena:
         return {"status": "not_started"}
     
     try:
-        # Update statistics for all groups and traders (ensure latest data is returned)
-        for group in arena.groups:
-            await group.update_stats()
-        for trader in arena.individual_traders:
-            await trader.update_stats()
+        from datetime import datetime
+        
+        # Parse last_update_time if provided
+        last_update_dt = None
+        if last_update_time:
+            try:
+                last_update_dt = datetime.fromisoformat(last_update_time.replace('Z', '+00:00'))
+            except Exception as e:
+                logger.warning(f"Invalid last_update_time format: {last_update_time}, error: {e}")
+        
+        # ⚡ Performance optimization: Use cached statistics directly, no real-time updates
+        # Statistics are updated by arena's main loop, no need to query on every request
+        # This avoids frequent get_account_info() calls (especially slow on Aster: 300-600ms per call)
+        
+        is_incremental = last_update_dt is not None
         
         groups_data = []
         for group in arena.groups:
+            # Filter incremental decisions
+            all_decisions = group.stats.get("consensus_decisions", [])
+            if is_incremental:
+                # Only return decisions after last_update_time
+                filtered_decisions = [
+                    d for d in all_decisions 
+                    if datetime.fromisoformat(d.get("time", "1970-01-01T00:00:00")) > last_update_dt
+                ]
+            else:
+                # Return all decisions (up to 100)
+                filtered_decisions = all_decisions[:100]
+            
             group_info = {
                 "type": "group",
                 "group_name": group.stats.get("group_name", ""),
-                "platforms": _sanitize_for_json(group.stats.get("platforms", {})),
-                "platform_comparison": _sanitize_for_json(group.stats.get("platform_comparison", {})),
-                "consensus_decisions": _sanitize_for_json(group.stats.get("consensus_decisions", []))
+                "platforms": _sanitize_for_json(group.stats.get("platforms", {})) if not is_incremental else {},
+                "platform_comparison": _sanitize_for_json(group.stats.get("platform_comparison", {})) if not is_incremental else {},
+                "consensus_decisions": _sanitize_for_json(filtered_decisions),
+                "is_incremental": is_incremental
             }
             groups_data.append(group_info)
         
         individual_traders_data = []
         for trader in arena.individual_traders:
-            # 获取平台地址信息
+            # Filter incremental decisions
+            all_decisions = trader.stats.get("decisions", [])
+            if is_incremental:
+                # Only return decisions after last_update_time
+                filtered_decisions = [
+                    d for d in all_decisions 
+                    if datetime.fromisoformat(d.get("time", "1970-01-01T00:00:00")) > last_update_dt
+                ]
+            else:
+                # Return all decisions (up to 100)
+                filtered_decisions = all_decisions[:100]
+            
+            # 获取平台地址信息 (only for full update)
             platform_addresses = {}
-            for platform_name, platform_trader in trader.multi_trader.platform_traders.items():
-                if hasattr(platform_trader.client, 'address'):
-                    platform_addresses[platform_name] = platform_trader.client.address
+            if not is_incremental:
+                for platform_name, platform_trader in trader.multi_trader.platform_traders.items():
+                    if hasattr(platform_trader.client, 'address'):
+                        platform_addresses[platform_name] = platform_trader.client.address
             
             trader_info = {
                 "type": "individual",
                 "trader_name": trader.stats.get("trader_name", ""),
                 "ai_name": trader.stats.get("ai_name", ""),
-                "platforms": _sanitize_for_json(trader.stats.get("platforms", {})),
-                "platform_comparison": _sanitize_for_json(trader.stats.get("platform_comparison", {})),
-                "decisions": _sanitize_for_json(trader.stats.get("decisions", [])),
-                "addresses": platform_addresses  # 添加地址信息
+                "platforms": _sanitize_for_json(trader.stats.get("platforms", {})) if not is_incremental else {},
+                "platform_comparison": _sanitize_for_json(trader.stats.get("platform_comparison", {})) if not is_incremental else {},
+                "decisions": _sanitize_for_json(filtered_decisions),
+                "addresses": platform_addresses,  # 添加地址信息
+                "is_incremental": is_incremental
             }
             individual_traders_data.append(trader_info)
+        
+        current_time = datetime.now().isoformat()
         
         return {
             "status": "running" if arena.running else "stopped",
@@ -1458,7 +1501,9 @@ async def get_status():
             "update_interval": f"{arena.update_interval//60} minute(s)",
             "consensus_rule": f"At least {settings.consensus_min_votes} AIs must agree",
             "enabled_platforms": get_enabled_platforms(),
-            "total_participants": len(arena.groups) + len(arena.individual_traders)
+            "total_participants": len(arena.groups) + len(arena.individual_traders),
+            "server_time": current_time,
+            "is_incremental": is_incremental
         }
     except Exception as e:
         logger.error(f"Error in get_status: {e}")

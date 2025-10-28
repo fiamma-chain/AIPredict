@@ -926,6 +926,14 @@
         let lastDecisionCount = 0;  // Last decision count
         let currentPeriodStartIndex = 0;  // Current period start index
         
+        // ⚡ Frontend cache for incremental updates
+        let lastUpdateTime = null;  // Last update timestamp (ISO format)
+        const cachedData = {
+            groups: {},  // Key: group_name, Value: { platforms, decisions, ... }
+            traders: {}  // Key: trader_name, Value: { platforms, decisions, ... }
+        };
+        const MAX_DECISIONS = 100;  // Max decisions to keep per trader/group
+        
         // Logo image cache
         const logoImages = {};
         const logoMapping = {
@@ -1477,12 +1485,138 @@
             });
         }
         
+        // ⚡ Merge full data into cache
+        function mergeFullData(data) {
+            // Clear and rebuild cache
+            cachedData.groups = {};
+            cachedData.traders = {};
+            
+            // Process groups
+            if (data.groups) {
+                data.groups.forEach(group => {
+                    const groupName = group.group_name;
+                    cachedData.groups[groupName] = {
+                        group_name: groupName,
+                        platforms: group.platforms || {},
+                        platform_comparison: group.platform_comparison || {},
+                        consensus_decisions: (group.consensus_decisions || []).slice(0, MAX_DECISIONS)
+                    };
+                });
+            }
+            
+            // Process individual traders
+            if (data.individual_traders) {
+                data.individual_traders.forEach(trader => {
+                    const traderName = trader.trader_name;
+                    cachedData.traders[traderName] = {
+                        trader_name: traderName,
+                        ai_name: trader.ai_name,
+                        platforms: trader.platforms || {},
+                        platform_comparison: trader.platform_comparison || {},
+                        decisions: (trader.decisions || []).slice(0, MAX_DECISIONS),
+                        addresses: trader.addresses || {}
+                    };
+                });
+            }
+            
+            console.log(`📦 Cache initialized: ${Object.keys(cachedData.groups).length} groups, ${Object.keys(cachedData.traders).length} traders`);
+        }
+        
+        // ⚡ Merge incremental data into cache
+        function mergeIncrementalData(data) {
+            let newDecisions = 0;
+            
+            // Process groups
+            if (data.groups) {
+                data.groups.forEach(group => {
+                    const groupName = group.group_name;
+                    
+                    // Initialize if not exists
+                    if (!cachedData.groups[groupName]) {
+                        cachedData.groups[groupName] = {
+                            group_name: groupName,
+                            platforms: {},
+                            platform_comparison: {},
+                            consensus_decisions: []
+                        };
+                    }
+                    
+                    // Update platforms if provided (full update only)
+                    if (group.platforms && Object.keys(group.platforms).length > 0) {
+                        cachedData.groups[groupName].platforms = group.platforms;
+                    }
+                    if (group.platform_comparison && Object.keys(group.platform_comparison).length > 0) {
+                        cachedData.groups[groupName].platform_comparison = group.platform_comparison;
+                    }
+                    
+                    // Merge new decisions (prepend and limit to MAX_DECISIONS)
+                    if (group.consensus_decisions && group.consensus_decisions.length > 0) {
+                        newDecisions += group.consensus_decisions.length;
+                        cachedData.groups[groupName].consensus_decisions = [
+                            ...group.consensus_decisions,
+                            ...cachedData.groups[groupName].consensus_decisions
+                        ].slice(0, MAX_DECISIONS);
+                    }
+                });
+            }
+            
+            // Process individual traders
+            if (data.individual_traders) {
+                data.individual_traders.forEach(trader => {
+                    const traderName = trader.trader_name;
+                    
+                    // Initialize if not exists
+                    if (!cachedData.traders[traderName]) {
+                        cachedData.traders[traderName] = {
+                            trader_name: traderName,
+                            ai_name: trader.ai_name,
+                            platforms: {},
+                            platform_comparison: {},
+                            decisions: [],
+                            addresses: {}
+                        };
+                    }
+                    
+                    // Update platforms if provided (full update only)
+                    if (trader.platforms && Object.keys(trader.platforms).length > 0) {
+                        cachedData.traders[traderName].platforms = trader.platforms;
+                    }
+                    if (trader.platform_comparison && Object.keys(trader.platform_comparison).length > 0) {
+                        cachedData.traders[traderName].platform_comparison = trader.platform_comparison;
+                    }
+                    if (trader.addresses && Object.keys(trader.addresses).length > 0) {
+                        cachedData.traders[traderName].addresses = trader.addresses;
+                    }
+                    
+                    // Merge new decisions (prepend and limit to MAX_DECISIONS)
+                    if (trader.decisions && trader.decisions.length > 0) {
+                        newDecisions += trader.decisions.length;
+                        cachedData.traders[traderName].decisions = [
+                            ...trader.decisions,
+                            ...cachedData.traders[traderName].decisions
+                        ].slice(0, MAX_DECISIONS);
+                    }
+                });
+            }
+            
+            console.log(`✨ Incremental update merged: ${newDecisions} new decisions`);
+        }
+        
         async function updateData() {
             try {
                 const now = new Date().toLocaleTimeString('en-US');
                 console.log(`⏰ [${now}] Starting data update...`);
                 
-                const response = await fetch('/api/status');
+                // ⚡ Build API URL with incremental update support
+                let apiUrl = '/api/status';
+                if (lastUpdateTime) {
+                    apiUrl += `?last_update_time=${encodeURIComponent(lastUpdateTime)}`;
+                    console.log(`📡 Requesting incremental update since: ${lastUpdateTime}`);
+                } else {
+                    console.log('📡 Requesting full data (first load)');
+                }
+                
+                const response = await fetch(apiUrl);
                 
                 // Check if response is OK (status 200-299)
                 if (!response.ok) {
@@ -1501,15 +1635,35 @@
                 
                 const data = await response.json();
                 
-                if (!data.groups || data.groups.length < 2) return;
+                // ⚡ Update last update time from server
+                if (data.server_time) {
+                    lastUpdateTime = data.server_time;
+                    console.log(`✅ Updated lastUpdateTime to: ${lastUpdateTime}`);
+                }
                 
-                const alphaGroup = data.groups[0];
-                const betaGroup = data.groups[1];
+                // ⚡ Merge incremental data into cache
+                if (data.is_incremental) {
+                    console.log('🔄 Processing incremental update...');
+                    mergeIncrementalData(data);
+                } else {
+                    console.log('📥 Processing full data update...');
+                    mergeFullData(data);
+                }
+                
+                // ⚡ Use cached data for rendering
+                const groupNames = Object.keys(cachedData.groups);
+                if (groupNames.length < 2) {
+                    console.warn('⚠️ Not enough groups in cache');
+                    return;
+                }
+                
+                const alphaGroup = cachedData.groups[groupNames[0]];
+                const betaGroup = cachedData.groups[groupNames[1]];
                 
                 // Debug: output complete groups data structure
-                console.log('🔍 [DEBUG] Alpha Group complete data:', alphaGroup);
+                console.log('🔍 [DEBUG] Alpha Group cached data:', alphaGroup);
                 console.log('🔍 [DEBUG] Alpha platforms keys:', Object.keys(alphaGroup.platforms || {}));
-                console.log('🔍 [DEBUG] Beta Group complete data:', betaGroup);
+                console.log('🔍 [DEBUG] Beta Group cached data:', betaGroup);
                 console.log('🔍 [DEBUG] Beta platforms keys:', Object.keys(betaGroup.platforms || {}));
                 
                 // Get platform data
@@ -1545,8 +1699,8 @@
                 document.getElementById('beta-hl-roi').textContent = `${betaHLRoi >= 0 ? '+' : ''}${betaHLRoi.toFixed(2)}%`;
                 document.getElementById('beta-aster-roi').textContent = `${betaAsterRoi >= 0 ? '+' : ''}${betaAsterRoi.toFixed(2)}%`;
                 
-                // Get ROI data for individual AI traders
-                const individualTraders = data.individual_traders || [];
+                // Get ROI data for individual AI traders (from cache)
+                const individualTraders = Object.values(cachedData.traders);
                 const soloRois = {};
                 
                 individualTraders.forEach(trader => {
