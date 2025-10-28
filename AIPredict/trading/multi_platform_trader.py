@@ -134,7 +134,9 @@ class PlatformTrader:
         """Update statistics"""
         try:
             # Get current balance
+            logger.info(f"[{self.name}] Before updating account info...")
             account = await self.client.get_account_info()
+            logger.info(f"[{self.name}] After updating account info...")
             current_balance = float(account.get('marginSummary', {}).get('accountValue', 0))
             
             self.stats["balance"] = current_balance
