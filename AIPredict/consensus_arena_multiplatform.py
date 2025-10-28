@@ -1391,6 +1391,23 @@ def _sanitize_for_json(obj, _visited=None):
             return str(obj)
 
 
+@app.get("/api/health")
+async def get_health():
+    """Health check endpoint - returns whether the program is running"""
+    if not arena:
+        return {
+            "status": "not_started",
+            "running": False,
+            "message": "System not initialized"
+        }
+    
+    return {
+        "status": "healthy" if arena.running else "stopped",
+        "running": arena.running,
+        "message": "System is running normally" if arena.running else "System is stopped"
+    }
+
+
 @app.get("/api/status")
 async def get_status():
     """Get system status"""
