@@ -1755,7 +1755,7 @@
                     
                     // Helper function: get value with smart fallback (for real-time updates)
                     const getRealtimeValue = (value, datasetIndex) => {
-                        if (value !== undefined && value !== null) {
+                        if (value !== undefined && value !== null && value !== 0) {
                             return value;
                         }
                         // If there's previous data, use the last value
