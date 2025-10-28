@@ -1217,10 +1217,10 @@
                         let color, colorName;
                         const groupName = trade.group;
                         
-                        if (groupName.includes('Alpha') || groupName === 'Alpha组') {
+                        if (groupName.includes('Alpha') || groupName === 'Alpha') {
                             color = '#8b5cf6';  // Purple - Alpha Group
                             colorName = '🟣Purple';
-                        } else if (groupName.includes('Beta') || groupName === 'Beta组') {
+                        } else if (groupName.includes('Beta') || groupName === 'Beta') {
                             color = '#f97316';  // Orange - Beta Group
                             colorName = '🟠Orange';
                         } else if (groupName.includes('DeepSeek')) {
@@ -1269,7 +1269,7 @@
                         // For individual traders, use AI name; for groups, use group name
                         const displayName = groupName.includes('-Solo') ? 
                                             groupName.replace('-Solo-Aster', '').replace('-Solo', '') : 
-                                            groupName.replace('组', '');
+                                            groupName;
                         
                         let text = `${platformLabel} ${displayName} ${actionText} ${sideText}`;
                         if (!isOpen && trade.pnl !== 0) {
@@ -1523,12 +1523,12 @@
                 const betaPlatforms = betaGroup.platforms || {};
                 
                 // Extract two platform data for Alpha group
-                const alphaHL = alphaPlatforms['Alpha组-Hyperliquid'] || alphaPlatforms['Alpha-Hyperliquid'] || {};
-                const alphaAster = alphaPlatforms['Alpha组-Aster'] || alphaPlatforms['Alpha-Aster'] || {};
+                const alphaHL = alphaPlatforms['Alpha-Hyperliquid'] || alphaPlatforms['Alpha-Hyperliquid'] || {};
+                const alphaAster = alphaPlatforms['Alpha-Aster'] || alphaPlatforms['Alpha-Aster'] || {};
                 
                 // Extract two platform data for Beta group
-                const betaHL = betaPlatforms['Beta组-Hyperliquid'] || betaPlatforms['Beta-Hyperliquid'] || {};
-                const betaAster = betaPlatforms['Beta组-Aster'] || betaPlatforms['Beta-Aster'] || {};
+                const betaHL = betaPlatforms['Beta-Hyperliquid'] || betaPlatforms['Beta-Hyperliquid'] || {};
+                const betaAster = betaPlatforms['Beta-Aster'] || betaPlatforms['Beta-Aster'] || {};
                 
                 console.log('🔍 [DEBUG] Alpha HL data:', alphaHL);
                 console.log('🔍 [DEBUG] Alpha Aster data:', alphaAster);
@@ -2028,10 +2028,10 @@
                         });
                         
                         // Alpha/Beta platform data (group initial 200 USDT)
-                        equityChart.data.datasets[0].data.push(balances['Alpha组-Hyperliquid'] || 200);
-                        equityChart.data.datasets[1].data.push(balances['Alpha组-Aster'] || 200);
-                        equityChart.data.datasets[2].data.push(balances['Beta组-Hyperliquid'] || 200);
-                        equityChart.data.datasets[3].data.push(balances['Beta组-Aster'] || 200);
+                        equityChart.data.datasets[0].data.push(balances['Alpha-Hyperliquid'] || 200);
+                        equityChart.data.datasets[1].data.push(balances['Alpha-Aster'] || 200);
+                        equityChart.data.datasets[2].data.push(balances['Beta-Hyperliquid'] || 200);
+                        equityChart.data.datasets[3].data.push(balances['Beta-Aster'] || 200);
                         // Individual AI traders (initial 200 USDT)
                         equityChart.data.datasets[4].data.push(traderBalances['DeepSeek'] || 200);
                         equityChart.data.datasets[5].data.push(traderBalances['Claude'] || 200);

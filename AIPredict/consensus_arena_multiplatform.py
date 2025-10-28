@@ -295,9 +295,9 @@ class AIGroup:
             await self._sync_existing_positions(trader)
     
     async def _sync_existing_positions(self, trader):
-        """同步平台持仓"""
+        """Sync platform positions"""
         try:
-            logger.info(f"[{trader.name}] 🔄 正在同步现有持仓...")
+            logger.info(f"[{trader.name}] 🔄 Syncing existing positions...")
             account = await trader.client.get_account_info()
             positions = account.get('assetPositions', [])
             

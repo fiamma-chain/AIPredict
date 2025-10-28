@@ -241,20 +241,51 @@ class AsterClient(BaseExchangeClient):
             # Output total balance (USDC + USDT)
             logger.info(f"[Aster] 📊 Total contract account balance: ${total_margin_balance:.6f} (USDC+USDT)")
             
+            # Filter positions with positionAmt > 0
+            all_positions = result.get('positions', [])
+            active_positions = []
+            for pos in all_positions:
+                if float(pos.get('positionAmt', 0)) != 0:
+                    # Convert to Hyperliquid-compatible nested format
+                    # Hyperliquid uses nested 'position' object
+                    symbol = pos.get('symbol', '')
+                    # Convert BTCUSDT -> BTC for Hyperliquid compatibility
+                    coin = symbol.replace('USDT', '').replace('USDC', '') if symbol else ''
+                    position_side = pos.get('positionSide', 'BOTH')
+                    leverage = {
+                        'type': 'isolated' if pos.get('isolated', False) else 'cross',
+                        'value': int(pos.get('leverage', '1'))
+                    }
+                    
+                    formatted_pos = {
+                        'type': 'oneWay' if position_side == 'BOTH' else 'hedge',
+                        'position': {
+                            'coin': coin,
+                            'szi': pos.get('positionAmt', '0'),
+                            'entryPx': pos.get('entryPrice', '0'),
+                            'leverage': leverage,
+                            'positionValue': pos.get('notional', '0'),
+                            'unrealizedPnl': pos.get('unrealizedProfit', '0'),
+                        },
+                        # Keep original Aster fields for reference
+                        'aster_raw': pos
+                    }
+                    active_positions.append(formatted_pos)
+            
             # Standardized return format, compatible with Hyperliquid format, includes Aster specific info
             # Use marginBalance (includes unrealized PnL) as account value
             return {
                 "marginSummary": {
                     "accountValue": total_margin_balance  # Use marginBalance instead of walletBalance
                 },
-                "assetPositions": result.get('positions', []),
+                "assetPositions": active_positions,
                 "withdrawable": total_available_balance,  # Compatible with Hyperliquid format
                 # Aster-specific fields
                 "equity": total_margin_balance,
                 "availableBalance": total_available_balance,
                 "totalPositionInitialMargin": float(result.get('totalPositionInitialMargin', 0)),
                 "totalUnrealizedProfit": total_unrealized_profit,
-                "positions": result.get('positions', []),
+                "positions": active_positions,
                 "raw": result
             }
         except Exception as e:
