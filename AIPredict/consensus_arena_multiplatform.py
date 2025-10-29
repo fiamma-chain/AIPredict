@@ -1420,6 +1420,9 @@ async def get_status(last_update_time: str = None):
     
     try:
         from datetime import datetime
+        import time
+        
+        start_time = time.time()
         
         # Parse last_update_time if provided
         last_update_dt = None
@@ -1435,19 +1438,52 @@ async def get_status(last_update_time: str = None):
         
         is_incremental = last_update_dt is not None
         
+        # ⚡ Optimized decision filtering function
+        def filter_decisions_fast(decisions_list, cutoff_time=None, max_count=100):
+            """Fast decision filtering with early termination
+            
+            Args:
+                decisions_list: List of decisions (newest first)
+                cutoff_time: Only return decisions after this time
+                max_count: Maximum number of decisions to return
+            
+            Returns:
+                Filtered list of decisions
+            """
+            if not decisions_list:
+                return []
+            
+            if cutoff_time is None:
+                # Full update: return first max_count items
+                return decisions_list[:max_count]
+            
+            # Incremental update: filter by time with early termination
+            result = []
+            for decision in decisions_list:
+                if len(result) >= max_count:
+                    break
+                
+                # Parse time only when needed
+                try:
+                    decision_time_str = decision.get("time", "1970-01-01T00:00:00")
+                    decision_time = datetime.fromisoformat(decision_time_str)
+                    
+                    if decision_time > cutoff_time:
+                        result.append(decision)
+                    else:
+                        # Since list is sorted newest first, we can stop here
+                        break
+                except Exception as e:
+                    logger.warning(f"Failed to parse decision time: {e}")
+                    continue
+            
+            return result
+        
         groups_data = []
         for group in arena.groups:
-            # Filter incremental decisions
+            # Filter incremental decisions with optimized function
             all_decisions = group.stats.get("consensus_decisions", [])
-            if is_incremental:
-                # Only return decisions after last_update_time
-                filtered_decisions = [
-                    d for d in all_decisions 
-                    if datetime.fromisoformat(d.get("time", "1970-01-01T00:00:00")) > last_update_dt
-                ]
-            else:
-                # Return all decisions (up to 100)
-                filtered_decisions = all_decisions[:100]
+            filtered_decisions = filter_decisions_fast(all_decisions, last_update_dt, 100)
             
             group_info = {
                 "type": "group",
@@ -1461,17 +1497,9 @@ async def get_status(last_update_time: str = None):
         
         individual_traders_data = []
         for trader in arena.individual_traders:
-            # Filter incremental decisions
+            # Filter incremental decisions with optimized function
             all_decisions = trader.stats.get("decisions", [])
-            if is_incremental:
-                # Only return decisions after last_update_time
-                filtered_decisions = [
-                    d for d in all_decisions 
-                    if datetime.fromisoformat(d.get("time", "1970-01-01T00:00:00")) > last_update_dt
-                ]
-            else:
-                # Return all decisions (up to 100)
-                filtered_decisions = all_decisions[:100]
+            filtered_decisions = filter_decisions_fast(all_decisions, last_update_dt, 100)
             
             # 获取平台地址信息 (only for full update)
             platform_addresses = {}
@@ -1493,6 +1521,11 @@ async def get_status(last_update_time: str = None):
             individual_traders_data.append(trader_info)
         
         current_time = datetime.now().isoformat()
+        elapsed_time = time.time() - start_time
+        
+        # Log performance warning if request takes too long
+        if elapsed_time > 1.0:
+            logger.warning(f"⚠️ get_status took {elapsed_time:.2f}s (threshold: 1.0s)")
         
         return {
             "status": "running" if arena.running else "stopped",
@@ -1503,7 +1536,8 @@ async def get_status(last_update_time: str = None):
             "enabled_platforms": get_enabled_platforms(),
             "total_participants": len(arena.groups) + len(arena.individual_traders),
             "server_time": current_time,
-            "is_incremental": is_incremental
+            "is_incremental": is_incremental,
+            "processing_time_ms": round(elapsed_time * 1000, 2)
         }
     except Exception as e:
         logger.error(f"Error in get_status: {e}")
