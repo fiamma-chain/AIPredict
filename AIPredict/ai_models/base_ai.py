@@ -204,7 +204,7 @@ When confidence is below 50%, choose HOLD and wait for better opportunities.
 Response Format (strictly follow this format):
 DECISION: [STRONG_BUY/BUY/HOLD/SELL/STRONG_SELL]
 CONFIDENCE: [number from 0-100]
-REASONING: [your analysis reasoning, 50-100 words]
+REASONING: [your analysis reasoning, maximum 50 words]
 """
         
         return prompt

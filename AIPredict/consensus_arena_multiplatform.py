@@ -86,8 +86,7 @@ class IndividualAITrader:
             "ai_name": self.ai_name,
             "type": "individual",
             "platforms": {},
-            "decisions": [],
-            "platform_comparison": {}
+            "decisions": []
         }
     
     async def initialize(self):
@@ -210,10 +209,6 @@ class IndividualAITrader:
         """Update statistics"""
         await self.multi_trader.update_all_stats()
         
-        # Update statistics
-        comparison = self.multi_trader.get_comparison_stats()
-        self.stats["platform_comparison"] = comparison
-        
         # Update statistics for each platform
         for platform_name, trader in self.multi_trader.platform_traders.items():
             self.stats["platforms"][platform_name] = trader.stats
@@ -281,8 +276,7 @@ class AIGroup:
         self.stats = {
             "group_name": name,
             "platforms": {},
-            "consensus_decisions": [],
-            "platform_comparison": {}
+            "consensus_decisions": []
         }
     
     async def initialize(self):
@@ -634,10 +628,6 @@ class AIGroup:
     async def update_stats(self):
         """Update statistics"""
         await self.multi_trader.update_all_stats()
-        
-        # Update group statistics
-        comparison = self.multi_trader.get_comparison_stats()
-        self.stats["platform_comparison"] = comparison
         
         # Update statistics for each platform
         for platform_name, trader in self.multi_trader.platform_traders.items():
@@ -1068,7 +1058,7 @@ class ConsensusArena:
                             "price": current_price
                         }
                         group.stats["consensus_decisions"].insert(0, decision_record)
-                        group.stats["consensus_decisions"] = group.stats["consensus_decisions"][:100]
+                        group.stats["consensus_decisions"] = group.stats["consensus_decisions"][:10]
                         
                         # Record to global decision history (for frontend display)
                         # ai_votes is a list, each element is {'ai_name': xx, 'decision': xx, ...}
@@ -1117,8 +1107,7 @@ class ConsensusArena:
                         # Display platform comparison
                         if settings.platform_comparison_enabled:
                             logger.info(f"\n[{group.name}] 📊 Platform Performance Comparison:")
-                            comparison = group.stats["platform_comparison"]
-                            for platform_stats in comparison.get("platforms", []):
+                            for platform_name, platform_stats in group.stats["platforms"].items():
                                 logger.info(f"  {platform_stats['name']}: "
                                           f"Balance=${platform_stats['balance']:.2f}, "
                                           f"PnL=${platform_stats['pnl']:+.2f}, "
@@ -1162,7 +1151,7 @@ class ConsensusArena:
                             "price": current_price
                         }
                         trader.stats["decisions"].insert(0, decision_record)
-                        trader.stats["decisions"] = trader.stats["decisions"][:100]
+                        trader.stats["decisions"] = trader.stats["decisions"][:10]
                         
                         # Record to global decision history (for frontend display)
                         global_decision = {
@@ -1193,8 +1182,7 @@ class ConsensusArena:
                         # Display platform comparison
                         if settings.platform_comparison_enabled:
                             logger.info(f"\n[{trader.name}] 📊 Platform Performance Comparison:")
-                            comparison = trader.stats["platform_comparison"]
-                            for platform_stats in comparison.get("platforms", []):
+                            for platform_name, platform_stats in trader.stats["platforms"].items():
                                 logger.info(f"  {platform_stats['name']}: "
                                           f"Balance=${platform_stats['balance']:.2f}, "
                                           f"PnL=${platform_stats['pnl']:+.2f}, "
@@ -1477,7 +1465,7 @@ async def get_status(last_update_time: str = None):
         is_incremental = last_update_dt is not None
         
         # ⚡ Optimized decision filtering function
-        def filter_decisions_fast(decisions_list, cutoff_time=None, max_count=100):
+        def filter_decisions_fast(decisions_list, cutoff_time=None, max_count=10):
             """Fast decision filtering with early termination
             
             Args:
@@ -1521,13 +1509,12 @@ async def get_status(last_update_time: str = None):
         for group in arena.groups:
             # Filter incremental decisions with optimized function
             all_decisions = group.stats.get("consensus_decisions", [])
-            filtered_decisions = filter_decisions_fast(all_decisions, last_update_dt, 100)
+            filtered_decisions = filter_decisions_fast(all_decisions, last_update_dt, 10)
             
             group_info = {
                 "type": "group",
                 "group_name": group.stats.get("group_name", ""),
                 "platforms": _sanitize_for_json(group.stats.get("platforms", {})) if not is_incremental else {},
-                "platform_comparison": _sanitize_for_json(group.stats.get("platform_comparison", {})) if not is_incremental else {},
                 "consensus_decisions": _sanitize_for_json(filtered_decisions),
                 "is_incremental": is_incremental
             }
@@ -1537,7 +1524,7 @@ async def get_status(last_update_time: str = None):
         for trader in arena.individual_traders:
             # Filter incremental decisions with optimized function
             all_decisions = trader.stats.get("decisions", [])
-            filtered_decisions = filter_decisions_fast(all_decisions, last_update_dt, 100)
+            filtered_decisions = filter_decisions_fast(all_decisions, last_update_dt, 10)
             
             # 获取平台地址信息 (only for full update)
             platform_addresses = {}
@@ -1551,7 +1538,6 @@ async def get_status(last_update_time: str = None):
                 "trader_name": trader.stats.get("trader_name", ""),
                 "ai_name": trader.stats.get("ai_name", ""),
                 "platforms": _sanitize_for_json(trader.stats.get("platforms", {})) if not is_incremental else {},
-                "platform_comparison": _sanitize_for_json(trader.stats.get("platform_comparison", {})) if not is_incremental else {},
                 "decisions": _sanitize_for_json(filtered_decisions),
                 "addresses": platform_addresses,  # 添加地址信息
                 "is_incremental": is_incremental
@@ -1587,60 +1573,6 @@ async def get_status(last_update_time: str = None):
             "groups": [],
             "individual_traders": []
         }
-
-
-@app.get("/api/platform_comparison")
-async def get_platform_comparison():
-    """Get platform comparison data"""
-    if not arena:
-        return {"platforms": []}
-    
-    # Aggregate multi-platform data from all groups
-    platform_summary = {}
-    
-    for group in arena.groups:
-        platforms = group.stats.get("platforms", {})
-        for platform_name, platform_stats in platforms.items():
-            # Extract platform abbreviation (e.g. Hyperliquid or Aster)
-            platform_key = "Hyperliquid" if "Hyperliquid" in platform_name else "Aster"
-            
-            if platform_key not in platform_summary:
-                platform_summary[platform_key] = {
-                    "platform": platform_key,
-                    "total_pnl": 0,
-                    "total_trades": 0,
-                    "wins": 0,
-                    "losses": 0,
-                    "initial_balance": 0,
-                    "current_balance": 0
-                }
-            
-            summary = platform_summary[platform_key]
-            summary["total_pnl"] += platform_stats.get("total_pnl", 0)
-            summary["total_trades"] += platform_stats.get("total_trades", 0)
-            summary["wins"] += platform_stats.get("total_wins", 0)
-            summary["losses"] += platform_stats.get("total_losses", 0)
-            summary["initial_balance"] += platform_stats.get("initial_balance", 0)
-            summary["current_balance"] += platform_stats.get("current_balance", 0)
-    
-    # Calculate derived metrics
-    platforms_list = []
-    for platform_data in platform_summary.values():
-        total_trades = platform_data["total_trades"]
-        win_rate = (platform_data["wins"] / total_trades * 100) if total_trades > 0 else 0
-        roi = (platform_data["total_pnl"] / platform_data["initial_balance"] * 100) if platform_data["initial_balance"] > 0 else 0
-        
-        platforms_list.append({
-            "platform": platform_data["platform"],
-            "total_pnl": platform_data["total_pnl"],
-            "current_balance": platform_data["current_balance"],
-            "initial_balance": platform_data["initial_balance"],
-            "roi_percentage": roi,
-            "win_rate": win_rate,
-            "total_trades": total_trades
-        })
-    
-    return {"platforms": platforms_list}
 
 
 @app.get("/api/chart")

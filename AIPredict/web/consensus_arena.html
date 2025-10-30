@@ -932,7 +932,7 @@
             groups: {},  // Key: group_name, Value: { platforms, decisions, ... }
             traders: {}  // Key: trader_name, Value: { platforms, decisions, ... }
         };
-        const MAX_DECISIONS = 100;  // Max decisions to keep per trader/group
+        const MAX_DECISIONS = 10;  // Max decisions to keep per trader/group
         
         // Logo image cache
         const logoImages = {};
@@ -1536,7 +1536,6 @@
                     cachedData.groups[groupName] = {
                         group_name: groupName,
                         platforms: group.platforms || {},
-                        platform_comparison: group.platform_comparison || {},
                         consensus_decisions: (group.consensus_decisions || []).slice(0, MAX_DECISIONS)
                     };
                 });
@@ -1550,7 +1549,6 @@
                         trader_name: traderName,
                         ai_name: trader.ai_name,
                         platforms: trader.platforms || {},
-                        platform_comparison: trader.platform_comparison || {},
                         decisions: (trader.decisions || []).slice(0, MAX_DECISIONS),
                         addresses: trader.addresses || {}
                     };
@@ -1574,7 +1572,6 @@
                         cachedData.groups[groupName] = {
                             group_name: groupName,
                             platforms: {},
-                            platform_comparison: {},
                             consensus_decisions: []
                         };
                     }
@@ -1582,9 +1579,6 @@
                     // Update platforms if provided (full update only)
                     if (group.platforms && Object.keys(group.platforms).length > 0) {
                         cachedData.groups[groupName].platforms = group.platforms;
-                    }
-                    if (group.platform_comparison && Object.keys(group.platform_comparison).length > 0) {
-                        cachedData.groups[groupName].platform_comparison = group.platform_comparison;
                     }
                     
                     // Merge new decisions (prepend and limit to MAX_DECISIONS)
@@ -1609,7 +1603,6 @@
                             trader_name: traderName,
                             ai_name: trader.ai_name,
                             platforms: {},
-                            platform_comparison: {},
                             decisions: [],
                             addresses: {}
                         };
@@ -1618,9 +1611,6 @@
                     // Update platforms if provided (full update only)
                     if (trader.platforms && Object.keys(trader.platforms).length > 0) {
                         cachedData.traders[traderName].platforms = trader.platforms;
-                    }
-                    if (trader.platform_comparison && Object.keys(trader.platform_comparison).length > 0) {
-                        cachedData.traders[traderName].platform_comparison = trader.platform_comparison;
                     }
                     if (trader.addresses && Object.keys(trader.addresses).length > 0) {
                         cachedData.traders[traderName].addresses = trader.addresses;

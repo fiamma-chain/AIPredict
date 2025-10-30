@@ -281,39 +281,6 @@ class MultiPlatformTrader:
         for trader in self.platform_traders.values():
             await trader.update_stats(force_refresh=force_refresh)
     
-    def get_comparison_stats(self) -> Dict:
-        """
-        Get comparison statistics for all platforms
-        
-        Returns:
-            Dictionary of comparison statistics
-        """
-        comparison = {
-            "platforms": [],
-            "summary": {
-                "total_decisions": len(self.decision_history),
-                "best_platform": None,
-                "worst_platform": None,
-                "avg_roi": 0.0
-            }
-        }
-        
-        # Collect data from all platforms
-        platform_data = []
-        for name, trader in self.platform_traders.items():
-            stats = trader.stats.copy()
-            platform_data.append(stats)
-            comparison["platforms"].append(stats)
-        
-        # Calculate best/worst platforms
-        if platform_data:
-            sorted_by_roi = sorted(platform_data, key=lambda x: x["roi"], reverse=True)
-            comparison["summary"]["best_platform"] = sorted_by_roi[0]["name"]
-            comparison["summary"]["worst_platform"] = sorted_by_roi[-1]["name"]
-            comparison["summary"]["avg_roi"] = sum(p["roi"] for p in platform_data) / len(platform_data)
-        
-        return comparison
-    
     def get_platform_trader(self, name: str) -> Optional[PlatformTrader]:
         """Get trader for a specific platform"""
         return self.platform_traders.get(name)
