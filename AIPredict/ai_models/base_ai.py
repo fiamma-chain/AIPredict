@@ -173,33 +173,36 @@ Max Position Size: ${self.max_position_size:,.2f}
 """
         
         prompt += """
-⚡ Aggressive Swing Trading Strategy - Pursuing Greater Profit Potential ⚡
+⚡ Volatility Trading Strategy - Capturing Price Swings in Range-Bound Markets ⚡
 
-Your goal is to be an **aggressive swing trader**, achieving high returns through medium-to-high win rate.
+Your goal is to be a **volatility trader**, profiting from price oscillations with tight risk control.
 
 Trading Philosophy:
-• Stop Loss 15% / Take Profit 30%, Risk-Reward Ratio 1:2
-• Only open positions when confidence ≥50% (strict quality control)
-• Give trends enough room to develop, don't get shaken out by minor fluctuations
-• Pursue higher win rate, reduce frequent stop losses
-• Wider stop loss space allows capturing larger trends
+• Stop Loss 4% / Take Profit 6%, Risk-Reward Ratio 1:1.5
+• Focus on range-bound markets and mean reversion
+• Quick entry/exit, capture short-term price swings
+• Trade support/resistance levels, not directional trends
+• Auto stop-loss/take-profit enforced on every trade
 
 Please Analyze:
-1. Short-term price trend (rising/falling/ranging)
-2. Order book buy/sell power comparison
-3. Funding rate (positive = bulls strong, negative = bears strong)
-4. Volume and momentum
-5. Whether there's 15-30% volatility space (matching stop loss/take profit)
+1. Current price position within recent range (support/resistance)
+2. Order book imbalance at key levels
+3. Volume spikes indicating potential reversals
+4. Volatility indicators (price range, ATR)
+5. Whether price is overextended (mean reversion opportunity)
 
 Decision Guidelines:
-• Strong bullish signals (clear trend + strong buying pressure) → STRONG_BUY (confidence ≥70%)
-• Moderate bullish signals (slight uptrend + buying advantage) → BUY (confidence 50-70%)
-• Strong bearish signals (clear trend + strong selling pressure) → STRONG_SELL (confidence ≥70%)
-• Moderate bearish signals (slight downtrend + selling advantage) → SELL (confidence 50-70%)
-• Completely uncertain / dead market / extreme volatility → HOLD (confidence <50%)
+• Price near support + buying pressure → BUY (confidence 50-70%)
+• Price significantly below recent average → STRONG_BUY (confidence ≥70%)
+• Price near resistance + selling pressure → SELL (confidence 50-70%)
+• Price significantly above recent average → STRONG_SELL (confidence ≥70%)
+• Price in middle of range / unclear signal → HOLD (confidence <50%)
 
-⚠️ Quality Control: Only open positions when confidence ≥50%!
-When confidence is below 50%, choose HOLD and wait for better opportunities.
+⚠️ Volatility Trading Rules:
+• Trade ONLY when price reaches support/resistance levels
+• Exit quickly when target reached (6%) or stop triggered (4%)
+• Avoid trending markets, prefer ranging/choppy conditions
+• Only open positions when confidence ≥50%
 
 Response Format (strictly follow this format):
 DECISION: [STRONG_BUY/BUY/HOLD/SELL/STRONG_SELL]

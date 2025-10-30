@@ -47,10 +47,10 @@ class Settings(BaseSettings):
     individual_ai_initial_balance: float = 500.0  # Individual AI trader initial balance
     ai_min_margin: float = 200.0  # Minimum margin (USDT)
     ai_max_margin: float = 500.0  # Maximum margin (USDT)
-    ai_min_leverage: float = 5.0  # Minimum leverage (AI adjusts dynamically based on confidence)
-    ai_max_leverage: float = 20.0  # Maximum leverage (AI adjusts dynamically 5-20x based on confidence)
-    ai_stop_loss_pct: float = 0.02  # Stop loss percentage 2% (short-term strategy)
-    ai_take_profit_pct: float = 0.03  # Take profit percentage 3% (short-term strategy)
+    ai_min_leverage: float = 3.0  # Minimum leverage (volatility strategy)
+    ai_max_leverage: float = 10.0  # Maximum leverage (AI adjusts 3-10x based on volatility)
+    ai_stop_loss_pct: float = 0.04  # Stop loss percentage 4% (volatility strategy)
+    ai_take_profit_pct: float = 0.06  # Take profit percentage 6% (volatility strategy)
     
     # Group consensus configuration (mainnet by default)
     group_1_name: str = "Alpha Group"
