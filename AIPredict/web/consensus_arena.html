@@ -1837,10 +1837,10 @@
                 const currentTime = new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
                 
                 // Get Alpha/Beta platform balances
-                const alphaHLBalance = alphaHL?.balance || 1000;
-                const alphaAsterBalance = alphaAster?.balance || 1000;
-                const betaHLBalance = betaHL?.balance || 1000;
-                const betaAsterBalance = betaAster?.balance || 1000;
+                const alphaHLBalance = alphaHL?.balance || 500;
+                const alphaAsterBalance = alphaAster?.balance || 500;
+                const betaHLBalance = betaHL?.balance || 500;
+                const betaAsterBalance = betaAster?.balance || 500;
                 
                 console.log(`📊 Alpha/Beta platform balances:`);
                 console.log(`  Alpha-HL: $${alphaHLBalance.toFixed(2)}`);
@@ -1901,8 +1901,8 @@
                         if (dataset.data.length > 0) {
                             return dataset.data[dataset.data.length - 1];
                         }
-                        // Otherwise use initial balance (1000 USDT)
-                        return 1000;
+                        // Otherwise use initial balance (500 USDT)
+                        return 500;
                     };
                     
                     // Alpha/Beta platform data
@@ -1930,8 +1930,8 @@
                             if (value !== undefined && value !== null) {
                                 return value;
                             }
-                            // For first load, use initial balance (1000 USDT)
-                            return 1000;
+                            // For first load, use initial balance (500 USDT)
+                            return 500;
                         };
                         
                         // Alpha/Beta platform data
@@ -1968,8 +1968,8 @@
                             if (lastIndex > 0) {
                                 return dataset.data[lastIndex - 1];
                             }
-                            // Otherwise use initial balance (1000 USDT)
-                            return 1000;
+                            // Otherwise use initial balance (500 USDT)
+                            return 500;
                         };
                         
                         // Alpha/Beta platform data
@@ -2262,7 +2262,7 @@
                         });
                         
                         // Helper function: get value with smart fallback
-                        // If data is missing, use previous value (if exists), otherwise use initial balance (1000)
+                        // If data is missing, use previous value (if exists), otherwise use initial balance (500)
                         const getValueWithFallback = (value, datasetIndex) => {
                             if (value !== undefined && value !== null && value !== 0) {
                                 return value;
@@ -2272,11 +2272,11 @@
                             if (dataset.data.length > 0) {
                                 return dataset.data[dataset.data.length - 1];
                             }
-                            // Otherwise use initial balance (1000 USDT)
-                            return 1000;
+                            // Otherwise use initial balance (500 USDT)
+                            return 500;
                         };
                         
-                        // Alpha/Beta platform data (group initial balance: 1000 USDT)
+                        // Alpha/Beta platform data (group initial balance: 500 USDT)
                         // Support multiple naming formats (historical compatibility):
                         // 1. "Alpha-Hyperliquid" (new format)
                         // 2. "Alpha Group-Hyperliquid" (English)
@@ -2289,7 +2289,7 @@
                             balances['Beta-Hyperliquid'] || balances['Beta Group-Hyperliquid'] || balances['Beta组-Hyperliquid'], 2));
                         equityChart.data.datasets[3].data.push(getValueWithFallback(
                             balances['Beta-Aster'] || balances['Beta Group-Aster'] || balances['Beta组-Aster'], 3));
-                        // Individual AI traders (initial balance: 1000 USDT)
+                        // Individual AI traders (initial balance: 500 USDT)
                         equityChart.data.datasets[4].data.push(getValueWithFallback(traderBalances['DeepSeek'], 4));
                         equityChart.data.datasets[5].data.push(getValueWithFallback(traderBalances['Claude'], 5));
                         equityChart.data.datasets[6].data.push(getValueWithFallback(traderBalances['Grok'], 6));
@@ -2300,13 +2300,6 @@
                     
                     // Update current period start index to last data point
                     currentPeriodStartIndex = equityChart.data.labels.length - 1;
-                    
-                    // Log summary of loaded data
-                    console.log(`📊 Historical data summary:`);
-                    console.log(`  Alpha-HL: ${equityChart.data.datasets[0].data.filter(v => v !== 1000).length} non-default data points`);
-                    console.log(`  Alpha-Aster: ${equityChart.data.datasets[1].data.filter(v => v !== 1000).length} non-default data points`);
-                    console.log(`  Beta-HL: ${equityChart.data.datasets[2].data.filter(v => v !== 1000).length} non-default data points`);
-                    console.log(`  Beta-Aster: ${equityChart.data.datasets[3].data.filter(v => v !== 1000).length} non-default data points`);
                     
                     // Dynamically set last point to show circle
                     equityChart.data.datasets.forEach(dataset => {

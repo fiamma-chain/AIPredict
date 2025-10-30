@@ -24,10 +24,10 @@ class AITradingModel(ABC):
     """AI Trading Model Base Class"""
     
     def __init__(
-        self,
+        self, 
         model_name: str,
         api_key: str,
-        initial_balance: float = 1000.0,
+        initial_balance: float = 500.0,
         max_position_size: float = 200.0
     ):
         """

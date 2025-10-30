@@ -43,8 +43,8 @@ class Settings(BaseSettings):
     deepseek_api_key: str = ""
     
     # AI Trading configuration
-    ai_initial_balance: float = 1000.0  # Group account initial balance (Alpha and Beta groups)
-    individual_ai_initial_balance: float = 1000.0  # Individual AI trader initial balance
+    ai_initial_balance: float = 500.0  # Group account initial balance (Alpha and Beta groups)
+    individual_ai_initial_balance: float = 500.0  # Individual AI trader initial balance
     ai_min_margin: float = 200.0  # Minimum margin (USDT)
     ai_max_margin: float = 500.0  # Maximum margin (USDT)
     ai_min_leverage: float = 5.0  # Minimum leverage (AI adjusts dynamically based on confidence)
