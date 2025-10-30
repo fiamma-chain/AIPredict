@@ -1309,8 +1309,9 @@
                         }
                         
                         // Add vertical spacing using newlines based on offset
-                        // This creates visual separation between different traders' markers
-                        const verticalSpacing = '\n'.repeat(verticalOffset);
+                        // Use 2 newlines per level to create more vertical separation
+                        // This prevents text overlap between different traders' markers
+                        const verticalSpacing = '\n'.repeat(verticalOffset * 2);
                         text = verticalSpacing + text;
                         
                         return {
