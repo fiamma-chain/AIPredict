@@ -351,6 +351,25 @@ class AIGroup:
             coin: Trading symbol
         """
         try:
+            # 🔥 Step 1: Cancel all open orders first to free up margin
+            try:
+                open_orders = await trader.client.get_open_orders(coin)
+                if open_orders:
+                    logger.info(f"[{trader.name}] 🧹 Found {len(open_orders)} open order(s) for {coin}, cancelling to free up margin...")
+                    for order in open_orders:
+                        try:
+                            order_id = order.get('orderId') or order.get('oid')
+                            if order_id:
+                                cancel_result = await trader.client.cancel_order(coin, order_id)
+                                if cancel_result.get('status') != 'err':
+                                    logger.info(f"[{trader.name}] ✅ Cancelled order {order_id}")
+                                else:
+                                    logger.warning(f"[{trader.name}] ⚠️  Failed to cancel order {order_id}: {cancel_result.get('response')}")
+                        except Exception as e:
+                            logger.warning(f"[{trader.name}] ⚠️  Failed to cancel order: {e}")
+            except Exception as e:
+                logger.warning(f"[{trader.name}] ⚠️  Failed to get/cancel open orders: {e}")
+            
             # Get actual exchange position
             account = await trader.client.get_account_info()
             positions = account.get('assetPositions', [])
@@ -771,6 +790,25 @@ class ConsensusArena:
             coin: Trading symbol
         """
         try:
+            # 🔥 Step 1: Cancel all open orders first to free up margin
+            try:
+                open_orders = await trader.client.get_open_orders(coin)
+                if open_orders:
+                    logger.info(f"[{trader.name}] 🧹 Found {len(open_orders)} open order(s) for {coin}, cancelling to free up margin...")
+                    for order in open_orders:
+                        try:
+                            order_id = order.get('orderId') or order.get('oid')
+                            if order_id:
+                                cancel_result = await trader.client.cancel_order(coin, order_id)
+                                if cancel_result.get('status') != 'err':
+                                    logger.info(f"[{trader.name}] ✅ Cancelled order {order_id}")
+                                else:
+                                    logger.warning(f"[{trader.name}] ⚠️  Failed to cancel order {order_id}: {cancel_result.get('response')}")
+                        except Exception as e:
+                            logger.warning(f"[{trader.name}] ⚠️  Failed to cancel order: {e}")
+            except Exception as e:
+                logger.warning(f"[{trader.name}] ⚠️  Failed to get/cancel open orders: {e}")
+            
             # Get actual exchange position
             account = await trader.client.get_account_info()
             positions = account.get('assetPositions', [])
