@@ -87,10 +87,19 @@ class ClaudeTrader(AITradingModel):
                 
                 return decision, confidence, reasoning
             else:
-                print(f"Claude API error: {response.status_code} - {response.text}")
-                return TradingDecision.HOLD, 0.0, f"API call failed: {response.status_code}"
+                error_msg = f"Claude API error: {response.status_code}"
+                try:
+                    error_detail = response.json()
+                    error_msg += f" - {error_detail}"
+                except:
+                    error_msg += f" - {response.text[:200]}"
+                print(error_msg)
+                return TradingDecision.HOLD, 0.0, f"API error: {response.status_code}"
         
         except Exception as e:
+            import traceback
+            error_detail = traceback.format_exc()
             print(f"Claude analysis failed: {e}")
-            return TradingDecision.HOLD, 0.0, f"Analysis error: {str(e)}"
+            print(f"Traceback: {error_detail}")
+            return TradingDecision.HOLD, 0.0, f"Error: {str(e)[:50]}"
 

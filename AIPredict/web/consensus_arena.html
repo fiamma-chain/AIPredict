@@ -2091,17 +2091,45 @@
                 const date = new Date(decision.time);
                 const timeStr = date.toLocaleString('en-US');
                 
+                // Parse AI votes from summary
                 let aiVotesHtml = '';
-                if (decision.ai_votes && decision.ai_votes.length > 0) {
-                    aiVotesHtml = '<div class="ai-votes">' +
-                        decision.ai_votes.map(vote => `
-                            <div class="ai-vote">
-                                <div class="ai-name">${vote.ai_name}</div>
-                                <div>${highlightDecisions(vote.decision)}</div>
-                                <div style="font-size: 0.85em; opacity: 0.8;">Confidence: ${vote.confidence.toFixed(0)}%</div>
-                            </div>
-                        `).join('') +
-                        '</div>';
+                if (decision.summary && decision.summary.includes('AI Votes:')) {
+                    const summaryParts = decision.summary.split('AI Votes:');
+                    const aiVotesText = summaryParts[1] || '';
+                    const voteLines = aiVotesText.split('\n').filter(line => line.trim().startsWith('-'));
+                    
+                    if (voteLines.length > 0) {
+                        const votes = voteLines.map(line => {
+                            // Parse: "- DeepSeek: BUY (Confidence: 70%)"
+                            const match = line.match(/- (.+?):\s*(\w+)\s*\(Confidence:\s*(\d+)%\)/);
+                            if (match) {
+                                return {
+                                    ai_name: match[1].trim(),
+                                    decision: match[2].trim(),
+                                    confidence: parseInt(match[3])
+                                };
+                            }
+                            return null;
+                        }).filter(v => v !== null);
+                        
+                        if (votes.length > 0) {
+                            aiVotesHtml = '<div class="ai-votes">' +
+                                votes.map(vote => `
+                                    <div class="ai-vote">
+                                        <div class="ai-name">${vote.ai_name}</div>
+                                        <div>${highlightDecisions(vote.decision)}</div>
+                                        <div style="font-size: 0.85em; opacity: 0.8;">Confidence: ${vote.confidence}%</div>
+                                    </div>
+                                `).join('') +
+                                '</div>';
+                        }
+                    }
+                }
+                
+                // Extract summary without AI votes section for cleaner display
+                let displaySummary = decision.summary;
+                if (displaySummary.includes('AI Votes:')) {
+                    displaySummary = displaySummary.split('AI Votes:')[0].trim();
                 }
                 
                 return `
@@ -2116,7 +2144,7 @@
                         ${aiVotesHtml}
                         <div class="consensus-summary">
                             <strong>Consensus Summary:</strong><br>
-                            ${highlightDecisions(decision.summary.replace(/\n/g, '<br>'))}
+                            ${highlightDecisions(displaySummary.replace(/\n/g, '<br>'))}
                         </div>
                     </div>
                 `;

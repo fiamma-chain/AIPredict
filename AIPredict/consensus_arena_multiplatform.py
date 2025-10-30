@@ -589,7 +589,18 @@ class AIGroup:
             avg_confidence = 0
         
         vote_summary = f"Buy: {buy_count}, Sell: {sell_count}, Hold: {hold_count}"
-        consensus_summary = f"Consensus: {direction_name} ({vote_count}/{len(ai_decisions)} votes, Avg Confidence {avg_confidence:.1f}%)\nVoting Details: {vote_summary}"
+        
+        # Build detailed AI votes info for summary
+        ai_votes_details = []
+        for ai_decision in ai_decisions:
+            ai_name = ai_decision.get('ai_name', 'Unknown')
+            decision = ai_decision.get('decision', TradingDecision.HOLD)
+            decision_str = decision.value if hasattr(decision, 'value') else str(decision)
+            conf = ai_decision.get('confidence', 0)
+            ai_votes_details.append(f"- {ai_name}: {decision_str} (Confidence: {conf:.0f}%)")
+        
+        ai_votes_text = "\nAI Votes:\n" + "\n".join(ai_votes_details)
+        consensus_summary = f"Consensus: {direction_name} ({vote_count}/{len(ai_decisions)} votes, Avg Confidence {avg_confidence:.1f}%)\nVoting Details: {vote_summary}{ai_votes_text}"
         
         logger.info(f"[{self.name}] 📊 {consensus_summary}")
         
@@ -598,8 +609,9 @@ class AIGroup:
             logger.info(f"[{self.name}] ✅ Consensus reached! Executing: {direction_name} ({consensus_decision})")
             return consensus_decision, avg_confidence, consensus_summary, ai_decisions
         else:
+            no_consensus_summary = f"No consensus reached (need {min_votes} votes, got {vote_count} votes max), holding\n{vote_summary}{ai_votes_text}"
             logger.info(f"[{self.name}] ⚠️  No consensus reached (need at least {min_votes} votes), holding position")
-            return TradingDecision.HOLD, avg_confidence, f"No consensus reached (need {min_votes} votes, got {vote_count} votes max), holding\n{vote_summary}", ai_decisions
+            return TradingDecision.HOLD, avg_confidence, no_consensus_summary, ai_decisions
     
     async def execute_decision_on_all_platforms(
         self, 
@@ -1054,28 +1066,13 @@ class ConsensusArena:
                             "decision": consensus_decision.value if hasattr(consensus_decision, 'value') else str(consensus_decision),
                             "confidence": confidence,
                             "summary": summary,
-                            "ai_votes": ai_votes,
                             "price": current_price
                         }
                         group.stats["consensus_decisions"].insert(0, decision_record)
                         group.stats["consensus_decisions"] = group.stats["consensus_decisions"][:10]
                         
                         # Record to global decision history (for frontend display)
-                        # ai_votes is a list, each element is {'ai_name': xx, 'decision': xx, ...}
                         votes_count = sum(1 for vote in ai_votes if vote and vote.get('decision') == consensus_decision)
-                        
-                        # Format AI vote info (for frontend display)
-                        formatted_ai_votes = []
-                        for vote in ai_votes:
-                            if vote:
-                                vote_decision = vote.get('decision', '')
-                                decision_str = vote_decision.value if hasattr(vote_decision, 'value') else str(vote_decision)
-                                formatted_ai_votes.append({
-                                    "ai_name": vote.get('ai_name', 'Unknown'),
-                                    "decision": decision_str,
-                                    "confidence": round(vote.get('confidence', 0), 1),
-                                    "reasoning": vote.get('reasoning', '')[:200]  # Limit length
-                                })
                         
                         global_decision = {
                             "time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -1086,8 +1083,7 @@ class ConsensusArena:
                             "total_ais": len([v for v in ai_votes if v]),  # Filter out None
                             "price": current_price,
                             "platforms": [],
-                            "ai_votes": formatted_ai_votes,
-                            "summary": summary  # Add consensus summary
+                            "summary": summary  # Summary includes AI votes details
                         }
                         self.decision_history.insert(0, global_decision)
                         self.decision_history = self.decision_history[:100]  # Keep recent 100 entries
