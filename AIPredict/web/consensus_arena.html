@@ -1220,7 +1220,11 @@
                 }
                 
                 if (data.trade_markers && data.trade_markers.length > 0) {
-                    const markers = data.trade_markers.map(trade => {
+                    // Group markers by time to detect overlaps (within 5 minute window)
+                    const timeGroups = {};
+                    const TIME_WINDOW = 300; // 5 minutes in seconds
+                    
+                    const markers = data.trade_markers.map((trade, index) => {
                         console.log('🔍 [DEBUG] trade.group =', trade.group, 'trade.platform =', trade.platform, 'trade.action =', trade.action, 'trade.side =', trade.side, 'trade.price =', trade.price);
                         
                         // Skip trade markers with price 0 (invalid data)
@@ -1230,38 +1234,48 @@
                         }
                         
                         const isOpen = trade.action === 'open' || trade.action === 'OPEN';
+                        const timeKey = trade.time / 1000;
                         
                         // Color scheme mapping
-                        let color, colorName;
+                        let color, colorName, verticalOffset;
                         const groupName = trade.group;
                         
                         if (groupName.includes('Alpha') || groupName === 'Alpha') {
                             color = '#8b5cf6';  // Purple - Alpha Group
                             colorName = '🟣Purple';
+                            verticalOffset = 0; // Base position
                         } else if (groupName.includes('Beta') || groupName === 'Beta') {
                             color = '#f97316';  // Orange - Beta Group
                             colorName = '🟠Orange';
+                            verticalOffset = 1; // One level offset
                         } else if (groupName.includes('DeepSeek')) {
                             color = '#3b82f6';  // Blue - DeepSeek
                             colorName = '🔵Blue';
+                            verticalOffset = 2;
                         } else if (groupName.includes('Claude')) {
                             color = '#10b981';  // Green - Claude
                             colorName = '🟢Green';
+                            verticalOffset = 3;
                         } else if (groupName.includes('Grok')) {
                             color = '#ec4899';  // Pink - Grok
                             colorName = '🔴Pink';
+                            verticalOffset = 4;
                         } else if (groupName.includes('GPT')) {
                             color = '#14b8a6';  // Teal - GPT
                             colorName = '🟦Teal';
+                            verticalOffset = 5;
                         } else if (groupName.includes('Gemini')) {
                             color = '#f59e0b';  // Amber - Gemini
                             colorName = '🟡Amber';
+                            verticalOffset = 6;
                         } else if (groupName.includes('Qwen')) {
                             color = '#a855f7';  // Violet - Qwen
                             colorName = '🟣Violet';
+                            verticalOffset = 7;
                         } else {
                             color = '#6b7280';  // Gray - Default
                             colorName = '⚪Gray';
+                            verticalOffset = 8;
                         }
                         
                         // Open uses up arrow, Close uses down arrow
@@ -1294,12 +1308,19 @@
                             text += ` P/L: $${trade.pnl.toFixed(2)}`;
                         }
                         
+                        // Add vertical spacing using newlines based on offset
+                        // This creates visual separation between different traders' markers
+                        const verticalSpacing = '\n'.repeat(verticalOffset);
+                        text = verticalSpacing + text;
+                        
                         return {
-                            time: trade.time / 1000,
+                            time: timeKey,
                             position: isOpen ? 'belowBar' : 'aboveBar',
                             color: color,
                             shape: shape,
-                            text: text
+                            text: text,
+                            groupName: groupName,
+                            verticalOffset: verticalOffset
                         };
                     }).filter(m => m !== null);  // Filter out invalid markers
                     
