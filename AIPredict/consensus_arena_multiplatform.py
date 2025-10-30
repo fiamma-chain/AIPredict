@@ -411,8 +411,8 @@ class AIGroup:
                     logger.warning(f"[{trader.name}]    Exchange actual: {actual_position['size']:.8f}")
                     logger.warning(f"[{trader.name}]    Difference: {size_diff:.8f}")
                     
-                    # 🧹 Check if it's a residual position (less than 2x minimum trade unit)
-                    min_size = 0.002  # 2x BTC minimum unit of 0.001
+                    # 🧹 Check if it's a residual position (less than 5x minimum trade unit)
+                    min_size = 0.005  # 5x BTC minimum unit of 0.001
                     if actual_position['size'] < min_size:
                         logger.warning(f"[{trader.name}] 🧹 Detected residual position ({actual_position['size']:.8f} < {min_size})")
                         logger.info(f"[{trader.name}] Attempting to clean residual position...")
@@ -831,8 +831,8 @@ class ConsensusArena:
                     logger.warning(f"[{trader.name}]    Exchange actual: {actual_position['size']:.8f}")
                     logger.warning(f"[{trader.name}]    Difference: {size_diff:.8f}")
                     
-                    # 🧹 Check if it's a residual position (less than 2x minimum trade unit)
-                    min_size = 0.002  # 2x BTC minimum unit of 0.001
+                    # 🧹 Check if it's a residual position (less than 5x minimum trade unit)
+                    min_size = 0.005  # 5x BTC minimum unit of 0.001
                     if actual_position['size'] < min_size:
                         logger.warning(f"[{trader.name}] 🧹 Detected residual position ({actual_position['size']:.8f} < {min_size})")
                         logger.info(f"[{trader.name}] Attempting to clean residual position...")

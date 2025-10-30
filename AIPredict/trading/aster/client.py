@@ -391,7 +391,7 @@ class AsterClient(BaseExchangeClient):
         coin: str,
         is_buy: bool,
         size: float,
-        price: float,
+        price: Optional[float],
         order_type: str = "Limit",
         reduce_only: bool = False,
         leverage: int = None
@@ -402,7 +402,7 @@ class AsterClient(BaseExchangeClient):
             coin: Coin symbol
             is_buy: Whether to buy
             size: Quantity
-            price: Price
+            price: Price (None for market order, will fetch current market price)
             order_type: Order type
             reduce_only: Whether to reduce only
             leverage: Leverage multiplier (optional, will set leverage before placing order if provided)
