@@ -40,7 +40,6 @@ class AutoTrader:
         self.max_trades_history = 1000  # Maximum number of trades to keep in memory
         
         # Risk control
-        self.daily_loss_limit = 10.0  # Daily maximum loss (USDC)
         self.daily_pnl = 0.0
         self.daily_trade_count = 0
         self.last_reset_date = datetime.now().date()
@@ -70,11 +69,6 @@ class AutoTrader:
             Whether trading is allowed
         """
         self.reset_daily_stats()
-        
-        # Check daily loss limit
-        if self.daily_pnl < -self.daily_loss_limit:
-            logger.warning(f"⚠️  Daily loss limit reached: ${self.daily_pnl:,.2f}")
-            return False
         
         return True
     
