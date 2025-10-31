@@ -275,6 +275,7 @@
             height: 500px;
             background: #131722;
             border-radius: 8px;
+            position: relative;
         }
         
         .kline-controls {
@@ -921,6 +922,7 @@
         let klineChart = null;
         let candlestickSeries = null;
         let currentInterval = '15m';
+        let tradeMarkers = [];  // Store trade markers for custom rendering
         
         // Equity curve management variables
         let lastDecisionCount = 0;  // Last decision count
@@ -1150,9 +1152,60 @@
             
             console.log('candlestickSeries created successfully');
             
+            // Add tooltip for trade markers
+            const toolTipDiv = document.createElement('div');
+            toolTipDiv.style.cssText = `
+                position: absolute;
+                display: none;
+                padding: 8px;
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                border-radius: 4px;
+                font-size: 12px;
+                z-index: 1000;
+                pointer-events: none;
+                max-width: 300px;
+                white-space: pre-wrap;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            `;
+            chartContainer.appendChild(toolTipDiv);
+            
+            // Subscribe to crosshair move to show marker info
+            klineChart.subscribeCrosshairMove((param) => {
+                if (!param.time || !param.point || tradeMarkers.length === 0) {
+                    toolTipDiv.style.display = 'none';
+                    return;
+                }
+                
+                // Find markers near this time
+                const currentTime = param.time;
+                const nearbyMarkers = tradeMarkers.filter(m => {
+                    const timeDiff = Math.abs(m.time - currentTime);
+                    return timeDiff < 180; // Within 3 minutes (180 seconds)
+                });
+                
+                if (nearbyMarkers.length > 0) {
+                    const markerTexts = nearbyMarkers.map(m => m.text).join('\n');
+                    toolTipDiv.innerHTML = markerTexts;
+                    toolTipDiv.style.display = 'block';
+                    toolTipDiv.style.left = param.point.x + 15 + 'px';
+                    toolTipDiv.style.top = param.point.y + 15 + 'px';
+                } else {
+                    toolTipDiv.style.display = 'none';
+                }
+            });
+            
+            // Subscribe to visible range changes to redraw labels
+            klineChart.timeScale().subscribeVisibleLogicalRangeChange(() => {
+                if (tradeMarkers.length > 0) {
+                    setTimeout(() => drawMarkerLabels(), 10);
+                }
+            });
+            
             // Responsive adjustment
             window.addEventListener('resize', () => {
                 klineChart.applyOptions({ width: chartContainer.clientWidth });
+                setTimeout(() => drawMarkerLabels(), 100);
             });
         }
         
@@ -1328,18 +1381,74 @@
                             color: color,
                             shape: shape,
                             text: text,
+                            price: trade.price,  // Add price for label positioning
                             groupName: groupName,
                             verticalOffset: verticalOffset
                         };
                     }).filter(m => m !== null);  // Filter out invalid markers
                     
                     console.log(`📍 [K-line Markers] Valid markers to display: ${markers.length}`);
+                    
+                    // Store markers for tooltip display
+                    tradeMarkers = markers;
+                    
                     candlestickSeries.setMarkers(markers);
+                    
+                    // Draw marker labels on chart
+                    setTimeout(() => drawMarkerLabels(), 100);
                 }
                 
             } catch (error) {
                 console.error('Failed to update K-line chart:', error);
             }
+        }
+        
+        // Draw marker labels on chart
+        function drawMarkerLabels() {
+            if (!klineChart || !candlestickSeries || tradeMarkers.length === 0) {
+                return;
+            }
+            
+            const chartContainer = document.getElementById('klineChart');
+            
+            // Remove existing labels
+            const existingLabels = chartContainer.querySelectorAll('.marker-label');
+            existingLabels.forEach(label => label.remove());
+            
+            // Create labels for each marker
+            tradeMarkers.forEach(marker => {
+                try {
+                    // Get the price coordinate for this marker
+                    const coordinate = candlestickSeries.priceToCoordinate(marker.price || 0);
+                    const timeCoordinate = klineChart.timeScale().timeToCoordinate(marker.time);
+                    
+                    if (coordinate !== null && timeCoordinate !== null) {
+                        const label = document.createElement('div');
+                        label.className = 'marker-label';
+                        label.style.cssText = `
+                            position: absolute;
+                            left: ${timeCoordinate + 5}px;
+                            top: ${coordinate - (marker.position === 'belowBar' ? 20 : -5)}px;
+                            background: ${marker.color};
+                            color: white;
+                            padding: 2px 6px;
+                            border-radius: 3px;
+                            font-size: 10px;
+                            white-space: nowrap;
+                            z-index: 10;
+                            pointer-events: none;
+                            font-weight: bold;
+                            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+                        `;
+                        label.textContent = marker.text;
+                        chartContainer.appendChild(label);
+                    }
+                } catch (e) {
+                    console.warn('Failed to draw label for marker:', marker, e);
+                }
+            });
+            
+            console.log(`✅ Drew ${tradeMarkers.length} marker labels`);
         }
         
         function changeInterval(interval) {
