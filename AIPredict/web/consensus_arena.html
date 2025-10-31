@@ -1220,9 +1220,19 @@
                 }
                 
                 if (data.trade_markers && data.trade_markers.length > 0) {
-                    // Group markers by time to detect overlaps (within 5 minute window)
+                    // Group markers by time to detect overlaps
                     const timeGroups = {};
-                    const TIME_WINDOW = 300; // 5 minutes in seconds
+                    
+                    // First pass: group markers by time (rounded to nearest minute)
+                    data.trade_markers.forEach((trade, index) => {
+                        if (!trade.price || trade.price === 0) return;
+                        
+                        const timeKey = Math.floor(trade.time / 1000 / 60) * 60; // Round to minute
+                        if (!timeGroups[timeKey]) {
+                            timeGroups[timeKey] = [];
+                        }
+                        timeGroups[timeKey].push({ trade, originalIndex: index });
+                    });
                     
                     const markers = data.trade_markers.map((trade, index) => {
                         console.log('🔍 [DEBUG] trade.group =', trade.group, 'trade.platform =', trade.platform, 'trade.action =', trade.action, 'trade.side =', trade.side, 'trade.price =', trade.price);
@@ -1234,7 +1244,7 @@
                         }
                         
                         const isOpen = trade.action === 'open' || trade.action === 'OPEN';
-                        const timeKey = trade.time / 1000;
+                        const baseTimeKey = trade.time / 1000;
                         
                         // Color scheme mapping
                         let color, colorName, verticalOffset;
@@ -1243,11 +1253,11 @@
                         if (groupName.includes('Alpha') || groupName === 'Alpha') {
                             color = '#8b5cf6';  // Purple - Alpha Group
                             colorName = '🟣Purple';
-                            verticalOffset = 0; // Base position
+                            verticalOffset = 0;
                         } else if (groupName.includes('Beta') || groupName === 'Beta') {
                             color = '#f97316';  // Orange - Beta Group
                             colorName = '🟠Orange';
-                            verticalOffset = 1; // One level offset
+                            verticalOffset = 1;
                         } else if (groupName.includes('DeepSeek')) {
                             color = '#3b82f6';  // Blue - DeepSeek
                             colorName = '🔵Blue';
@@ -1278,6 +1288,10 @@
                             verticalOffset = 8;
                         }
                         
+                        // Apply time offset to spread out overlapping markers
+                        // Each trader gets a 3-second offset (enough to separate visually without being too far)
+                        const timeKey = baseTimeKey + (verticalOffset * 3);
+                        
                         // Open uses up arrow, Close uses down arrow
                         const shape = isOpen ? 'arrowUp' : 'arrowDown';
                         
@@ -1307,12 +1321,6 @@
                         if (!isOpen && trade.pnl !== 0) {
                             text += ` P/L: $${trade.pnl.toFixed(2)}`;
                         }
-                        
-                        // Add vertical spacing using newlines based on offset
-                        // Use 2 newlines per level to create more vertical separation
-                        // This prevents text overlap between different traders' markers
-                        const verticalSpacing = '\n'.repeat(verticalOffset * 2);
-                        text = verticalSpacing + text;
                         
                         return {
                             time: timeKey,

@@ -1599,18 +1599,11 @@ async def get_chart_data(
         
         # 1. Collect group trades (Alpha group, Beta group)
         for group in arena.groups:
-            group_start_time = group.start_time
-            
             # Iterate through all platforms of this group
             for platform_name, platform_stats in group.stats.get("platforms", {}).items():
                 for trade in platform_stats.get("trades", []):
                     try:
                         trade_time = datetime.fromisoformat(trade.get("time", ""))
-                        
-                        # Only show trades after system startup
-                        if trade_time < group_start_time:
-                            continue
-                        
                         timestamp_ms = int(trade_time.timestamp() * 1000)
                         
                         # Use price for open, exit_price for close
@@ -1631,18 +1624,11 @@ async def get_chart_data(
         
         # 2. Collect individual trader trades (DeepSeek-Solo, Claude-Solo, etc.)
         for trader in arena.individual_traders:
-            trader_start_time = trader.start_time
-            
             # Iterate through all platforms of this trader
             for platform_name, platform_stats in trader.stats.get("platforms", {}).items():
                 for trade in platform_stats.get("trades", []):
                     try:
                         trade_time = datetime.fromisoformat(trade.get("time", ""))
-                        
-                        # Only show trades after system startup
-                        if trade_time < trader_start_time:
-                            continue
-                        
                         timestamp_ms = int(trade_time.timestamp() * 1000)
                         
                         # Use price for open, exit_price for close
